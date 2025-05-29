@@ -1,5 +1,7 @@
 
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { 
   Shield, 
@@ -11,7 +13,8 @@ import {
   Menu,
   X,
   Bell,
-  User
+  User,
+  LogOut
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -21,15 +24,28 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const navigation = [
-    { name: 'Dashboard', icon: Shield, href: '/dashboard', current: true },
-    { name: 'Dead Man\'s Switch', icon: Clock, href: '/switch', current: false },
-    { name: 'Digital Accounts', icon: Key, href: '/accounts', current: false },
-    { name: 'Contacts', icon: Users, href: '/contacts', current: false },
-    { name: 'Documents', icon: FileText, href: '/documents', current: false },
-    { name: 'Settings', icon: Settings, href: '/settings', current: false },
+    { name: 'Dashboard', icon: Shield, href: '/dashboard' },
+    { name: 'Dead Man\'s Switch', icon: Clock, href: '/switch' },
+    { name: 'Digital Accounts', icon: Key, href: '/accounts' },
+    { name: 'Contacts', icon: Users, href: '/contacts' },
+    { name: 'Documents', icon: FileText, href: '/documents' },
+    { name: 'Settings', icon: Settings, href: '/settings' },
   ];
+
+  const handleNavigation = (href: string) => {
+    navigate(href);
+    setSidebarOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -61,19 +77,20 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <ul className="space-y-1">
             {navigation.map((item) => {
               const Icon = item.icon;
+              const isActive = location.pathname === item.href;
               return (
                 <li key={item.name}>
-                  <a
-                    href={item.href}
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      item.current
+                  <button
+                    onClick={() => handleNavigation(item.href)}
+                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isActive
                         ? 'bg-emerald-600/20 text-emerald-400'
                         : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                     }`}
                   >
                     <Icon className="w-5 h-5 mr-3" />
                     {item.name}
-                  </a>
+                  </button>
                 </li>
               );
             })}
@@ -81,7 +98,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </nav>
 
         {/* Status indicator */}
-        <div className="absolute bottom-6 left-3 right-3">
+        <div className="absolute bottom-20 left-3 right-3">
           <div className="bg-emerald-600/20 border border-emerald-600/30 rounded-lg p-3">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
@@ -91,6 +108,18 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               Next check-in in 5 days
             </p>
           </div>
+        </div>
+
+        {/* Sign out button */}
+        <div className="absolute bottom-6 left-3 right-3">
+          <Button
+            onClick={handleSignOut}
+            variant="ghost"
+            className="w-full text-slate-400 hover:text-white hover:bg-slate-700/50"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
       </div>
 

@@ -1,230 +1,197 @@
 
-import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { 
-  Clock, 
   Shield, 
+  Clock, 
   Users, 
   Key, 
   FileText, 
-  Settings,
-  Plus,
+  AlertTriangle,
   CheckCircle,
-  AlertTriangle
+  ArrowRight
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const Dashboard = () => {
-  const [timeToNextCheckin, setTimeToNextCheckin] = useState({
-    days: 5,
-    hours: 14,
-    minutes: 32
-  });
+  const { user } = useAuth();
 
-  const [setupProgress, setSetupProgress] = useState(65);
-
-  useEffect(() => {
-    // Simulate countdown timer
-    const timer = setInterval(() => {
-      setTimeToNextCheckin(prev => {
-        if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1 };
-        } else if (prev.hours > 0) {
-          return { ...prev, hours: prev.hours - 1, minutes: 59 };
-        } else if (prev.days > 0) {
-          return { ...prev, days: prev.days - 1, hours: 23, minutes: 59 };
-        }
-        return prev;
-      });
-    }, 60000); // Update every minute
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const quickStats = [
-    { label: 'Digital Accounts', value: '12', icon: Key, color: 'text-blue-400' },
-    { label: 'Contacts', value: '8', icon: Users, color: 'text-emerald-400' },
-    { label: 'Documents', value: '5', icon: FileText, color: 'text-purple-400' },
-    { label: 'Messages', value: '3', icon: FileText, color: 'text-orange-400' },
+  const stats = [
+    {
+      title: "Digital Accounts",
+      value: "12",
+      description: "Accounts secured",
+      icon: Key,
+      color: "text-blue-400",
+      bg: "bg-blue-400/20"
+    },
+    {
+      title: "Emergency Contacts",
+      value: "3",
+      description: "Contacts configured",
+      icon: Users,
+      color: "text-emerald-400",
+      bg: "bg-emerald-400/20"
+    },
+    {
+      title: "Legacy Documents",
+      value: "5",
+      description: "Documents stored",
+      icon: FileText,
+      color: "text-purple-400",
+      bg: "bg-purple-400/20"
+    },
+    {
+      title: "System Status",
+      value: "Active",
+      description: "All systems operational",
+      icon: Shield,
+      color: "text-green-400",
+      bg: "bg-green-400/20"
+    }
   ];
 
-  const recentActivity = [
-    { action: 'Updated password for Gmail account', time: '2 hours ago', type: 'update' },
-    { action: 'Added new contact: Sarah Johnson', time: '1 day ago', type: 'add' },
-    { action: 'Completed weekly check-in', time: '2 days ago', type: 'checkin' },
-    { action: 'Generated backup codes for Facebook', time: '3 days ago', type: 'security' },
-  ];
-
-  const setupTasks = [
-    { task: 'Add emergency contacts', completed: true },
-    { task: 'Configure check-in frequency', completed: true },
-    { task: 'Add digital accounts', completed: true },
-    { task: 'Set up 2FA backup codes', completed: false },
-    { task: 'Create personal messages', completed: false },
-    { task: 'Upload important documents', completed: false },
+  const quickActions = [
+    {
+      title: "Set Check-in Frequency",
+      description: "Configure how often you need to check in",
+      icon: Clock,
+      href: "/switch",
+      urgent: false
+    },
+    {
+      title: "Add Digital Account",
+      description: "Secure another digital account",
+      icon: Key,
+      href: "/accounts",
+      urgent: false
+    },
+    {
+      title: "Add Emergency Contact",
+      description: "Configure who to notify in case of emergency",
+      icon: Users,
+      href: "/contacts",
+      urgent: true
+    }
   ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="space-y-6">
+        {/* Welcome Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-            <p className="text-slate-400 mt-1">Monitor your digital legacy status</p>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Welcome back, {user?.user_metadata?.first_name || 'User'}
+            </h1>
+            <p className="text-slate-400">
+              Your digital legacy is secure and actively monitored
+            </p>
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-500">
-            <Plus className="w-4 h-4 mr-2" />
-            Quick Add Account
-          </Button>
+          <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30">
+            <CheckCircle className="w-4 h-4 mr-2" />
+            System Active
+          </Badge>
         </div>
 
-        {/* Dead Man's Switch Status */}
-        <Card className="bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-emerald-600/20 rounded-lg flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-emerald-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-white text-xl">Next Check-in</CardTitle>
-                  <CardDescription className="text-slate-300">
-                    Your system is active and monitoring
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-400/30">
-                Active
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-6 mb-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">{timeToNextCheckin.days}</div>
-                <div className="text-sm text-slate-400">Days</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">{timeToNextCheckin.hours}</div>
-                <div className="text-sm text-slate-400">Hours</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">{timeToNextCheckin.minutes}</div>
-                <div className="text-sm text-slate-400">Minutes</div>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button className="flex-1 bg-emerald-600 hover:bg-emerald-500">
-                Complete Check-in Now
-              </Button>
-              <Button variant="outline" className="border-slate-500 text-slate-300 hover:bg-slate-700">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickStats.map((stat, index) => {
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index} className="bg-slate-800/50 border-slate-600">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold text-white">{stat.value}</p>
-                      <p className="text-sm text-slate-400">{stat.label}</p>
-                    </div>
-                    <Icon className={`w-8 h-8 ${stat.color}`} />
+              <Card key={index} className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-200">
+                    {stat.title}
+                  </CardTitle>
+                  <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center`}>
+                    <Icon className={`w-4 h-4 ${stat.color}`} />
                   </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {stat.description}
+                  </p>
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Setup Progress */}
-          <Card className="bg-slate-800/50 border-slate-600">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Shield className="w-5 h-5 mr-2 text-blue-400" />
-                Setup Progress
-              </CardTitle>
-              <CardDescription className="text-slate-300">
-                Complete your digital legacy setup
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-300">Overall Progress</span>
-                    <span className="text-white font-semibold">{setupProgress}%</span>
-                  </div>
-                  <Progress value={setupProgress} className="h-2" />
-                </div>
-                <div className="space-y-3">
-                  {setupTasks.map((item, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      {item.completed ? (
-                        <CheckCircle className="w-5 h-5 text-emerald-400" />
-                      ) : (
-                        <div className="w-5 h-5 border-2 border-slate-500 rounded-full" />
-                      )}
-                      <span className={`text-sm ${item.completed ? 'text-slate-300 line-through' : 'text-white'}`}>
-                        {item.task}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Alert Banner */}
+        <Card className="bg-amber-900/20 border-amber-700/50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-amber-400">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              Action Required
+            </CardTitle>
+            <CardDescription className="text-amber-200/70">
+              Your next check-in is due in 5 days. Make sure to complete it to keep your system active.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="bg-amber-600 hover:bg-amber-500 text-white">
+              Complete Check-in Now
+            </Button>
+          </CardContent>
+        </Card>
 
-          {/* Recent Activity */}
-          <Card className="bg-slate-800/50 border-slate-600">
-            <CardHeader>
-              <CardTitle className="text-white">Recent Activity</CardTitle>
-              <CardDescription className="text-slate-300">
-                Your latest actions and updates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3 pb-3 border-b border-slate-700 last:border-b-0">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full mt-2" />
-                    <div className="flex-1">
-                      <p className="text-white text-sm">{activity.action}</p>
-                      <p className="text-slate-400 text-xs mt-1">{activity.time}</p>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {quickActions.map((action, index) => {
+            const Icon = action.icon;
+            return (
+              <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 cursor-pointer group">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className={`w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center`}>
+                      <Icon className="w-5 h-5 text-emerald-400" />
                     </div>
+                    {action.urgent && (
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+                        Urgent
+                      </Badge>
+                    )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <CardTitle className="text-white group-hover:text-emerald-400 transition-colors">
+                    {action.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-slate-400 mb-4">
+                    {action.description}
+                  </CardDescription>
+                  <Button variant="ghost" className="text-emerald-400 hover:text-emerald-300 p-0 h-auto group-hover:translate-x-1 transition-transform">
+                    Get Started
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
-        {/* Security Alert */}
-        <Card className="bg-orange-600/10 border-orange-600/30">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <AlertTriangle className="w-6 h-6 text-orange-400" />
-              <div>
-                <h3 className="text-white font-semibold">Security Recommendation</h3>
-                <p className="text-orange-200 text-sm mt-1">
-                  You have 3 accounts without 2FA backup codes. Consider adding them for better security.
-                </p>
+        {/* Recent Activity */}
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">Recent Activity</CardTitle>
+            <CardDescription className="text-slate-400">
+              Your latest actions and system events
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+                <div className="flex-1">
+                  <p className="text-sm text-white">Account created successfully</p>
+                  <p className="text-xs text-slate-400">Welcome to LegacyVault</p>
+                </div>
+                <span className="text-xs text-slate-400">Just now</span>
               </div>
-              <Button variant="outline" className="border-orange-400/30 text-orange-400 hover:bg-orange-400/10 ml-auto">
-                Review Accounts
-              </Button>
             </div>
           </CardContent>
         </Card>

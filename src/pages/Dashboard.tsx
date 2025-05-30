@@ -1,197 +1,261 @@
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   Shield, 
   Clock, 
   Users, 
-  Key, 
   FileText, 
   AlertTriangle,
   CheckCircle,
-  ArrowRight
+  Timer,
+  CreditCard,
+  TrendingUp
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+
+interface DashboardStats {
+  totalContacts: number;
+  totalAccounts: number;
+  totalDocuments: number;
+  nextCheckIn: string | null;
+  isActive: boolean;
+  lastCheckIn: string | null;
+}
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalContacts: 0,
+    totalAccounts: 0,
+    totalDocuments: 0,
+    nextCheckIn: null,
+    isActive: true,
+    lastCheckIn: null,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    {
-      title: "Digital Accounts",
-      value: "12",
-      description: "Accounts secured",
-      icon: Key,
-      color: "text-blue-400",
-      bg: "bg-blue-400/20"
-    },
-    {
-      title: "Emergency Contacts",
-      value: "3",
-      description: "Contacts configured",
-      icon: Users,
-      color: "text-emerald-400",
-      bg: "bg-emerald-400/20"
-    },
-    {
-      title: "Legacy Documents",
-      value: "5",
-      description: "Documents stored",
-      icon: FileText,
-      color: "text-purple-400",
-      bg: "bg-purple-400/20"
-    },
-    {
-      title: "System Status",
-      value: "Active",
-      description: "All systems operational",
-      icon: Shield,
-      color: "text-green-400",
-      bg: "bg-green-400/20"
+  useEffect(() => {
+    if (user) {
+      fetchDashboardStats();
     }
-  ];
+  }, [user]);
 
-  const quickActions = [
-    {
-      title: "Set Check-in Frequency",
-      description: "Configure how often you need to check in",
-      icon: Clock,
-      href: "/switch",
-      urgent: false
-    },
-    {
-      title: "Add Digital Account",
-      description: "Secure another digital account",
-      icon: Key,
-      href: "/accounts",
-      urgent: false
-    },
-    {
-      title: "Add Emergency Contact",
-      description: "Configure who to notify in case of emergency",
-      icon: Users,
-      href: "/contacts",
-      urgent: true
+  const fetchDashboardStats = async () => {
+    try {
+      // Fetch contacts count
+      const { count: contactsCount } = await supabase
+        .from('emergency_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
+
+      // Fetch accounts count
+      const { count: accountsCount } = await supabase
+        .from('digital_accounts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
+
+      // Fetch documents count
+      const { count: documentsCount } = await supabase
+        .from('legacy_documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
+
+      // Fetch user settings
+      const { data: userSettings } = await supabase
+        .from('user_settings')
+        .select('next_check_in_due, is_active, last_check_in')
+        .eq('user_id', user?.id)
+        .single();
+
+      setStats({
+        totalContacts: contactsCount || 0,
+        totalAccounts: accountsCount || 0,
+        totalDocuments: documentsCount || 0,
+        nextCheckIn: userSettings?.next_check_in_due || null,
+        isActive: userSettings?.is_active || false,
+        lastCheckIn: userSettings?.last_check_in || null,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusBadge = () => {
+    if (!stats.isActive) {
+      return <Badge className="bg-red-600/20 text-red-400">Inactive</Badge>;
+    }
+    
+    if (stats.nextCheckIn) {
+      const nextCheckIn = new Date(stats.nextCheckIn);
+      const now = new Date();
+      const isOverdue = nextCheckIn < now;
+      
+      if (isOverdue) {
+        return <Badge className="bg-orange-600/20 text-orange-400">Check-in Overdue</Badge>;
+      }
+    }
+    
+    return <Badge className="bg-emerald-600/20 text-emerald-400">Active</Badge>;
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-8">
+          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg animate-pulse mx-auto mb-4" />
+          <p className="text-slate-400">Loading dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Welcome Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Welcome back, {user?.user_metadata?.first_name || 'User'}
-            </h1>
-            <p className="text-slate-400">
-              Your digital legacy is secure and actively monitored
-            </p>
-          </div>
-          <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30">
-            <CheckCircle className="w-4 h-4 mr-2" />
-            System Active
-          </Badge>
+        {/* Welcome Section */}
+        <div className="text-center md:text-left">
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Welcome back to LegacyVault
+          </h1>
+          <p className="text-slate-400">
+            Manage your digital legacy and ensure your loved ones are protected
+          </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-200">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center`}>
-                    <Icon className={`w-4 h-4 ${stat.color}`} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">{stat.value}</div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Alert Banner */}
-        <Card className="bg-amber-900/20 border-amber-700/50">
+        {/* Status Card */}
+        <Card className="bg-slate-800 border-slate-700">
           <CardHeader>
-            <CardTitle className="flex items-center text-amber-400">
-              <AlertTriangle className="w-5 h-5 mr-2" />
-              Action Required
-            </CardTitle>
-            <CardDescription className="text-amber-200/70">
-              Your next check-in is due in 5 days. Make sure to complete it to keep your system active.
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Shield className="w-5 h-5 text-emerald-400" />
+                System Status
+              </CardTitle>
+              {getStatusBadge()}
+            </div>
           </CardHeader>
           <CardContent>
-            <Button className="bg-amber-600 hover:bg-amber-500 text-white">
-              Complete Check-in Now
-            </Button>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-slate-400 text-sm">Last Check-in</p>
+                <p className="text-white font-medium">{formatDate(stats.lastCheckIn)}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-sm">Next Check-in Due</p>
+                <p className="text-white font-medium">{formatDate(stats.nextCheckIn)}</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Link to="/switch">
+                <Button className="bg-emerald-600 hover:bg-emerald-500">
+                  <Timer className="w-4 h-4 mr-2" />
+                  Manage Dead Man's Switch
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {quickActions.map((action, index) => {
-            const Icon = action.icon;
-            return (
-              <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 cursor-pointer group">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className={`w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center`}>
-                      <Icon className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    {action.urgent && (
-                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
-                        Urgent
-                      </Badge>
-                    )}
-                  </div>
-                  <CardTitle className="text-white group-hover:text-emerald-400 transition-colors">
-                    {action.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-slate-400 mb-4">
-                    {action.description}
-                  </CardDescription>
-                  <Button variant="ghost" className="text-emerald-400 hover:text-emerald-300 p-0 h-auto group-hover:translate-x-1 transition-transform">
-                    Get Started
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+        {/* Stats Grid */}
+        <div className="grid md:grid-cols-3 gap-6">
+          <Card className="bg-slate-800 border-slate-700 hover:bg-slate-700/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">Emergency Contacts</CardTitle>
+              <Users className="w-4 h-4 text-blue-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{stats.totalContacts}</div>
+              <p className="text-xs text-slate-400 mt-1">Trusted individuals</p>
+              <Link to="/contacts" className="mt-3 block">
+                <Button variant="outline" size="sm" className="w-full">
+                  Manage Contacts
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800 border-slate-700 hover:bg-slate-700/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">Digital Accounts</CardTitle>
+              <CreditCard className="w-4 h-4 text-emerald-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{stats.totalAccounts}</div>
+              <p className="text-xs text-slate-400 mt-1">Secured accounts</p>
+              <Link to="/accounts" className="mt-3 block">
+                <Button variant="outline" size="sm" className="w-full">
+                  Manage Accounts
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800 border-slate-700 hover:bg-slate-700/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">Legacy Documents</CardTitle>
+              <FileText className="w-4 h-4 text-purple-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{stats.totalDocuments}</div>
+              <p className="text-xs text-slate-400 mt-1">Important files</p>
+              <Link to="/documents" className="mt-3 block">
+                <Button variant="outline" size="sm" className="w-full">
+                  Manage Documents
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Recent Activity */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        {/* Quick Actions */}
+        <Card className="bg-slate-800 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-white">Recent Activity</CardTitle>
-            <CardDescription className="text-slate-400">
-              Your latest actions and system events
-            </CardDescription>
+            <CardTitle className="text-white">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                <div className="flex-1">
-                  <p className="text-sm text-white">Account created successfully</p>
-                  <p className="text-xs text-slate-400">Welcome to LegacyVault</p>
-                </div>
-                <span className="text-xs text-slate-400">Just now</span>
-              </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link to="/contacts">
+                <Button variant="outline" className="w-full justify-start">
+                  <Users className="w-4 h-4 mr-2" />
+                  Add Contact
+                </Button>
+              </Link>
+              <Link to="/accounts">
+                <Button variant="outline" className="w-full justify-start">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Add Account
+                </Button>
+              </Link>
+              <Link to="/documents">
+                <Button variant="outline" className="w-full justify-start">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Upload Document
+                </Button>
+              </Link>
+              <Link to="/settings">
+                <Button variant="outline" className="w-full justify-start">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Update Settings
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

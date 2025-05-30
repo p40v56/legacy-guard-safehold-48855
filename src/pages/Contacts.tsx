@@ -33,12 +33,21 @@ const Contacts = () => {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    relationship: string;
+    contact_type: 'primary' | 'secondary' | 'professional' | 'legal';
+    priority_order: number;
+    can_access_accounts: boolean;
+    can_receive_messages: boolean;
+  }>({
     name: '',
     email: '',
     phone: '',
     relationship: '',
-    contact_type: 'primary' as const,
+    contact_type: 'primary',
     priority_order: 1,
     can_access_accounts: false,
     can_receive_messages: true,

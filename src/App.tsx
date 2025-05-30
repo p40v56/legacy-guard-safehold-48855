@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Switch from "./pages/Switch";
 import Accounts from "./pages/Accounts";
+import Contacts from "./pages/Contacts";
+import Documents from "./pages/Documents";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 

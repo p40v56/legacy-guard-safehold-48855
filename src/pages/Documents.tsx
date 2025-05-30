@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Edit, Trash2, Download, Eye } from 'lucide-react';
+import { Plus, FileText, Edit, Trash2, Download, Eye, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import SearchInput from '@/components/ui/search-input';
 
 interface Document {
   id: string;
@@ -32,6 +33,8 @@ const Documents = () => {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'public' | 'private' | 'all'>('all');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -170,6 +173,22 @@ const Documents = () => {
     });
   };
 
+  const filteredDocuments = useMemo(() => {
+    return documents.filter(document => {
+      const matchesSearch = 
+        document.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (document.description && document.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (document.file_type && document.file_type.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesFilter = 
+        filterType === 'all' || 
+        (filterType === 'public' && document.is_public) ||
+        (filterType === 'private' && !document.is_public);
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [documents, searchTerm, filterType]);
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -249,21 +268,54 @@ const Documents = () => {
           </Dialog>
         </div>
 
+        {/* Search and Filter */}
+        <div className="flex gap-4 items-center">
+          <div className="flex-1">
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search documents by title, description..."
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <Select value={filterType} onValueChange={(value: 'public' | 'private' | 'all') => setFilterType(value)}>
+              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="all">All Documents</SelectItem>
+                <SelectItem value="public">Public</SelectItem>
+                <SelectItem value="private">Private</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <div className="grid gap-4">
-          {documents.length === 0 ? (
+          {filteredDocuments.length === 0 ? (
             <Card className="bg-slate-800 border-slate-700">
               <CardContent className="text-center py-8">
                 <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">No documents added yet</h3>
-                <p className="text-slate-400 mb-4">Add your first legacy document to get started</p>
-                <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Document
-                </Button>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {searchTerm || filterType !== 'all' ? 'No Matching Documents' : 'No documents added yet'}
+                </h3>
+                <p className="text-slate-400 mb-4">
+                  {searchTerm || filterType !== 'all' 
+                    ? 'Try adjusting your search or filter criteria.'
+                    : 'Add your first legacy document to get started'
+                  }
+                </p>
+                {!searchTerm && filterType === 'all' && (
+                  <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Document
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
-            documents.map((document) => (
+            filteredDocuments.map((document) => (
               <Card key={document.id} className="bg-slate-800 border-slate-700">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex items-center space-x-3">

@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Mail, Phone, User } from 'lucide-react';
+import { Plus, Edit, Trash2, Mail, Phone, User, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import SearchInput from '@/components/ui/search-input';
 
 interface Contact {
   id: string;
@@ -33,6 +33,8 @@ const Contacts = () => {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'primary' | 'secondary' | 'professional' | 'legal' | 'all'>('all');
   const [formData, setFormData] = useState<{
     name: string;
     email: string;
@@ -190,6 +192,20 @@ const Contacts = () => {
     }
   };
 
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(contact => {
+      const matchesSearch = 
+        contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (contact.phone && contact.phone.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (contact.relationship && contact.relationship.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesFilter = filterType === 'all' || contact.contact_type === filterType;
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [contacts, searchTerm, filterType]);
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -324,21 +340,56 @@ const Contacts = () => {
           </Dialog>
         </div>
 
+        {/* Search and Filter */}
+        <div className="flex gap-4 items-center">
+          <div className="flex-1">
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search contacts by name, email, phone..."
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <Select value={filterType} onValueChange={(value: 'primary' | 'secondary' | 'professional' | 'legal' | 'all') => setFilterType(value)}>
+              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="primary">Primary</SelectItem>
+                <SelectItem value="secondary">Secondary</SelectItem>
+                <SelectItem value="professional">Professional</SelectItem>
+                <SelectItem value="legal">Legal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <div className="grid gap-4">
-          {contacts.length === 0 ? (
+          {filteredContacts.length === 0 ? (
             <Card className="bg-slate-800 border-slate-700">
               <CardContent className="text-center py-8">
                 <User className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">No contacts added yet</h3>
-                <p className="text-slate-400 mb-4">Add your first emergency contact to get started</p>
-                <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Contact
-                </Button>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {searchTerm || filterType !== 'all' ? 'No Matching Contacts' : 'No contacts added yet'}
+                </h3>
+                <p className="text-slate-400 mb-4">
+                  {searchTerm || filterType !== 'all' 
+                    ? 'Try adjusting your search or filter criteria.'
+                    : 'Add your first emergency contact to get started'
+                  }
+                </p>
+                {!searchTerm && filterType === 'all' && (
+                  <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Contact
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
-            contacts.map((contact) => (
+            filteredContacts.map((contact) => (
               <Card key={contact.id} className="bg-slate-800 border-slate-700">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex items-center space-x-3">

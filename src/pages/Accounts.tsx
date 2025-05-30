@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -11,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Key, Plus, Edit, Trash2, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Key, Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import SearchInput from '@/components/ui/search-input';
 
 type AccountType = 'email' | 'social_media' | 'financial' | 'subscription' | 'gaming' | 'work' | 'other';
 
@@ -36,6 +36,8 @@ const Accounts = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingAccount, setEditingAccount] = useState<DigitalAccount | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<AccountType | 'all'>('all');
 
   const [formData, setFormData] = useState({
     account_name: '',
@@ -186,6 +188,20 @@ const Accounts = () => {
     return labels[type];
   };
 
+  const filteredAccounts = useMemo(() => {
+    return accounts.filter(account => {
+      const matchesSearch = 
+        account.account_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        account.platform.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (account.email && account.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (account.username && account.username.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesFilter = filterType === 'all' || account.account_type === filterType;
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [accounts, searchTerm, filterType]);
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -333,27 +349,63 @@ const Accounts = () => {
           </Dialog>
         </div>
 
+        {/* Search and Filter */}
+        <div className="flex gap-4 items-center">
+          <div className="flex-1">
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search accounts, platforms, emails..."
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <Select value={filterType} onValueChange={(value: AccountType | 'all') => setFilterType(value)}>
+              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="social_media">Social Media</SelectItem>
+                <SelectItem value="financial">Financial</SelectItem>
+                <SelectItem value="subscription">Subscription</SelectItem>
+                <SelectItem value="gaming">Gaming</SelectItem>
+                <SelectItem value="work">Work</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Accounts Grid */}
-        {accounts.length === 0 ? (
+        {filteredAccounts.length === 0 ? (
           <Card className="bg-slate-800/50 border-slate-700">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Key className="w-16 h-16 text-slate-600 mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Digital Accounts</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {searchTerm || filterType !== 'all' ? 'No Matching Accounts' : 'No Digital Accounts'}
+              </h3>
               <p className="text-slate-400 text-center mb-6">
-                Start by adding your first digital account to secure your digital legacy.
+                {searchTerm || filterType !== 'all' 
+                  ? 'Try adjusting your search or filter criteria.'
+                  : 'Start by adding your first digital account to secure your digital legacy.'
+                }
               </p>
-              <Button 
-                onClick={() => setShowAddDialog(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Account
-              </Button>
+              {!searchTerm && filterType === 'all' && (
+                <Button 
+                  onClick={() => setShowAddDialog(true)}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Account
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {accounts.map((account) => (
+            {filteredAccounts.map((account) => (
               <Card key={account.id} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">

@@ -2,31 +2,33 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Save, User, Shield, Bell, Clock, AlertTriangle } from 'lucide-react';
+import { User, Bell, Shield, Save, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 interface Profile {
+  id: string;
   first_name?: string;
   last_name?: string;
+  email?: string;
   phone?: string;
-  emergency_email?: string;
+  bio?: string;
+  emergency_instructions?: string;
 }
 
-interface UserSettings {
-  check_in_frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly';
-  grace_period_hours: number;
-  is_active: boolean;
-  last_check_in?: string;
-  next_check_in_due?: string;
+interface NotificationSettings {
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  emergency_alerts: boolean;
 }
 
 const Settings = () => {
@@ -34,54 +36,51 @@ const Settings = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<Profile>({});
-  const [settings, setSettings] = useState<UserSettings>({
-    check_in_frequency: 'weekly',
-    grace_period_hours: 72,
-    is_active: true,
+  const [profile, setProfile] = useState<Profile>({
+    id: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    bio: '',
+    emergency_instructions: '',
+  });
+  const [notifications, setNotifications] = useState<NotificationSettings>({
+    email_notifications: true,
+    sms_notifications: false,
+    emergency_alerts: true,
   });
 
   useEffect(() => {
     if (user) {
-      fetchUserData();
+      fetchProfile();
     }
   }, [user]);
 
-  const fetchUserData = async () => {
+  const fetchProfile = async () => {
     try {
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user?.id)
         .single();
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
-
-      // Fetch settings
-      const { data: settingsData, error: settingsError } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (settingsError && settingsError.code !== 'PGRST116') {
-        throw settingsError;
-      }
-
-      setProfile(profileData || {});
-      setSettings(settingsData || {
-        check_in_frequency: 'weekly',
-        grace_period_hours: 72,
-        is_active: true,
+      if (error) throw error;
+      
+      setProfile({
+        id: data.id,
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        email: user?.email || '',
+        phone: data.phone || '',
+        bio: data.bio || '',
+        emergency_instructions: data.emergency_instructions || '',
       });
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching profile:', error);
       toast({
         title: "Error",
-        description: "Failed to load user settings",
+        description: "Failed to load profile",
         variant: "destructive",
       });
     } finally {
@@ -89,12 +88,19 @@ const Settings = () => {
     }
   };
 
-  const saveProfile = async () => {
+  const handleSaveProfile = async () => {
+    setSaving(true);
     try {
-      setSaving(true);
       const { error } = await supabase
         .from('profiles')
-        .upsert([{ id: user?.id, ...profile }]);
+        .update({
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone,
+          bio: profile.bio,
+          emergency_instructions: profile.emergency_instructions,
+        })
+        .eq('id', user?.id);
 
       if (error) throw error;
 
@@ -103,7 +109,7 @@ const Settings = () => {
         description: "Profile updated successfully",
       });
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "Failed to update profile",
@@ -114,49 +120,14 @@ const Settings = () => {
     }
   };
 
-  const saveSettings = async () => {
-    try {
-      setSaving(true);
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert([{ user_id: user?.id, ...settings }]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Settings updated successfully",
-      });
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update settings",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const formatNextCheckIn = (dateString?: string) => {
-    if (!dateString) return 'Not scheduled';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="text-center py-8">
-          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg animate-pulse mx-auto mb-4" />
-          <p className="text-slate-400">Loading settings...</p>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
+            <p className="text-slate-400">Loading settings...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -166,195 +137,192 @@ const Settings = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Settings</h1>
-          <p className="text-slate-400">Manage your account and system preferences</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+          <p className="text-slate-400">Manage your account and application preferences</p>
         </div>
 
         {/* Profile Settings */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <User className="w-5 h-5" />
+            <CardTitle className="text-white flex items-center">
+              <User className="w-5 h-5 mr-2 text-emerald-400" />
               Profile Information
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="first_name" className="text-slate-300">First Name</Label>
+                <Label className="text-slate-200">First Name</Label>
                 <Input
-                  id="first_name"
-                  value={profile.first_name || ''}
+                  value={profile.first_name}
                   onChange={(e) => setProfile({...profile, first_name: e.target.value})}
                   className="bg-slate-700 border-slate-600 text-white"
+                  placeholder="Enter your first name"
                 />
               </div>
               <div>
-                <Label htmlFor="last_name" className="text-slate-300">Last Name</Label>
+                <Label className="text-slate-200">Last Name</Label>
                 <Input
-                  id="last_name"
-                  value={profile.last_name || ''}
+                  value={profile.last_name}
                   onChange={(e) => setProfile({...profile, last_name: e.target.value})}
                   className="bg-slate-700 border-slate-600 text-white"
+                  placeholder="Enter your last name"
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="phone" className="text-slate-300">Phone Number</Label>
+                <Label className="text-slate-200">Email</Label>
                 <Input
-                  id="phone"
-                  value={profile.phone || ''}
+                  value={profile.email}
+                  disabled
+                  className="bg-slate-600 border-slate-500 text-slate-300"
+                />
+                <p className="text-xs text-slate-400 mt-1">Email cannot be changed here</p>
+              </div>
+              <div>
+                <Label className="text-slate-200">Phone Number</Label>
+                <Input
+                  value={profile.phone}
                   onChange={(e) => setProfile({...profile, phone: e.target.value})}
                   className="bg-slate-700 border-slate-600 text-white"
-                />
-              </div>
-              <div>
-                <Label htmlFor="emergency_email" className="text-slate-300">Emergency Email</Label>
-                <Input
-                  id="emergency_email"
-                  type="email"
-                  value={profile.emergency_email || ''}
-                  onChange={(e) => setProfile({...profile, emergency_email: e.target.value})}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  placeholder="+1 (555) 123-4567"
                 />
               </div>
             </div>
-            <Button onClick={saveProfile} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500">
-              <Save className="w-4 h-4 mr-2" />
-              Save Profile
-            </Button>
-          </CardContent>
-        </Card>
 
-        {/* System Settings */}
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              Dead Man's Switch Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-slate-300">System Active</Label>
-                <p className="text-sm text-slate-500">Enable or disable the dead man's switch monitoring</p>
-              </div>
-              <Switch
-                checked={settings.is_active}
-                onCheckedChange={(checked) => setSettings({...settings, is_active: checked})}
+            <div>
+              <Label className="text-slate-200">Bio</Label>
+              <Textarea
+                value={profile.bio}
+                onChange={(e) => setProfile({...profile, bio: e.target.value})}
+                className="bg-slate-700 border-slate-600 text-white"
+                rows={3}
+                placeholder="Tell us about yourself..."
               />
             </div>
 
-            <Separator className="bg-slate-700" />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="check_in_frequency" className="text-slate-300">Check-in Frequency</Label>
-                <Select 
-                  value={settings.check_in_frequency} 
-                  onValueChange={(value: any) => setSettings({...settings, check_in_frequency: value})}
-                >
-                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="grace_period_hours" className="text-slate-300">Grace Period (hours)</Label>
-                <Input
-                  id="grace_period_hours"
-                  type="number"
-                  min="1"
-                  max="168"
-                  value={settings.grace_period_hours}
-                  onChange={(e) => setSettings({...settings, grace_period_hours: parseInt(e.target.value)})}
-                  className="bg-slate-700 border-slate-600 text-white"
-                />
-              </div>
+            <div>
+              <Label className="text-slate-200">Emergency Instructions</Label>
+              <Textarea
+                value={profile.emergency_instructions}
+                onChange={(e) => setProfile({...profile, emergency_instructions: e.target.value})}
+                className="bg-slate-700 border-slate-600 text-white"
+                rows={4}
+                placeholder="Special instructions for emergency contacts (medical conditions, preferences, etc.)"
+              />
             </div>
 
-            {settings.next_check_in_due && (
-              <div className="bg-blue-600/10 border border-blue-600/20 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  <span className="text-blue-400 font-medium">Next Check-in Due</span>
-                </div>
-                <p className="text-slate-300">{formatNextCheckIn(settings.next_check_in_due)}</p>
-              </div>
-            )}
-
-            <Button onClick={saveSettings} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500">
-              <Save className="w-4 h-4 mr-2" />
-              Save Settings
+            <Button 
+              onClick={handleSaveProfile}
+              disabled={saving}
+              className="bg-emerald-600 hover:bg-emerald-500"
+            >
+              {saving ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Profile
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
 
         {/* Notification Settings */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Bell className="w-5 h-5" />
+            <CardTitle className="text-white flex items-center">
+              <Bell className="w-5 h-5 mr-2 text-blue-400" />
               Notification Preferences
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-slate-300">Email Notifications</Label>
-                <p className="text-sm text-slate-500">Receive check-in reminders via email</p>
+              <div className="flex items-center space-x-3">
+                <Mail className="w-5 h-5 text-slate-400" />
+                <div>
+                  <Label className="text-slate-200">Email Notifications</Label>
+                  <p className="text-sm text-slate-400">Receive updates via email</p>
+                </div>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={notifications.email_notifications}
+                onCheckedChange={(checked) => 
+                  setNotifications({...notifications, email_notifications: checked})
+                }
+              />
             </div>
+
+            <Separator className="bg-slate-600" />
+
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-slate-300">SMS Notifications</Label>
-                <p className="text-sm text-slate-500">Receive check-in reminders via SMS</p>
+              <div className="flex items-center space-x-3">
+                <Phone className="w-5 h-5 text-slate-400" />
+                <div>
+                  <Label className="text-slate-200">SMS Notifications</Label>
+                  <p className="text-sm text-slate-400">Receive updates via text message</p>
+                </div>
               </div>
-              <Switch />
+              <Switch
+                checked={notifications.sms_notifications}
+                onCheckedChange={(checked) => 
+                  setNotifications({...notifications, sms_notifications: checked})
+                }
+              />
             </div>
+
+            <Separator className="bg-slate-600" />
+
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-slate-300">Emergency Alerts</Label>
-                <p className="text-sm text-slate-500">Send alerts to emergency contacts</p>
+              <div className="flex items-center space-x-3">
+                <Shield className="w-5 h-5 text-slate-400" />
+                <div>
+                  <Label className="text-slate-200">Emergency Alerts</Label>
+                  <p className="text-sm text-slate-400">Critical notifications for emergency situations</p>
+                </div>
               </div>
-              <Switch defaultChecked />
+              <div className="flex items-center space-x-2">
+                <Badge variant="secondary" className="text-xs">Recommended</Badge>
+                <Switch
+                  checked={notifications.emergency_alerts}
+                  onCheckedChange={(checked) => 
+                    setNotifications({...notifications, emergency_alerts: checked})
+                  }
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Account Status */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Account Status
-            </CardTitle>
+            <CardTitle className="text-white">Account Status</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-slate-300">Account Type</span>
-              <Badge className="bg-emerald-600/20 text-emerald-400">Premium</Badge>
+              <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30">
+                Free Plan
+              </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-300">Member Since</span>
-              <span className="text-slate-400">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+              <span className="text-white">
+                {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-300">System Status</span>
-              <Badge className={settings.is_active ? "bg-emerald-600/20 text-emerald-400" : "bg-red-600/20 text-red-400"}>
-                {settings.is_active ? 'Active' : 'Inactive'}
-              </Badge>
+              <span className="text-slate-300">Last Login</span>
+              <span className="text-white">
+                {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Unknown'}
+              </span>
             </div>
           </CardContent>
         </Card>

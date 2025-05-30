@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Mail, Phone, User, Filter } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, Phone, Mail, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SearchInput from '@/components/ui/search-input';
@@ -17,13 +19,12 @@ import SearchInput from '@/components/ui/search-input';
 interface Contact {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
-  relationship?: string;
-  contact_type: 'primary' | 'secondary' | 'professional' | 'legal';
-  priority_order: number;
-  can_access_accounts: boolean;
-  can_receive_messages: boolean;
+  relationship: string;
+  is_primary: boolean;
+  notes?: string;
+  created_at: string;
 }
 
 const Contacts = () => {
@@ -34,25 +35,14 @@ const Contacts = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'primary' | 'secondary' | 'professional' | 'legal' | 'all'>('all');
-  const [formData, setFormData] = useState<{
-    name: string;
-    email: string;
-    phone: string;
-    relationship: string;
-    contact_type: 'primary' | 'secondary' | 'professional' | 'legal';
-    priority_order: number;
-    can_access_accounts: boolean;
-    can_receive_messages: boolean;
-  }>({
+  const [filterType, setFilterType] = useState<'primary' | 'secondary' | 'all'>('all');
+  const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     relationship: '',
-    contact_type: 'primary',
-    priority_order: 1,
-    can_access_accounts: false,
-    can_receive_messages: true,
+    is_primary: false,
+    notes: '',
   });
 
   useEffect(() => {
@@ -67,7 +57,8 @@ const Contacts = () => {
         .from('emergency_contacts')
         .select('*')
         .eq('user_id', user?.id)
-        .order('priority_order');
+        .order('is_primary', { ascending: false })
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setContacts(data || []);
@@ -154,10 +145,8 @@ const Contacts = () => {
       email: '',
       phone: '',
       relationship: '',
-      contact_type: 'primary',
-      priority_order: 1,
-      can_access_accounts: false,
-      can_receive_messages: true,
+      is_primary: false,
+      notes: '',
     });
   };
 
@@ -170,37 +159,36 @@ const Contacts = () => {
   const openEditDialog = (contact: Contact) => {
     setFormData({
       name: contact.name,
-      email: contact.email,
+      email: contact.email || '',
       phone: contact.phone || '',
-      relationship: contact.relationship || '',
-      contact_type: contact.contact_type,
-      priority_order: contact.priority_order,
-      can_access_accounts: contact.can_access_accounts,
-      can_receive_messages: contact.can_receive_messages,
+      relationship: contact.relationship,
+      is_primary: contact.is_primary,
+      notes: contact.notes || '',
     });
     setEditingContact(contact);
     setShowAddDialog(true);
   };
 
-  const getContactTypeColor = (type: string) => {
-    switch (type) {
-      case 'primary': return 'bg-emerald-600/20 text-emerald-400';
-      case 'secondary': return 'bg-blue-600/20 text-blue-400';
-      case 'professional': return 'bg-purple-600/20 text-purple-400';
-      case 'legal': return 'bg-orange-600/20 text-orange-400';
-      default: return 'bg-slate-600/20 text-slate-400';
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(contact => {
       const matchesSearch = 
         contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (contact.email && contact.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (contact.phone && contact.phone.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (contact.relationship && contact.relationship.toLowerCase().includes(searchTerm.toLowerCase()));
+        contact.relationship.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesFilter = filterType === 'all' || contact.contact_type === filterType;
+      const matchesFilter = 
+        filterType === 'all' || 
+        (filterType === 'primary' && contact.is_primary) ||
+        (filterType === 'secondary' && !contact.is_primary);
       
       return matchesSearch && matchesFilter;
     });
@@ -223,7 +211,7 @@ const Contacts = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Emergency Contacts</h1>
-            <p className="text-slate-400">Manage your trusted contacts who will be notified in case of emergency</p>
+            <p className="text-slate-400">Manage your emergency contacts and trusted individuals</p>
           </div>
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
@@ -239,17 +227,18 @@ const Contacts = () => {
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="text-slate-300">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Contact's full name"
+                    required
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name" className="text-slate-300">Name</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
-                      required
-                    />
-                  </div>
                   <div>
                     <Label htmlFor="email" className="text-slate-300">Email</Label>
                     <Input
@@ -258,74 +247,63 @@ const Contacts = () => {
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       className="bg-slate-700 border-slate-600 text-white"
-                      required
+                      placeholder="contact@example.com"
                     />
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="phone" className="text-slate-300">Phone</Label>
+                    <Label htmlFor="phone" className="text-slate-300">Phone Number</Label>
                     <Input
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       className="bg-slate-700 border-slate-600 text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="relationship" className="text-slate-300">Relationship</Label>
-                    <Input
-                      id="relationship"
-                      value={formData.relationship}
-                      onChange={(e) => setFormData({...formData, relationship: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      placeholder="+1 (555) 123-4567"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="contact_type" className="text-slate-300">Contact Type</Label>
-                    <Select value={formData.contact_type} onValueChange={(value: any) => setFormData({...formData, contact_type: value})}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="primary">Primary</SelectItem>
-                        <SelectItem value="secondary">Secondary</SelectItem>
-                        <SelectItem value="professional">Professional</SelectItem>
-                        <SelectItem value="legal">Legal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="priority_order" className="text-slate-300">Priority Order</Label>
-                    <Input
-                      id="priority_order"
-                      type="number"
-                      min="1"
-                      value={formData.priority_order}
-                      onChange={(e) => setFormData({...formData, priority_order: parseInt(e.target.value)})}
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="relationship" className="text-slate-300">Relationship</Label>
+                  <Select
+                    value={formData.relationship}
+                    onValueChange={(value) => setFormData({...formData, relationship: value})}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Select relationship" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="spouse">Spouse</SelectItem>
+                      <SelectItem value="partner">Partner</SelectItem>
+                      <SelectItem value="parent">Parent</SelectItem>
+                      <SelectItem value="child">Child</SelectItem>
+                      <SelectItem value="sibling">Sibling</SelectItem>
+                      <SelectItem value="friend">Friend</SelectItem>
+                      <SelectItem value="lawyer">Lawyer</SelectItem>
+                      <SelectItem value="doctor">Doctor</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="can_access_accounts" className="text-slate-300">Can access digital accounts</Label>
-                    <Switch
-                      id="can_access_accounts"
-                      checked={formData.can_access_accounts}
-                      onCheckedChange={(checked) => setFormData({...formData, can_access_accounts: checked})}
-                    />
+                <div>
+                  <Label htmlFor="notes" className="text-slate-300">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    rows={3}
+                    placeholder="Special instructions, when to contact, etc."
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="is_primary" className="text-slate-300">Primary Contact</Label>
+                    <p className="text-sm text-slate-500">First person to be contacted in emergencies</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="can_receive_messages" className="text-slate-300">Can receive legacy messages</Label>
-                    <Switch
-                      id="can_receive_messages"
-                      checked={formData.can_receive_messages}
-                      onCheckedChange={(checked) => setFormData({...formData, can_receive_messages: checked})}
-                    />
-                  </div>
+                  <Switch
+                    id="is_primary"
+                    checked={formData.is_primary}
+                    onCheckedChange={(checked) => setFormData({...formData, is_primary: checked})}
+                  />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 flex-1">
@@ -346,21 +324,19 @@ const Contacts = () => {
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search contacts by name, email, phone..."
+              placeholder="Search contacts by name, email, relationship..."
             />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-400" />
-            <Select value={filterType} onValueChange={(value: 'primary' | 'secondary' | 'professional' | 'legal' | 'all') => setFilterType(value)}>
+            <Select value={filterType} onValueChange={(value: 'primary' | 'secondary' | 'all') => setFilterType(value)}>
               <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="primary">Primary</SelectItem>
+                <SelectItem value="all">All Contacts</SelectItem>
+                <SelectItem value="primary">Primary Only</SelectItem>
                 <SelectItem value="secondary">Secondary</SelectItem>
-                <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="legal">Legal</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -370,7 +346,7 @@ const Contacts = () => {
           {filteredContacts.length === 0 ? (
             <Card className="bg-slate-800 border-slate-700">
               <CardContent className="text-center py-8">
-                <User className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-white mb-2">
                   {searchTerm || filterType !== 'all' ? 'No Matching Contacts' : 'No contacts added yet'}
                 </h3>
@@ -394,15 +370,20 @@ const Contacts = () => {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center">
-                      <User className="w-5 h-5 text-emerald-400" />
+                      <Users className="w-5 h-5 text-emerald-400" />
                     </div>
                     <div>
                       <CardTitle className="text-white text-lg">{contact.name}</CardTitle>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge className={getContactTypeColor(contact.contact_type)}>
-                          {contact.contact_type}
+                        <Badge variant={contact.is_primary ? "default" : "secondary"}>
+                          {contact.is_primary ? 'Primary' : 'Secondary'}
                         </Badge>
-                        <span className="text-sm text-slate-400">Priority {contact.priority_order}</span>
+                        <Badge variant="outline" className="text-slate-400">
+                          {contact.relationship}
+                        </Badge>
+                        <span className="text-sm text-slate-400">
+                          Added {formatDate(contact.created_at)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -426,30 +407,25 @@ const Contacts = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <Mail className="w-4 h-4" />
-                      <span>{contact.email}</span>
-                    </div>
+                  <div className="space-y-2">
+                    {contact.email && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="w-4 h-4 text-slate-400" />
+                        <span className="text-slate-300">{contact.email}</span>
+                      </div>
+                    )}
                     {contact.phone && (
-                      <div className="flex items-center gap-2 text-slate-300">
-                        <Phone className="w-4 h-4" />
-                        <span>{contact.phone}</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="w-4 h-4 text-slate-400" />
+                        <span className="text-slate-300">{contact.phone}</span>
                       </div>
                     )}
-                    {contact.relationship && (
-                      <div className="text-slate-400">
-                        <span className="font-medium">Relationship:</span> {contact.relationship}
+                    {contact.notes && (
+                      <div className="mt-3">
+                        <span className="text-slate-400 text-sm">Notes:</span>
+                        <p className="text-slate-300 text-sm mt-1">{contact.notes}</p>
                       </div>
                     )}
-                    <div className="flex gap-4 text-sm">
-                      <span className={`${contact.can_access_accounts ? 'text-emerald-400' : 'text-slate-500'}`}>
-                        {contact.can_access_accounts ? '✓' : '✗'} Account Access
-                      </span>
-                      <span className={`${contact.can_receive_messages ? 'text-emerald-400' : 'text-slate-500'}`}>
-                        {contact.can_receive_messages ? '✓' : '✗'} Legacy Messages
-                      </span>
-                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -1,21 +1,22 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Edit, Trash2, Download, Eye, Filter } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Plus, Edit, Trash2, Download, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
 
-interface Document {
+interface LegacyDocument {
   id: string;
   title: string;
   description?: string;
@@ -29,17 +30,39 @@ interface Document {
 const Documents = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
+  const [documents, setDocuments] = useState<LegacyDocument[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'public' | 'private' | 'all'>('all');
+  const [filterVisibility, setFilterVisibility] = useState<string>('all');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<LegacyDocument | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     is_public: false,
   });
+
+  const filteredDocuments = useMemo(() => {
+    return documents.filter(document => {
+      // Safe string conversion with null checks
+      const title = (document.title || '').toLowerCase();
+      const description = (document.description || '').toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
+      
+      const matchesSearch = !searchTerm || 
+        title.includes(searchLower) ||
+        description.includes(searchLower);
+      
+      let matchesFilter = true;
+      if (filterVisibility === 'public') {
+        matchesFilter = document.is_public;
+      } else if (filterVisibility === 'private') {
+        matchesFilter = !document.is_public;
+      }
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [documents, searchTerm, filterVisibility]);
 
   useEffect(() => {
     if (user) {
@@ -78,8 +101,9 @@ const Documents = () => {
           .from('legacy_documents')
           .update(formData)
           .eq('id', editingDocument.id);
-
+        
         if (error) throw error;
+        
         toast({
           title: "Success",
           description: "Document updated successfully",
@@ -88,16 +112,15 @@ const Documents = () => {
         const { error } = await supabase
           .from('legacy_documents')
           .insert([{ ...formData, user_id: user?.id }]);
-
+        
         if (error) throw error;
+        
         toast({
           title: "Success",
           description: "Document added successfully",
         });
       }
-
-      setShowAddDialog(false);
-      setEditingDocument(null);
+      
       resetForm();
       fetchDocuments();
     } catch (error) {
@@ -110,13 +133,25 @@ const Documents = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleEdit = (document: LegacyDocument) => {
+    setFormData({
+      title: document.title,
+      description: document.description || '',
+      is_public: document.is_public,
+    });
+    setEditingDocument(document);
+    setShowAddForm(true);
+  };
+
+  const handleDelete = async (documentId: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
     try {
       const { error } = await supabase
         .from('legacy_documents')
         .delete()
-        .eq('id', id);
-
+        .eq('id', documentId);
+      
       if (error) throw error;
       
       toast({
@@ -140,61 +175,26 @@ const Documents = () => {
       description: '',
       is_public: false,
     });
-  };
-
-  const openAddDialog = () => {
-    resetForm();
+    setShowAddForm(false);
     setEditingDocument(null);
-    setShowAddDialog(true);
-  };
-
-  const openEditDialog = (document: Document) => {
-    setFormData({
-      title: document.title,
-      description: document.description || '',
-      is_public: document.is_public,
-    });
-    setEditingDocument(document);
-    setShowAddDialog(true);
   };
 
   const formatFileSize = (bytes?: number) => {
-    if (!bytes) return 'N/A';
+    if (!bytes) return 'Unknown size';
+    const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const filteredDocuments = useMemo(() => {
-    return documents.filter(document => {
-      const matchesSearch = 
-        document.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (document.description && document.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (document.file_type && document.file_type.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesFilter = 
-        filterType === 'all' || 
-        (filterType === 'public' && document.is_public) ||
-        (filterType === 'private' && !document.is_public);
-      
-      return matchesSearch && matchesFilter;
-    });
-  }, [documents, searchTerm, filterType]);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="text-center py-8">
-          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg animate-pulse mx-auto mb-4" />
-          <p className="text-slate-400">Loading documents...</p>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
+            <p className="text-slate-400">Loading documents...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -205,202 +205,202 @@ const Documents = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Legacy Documents</h1>
-            <p className="text-slate-400">Store important documents that will be shared with your contacts</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Legacy Documents</h1>
+            <p className="text-slate-400">Store and manage important documents for your legacy</p>
           </div>
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Document
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
-              <DialogHeader>
-                <DialogTitle className="text-white">
-                  {editingDocument ? 'Edit Document' : 'Add Legacy Document'}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="title" className="text-slate-300">Document Title</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    placeholder="e.g., Will and Testament, Insurance Policies, etc."
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description" className="text-slate-300">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    rows={3}
-                    placeholder="Brief description of the document and its importance..."
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="is_public" className="text-slate-300">Make document publicly accessible</Label>
-                    <p className="text-sm text-slate-500">Allow contacts to access this document when needed</p>
-                  </div>
-                  <Switch
-                    id="is_public"
-                    checked={formData.is_public}
-                    onCheckedChange={(checked) => setFormData({...formData, is_public: checked})}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 flex-1">
-                    {editingDocument ? 'Update Document' : 'Add Document'}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-emerald-600 hover:bg-emerald-500"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Document
+          </Button>
         </div>
 
         {/* Search and Filter */}
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search documents by title, description..."
+              placeholder="Search documents..."
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <Select value={filterType} onValueChange={(value: 'public' | 'private' | 'all') => setFilterType(value)}>
-              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="all">All Documents</SelectItem>
-                <SelectItem value="public">Public</SelectItem>
-                <SelectItem value="private">Private</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={filterVisibility} onValueChange={setFilterVisibility}>
+            <SelectTrigger className="w-full sm:w-48 bg-slate-700 border-slate-600 text-white">
+              <SelectValue placeholder="Filter by visibility" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Documents</SelectItem>
+              <SelectItem value="private">Private</SelectItem>
+              <SelectItem value="public">Public</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
+        {/* Add/Edit Form */}
+        {showAddForm && (
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-emerald-400" />
+                {editingDocument ? 'Edit Document' : 'Add New Document'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label className="text-slate-200">Document Title *</Label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Last Will and Testament"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-slate-200">Description</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    rows={3}
+                    placeholder="Brief description of the document..."
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-slate-200">Make Public</Label>
+                    <p className="text-xs text-slate-400">Allow emergency contacts to access this document</p>
+                  </div>
+                  <Switch
+                    checked={formData.is_public}
+                    onCheckedChange={(checked) => setFormData({...formData, is_public: checked})}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500">
+                    {editingDocument ? 'Update Document' : 'Add Document'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Documents List */}
         <div className="grid gap-4">
           {filteredDocuments.length === 0 ? (
-            <Card className="bg-slate-800 border-slate-700">
-              <CardContent className="text-center py-8">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardContent className="p-8 text-center">
                 <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  {searchTerm || filterType !== 'all' ? 'No Matching Documents' : 'No documents added yet'}
-                </h3>
+                <h3 className="text-lg font-medium text-white mb-2">No documents found</h3>
                 <p className="text-slate-400 mb-4">
-                  {searchTerm || filterType !== 'all' 
-                    ? 'Try adjusting your search or filter criteria.'
-                    : 'Add your first legacy document to get started'
-                  }
+                  {searchTerm || filterVisibility !== 'all' 
+                    ? 'No documents match your search criteria.' 
+                    : 'Get started by adding your first legacy document.'}
                 </p>
-                {!searchTerm && filterType === 'all' && (
-                  <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
+                {(!searchTerm && filterVisibility === 'all') && (
+                  <Button 
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-emerald-600 hover:bg-emerald-500"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Document
+                    Add Your First Document
                   </Button>
                 )}
               </CardContent>
             </Card>
           ) : (
             filteredDocuments.map((document) => (
-              <Card key={document.id} className="bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-white text-lg">{document.title}</CardTitle>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={document.is_public ? "default" : "secondary"}>
+              <Card key={document.id} className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-medium text-white">{document.title}</h3>
+                        <Badge variant={document.is_public ? "default" : "secondary"} className="text-xs">
                           {document.is_public ? 'Public' : 'Private'}
                         </Badge>
-                        <span className="text-sm text-slate-400">
-                          Created {formatDate(document.created_at)}
-                        </span>
+                      </div>
+                      
+                      {document.description && (
+                        <p className="text-slate-300 mb-3">{document.description}</p>
+                      )}
+                      
+                      <div className="space-y-2 text-sm">
+                        {document.file_type && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">Type:</span>
+                            <span className="text-white">{document.file_type}</span>
+                          </div>
+                        )}
+                        
+                        {document.file_size && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">Size:</span>
+                            <span className="text-white">{formatFileSize(document.file_size)}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">Created:</span>
+                          <span className="text-slate-300">
+                            {new Date(document.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {document.file_path && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-slate-400 hover:text-white"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-slate-400 hover:text-white"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(document)}
-                      className="text-slate-400 hover:text-white"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(document.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {document.description && (
-                      <p className="text-slate-300">{document.description}</p>
-                    )}
-                    {document.file_type && (
-                      <div className="flex items-center gap-4 text-sm text-slate-400">
-                        <span>Type: {document.file_type}</span>
-                        {document.file_size && (
-                          <span>Size: {formatFileSize(document.file_size)}</span>
-                        )}
-                      </div>
-                    )}
+                    
+                    <div className="flex gap-2 ml-4">
+                      {document.file_path && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(document)}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(document.id)}
+                        className="text-slate-400 hover:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))
           )}
         </div>
-
-        {/* File upload placeholder */}
-        <Card className="bg-slate-800/50 border-slate-700 border-dashed">
-          <CardContent className="text-center py-8">
-            <FileText className="w-8 h-8 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-white mb-2">File Upload Coming Soon</h3>
-            <p className="text-slate-400 text-sm">
-              File upload functionality will be added in a future update. For now, you can create document references.
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

@@ -2,48 +2,71 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Plus, CreditCard, Edit, Trash2, Eye, EyeOff, Filter } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { CreditCard, Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
 
-interface Account {
+interface DigitalAccount {
   id: string;
-  platform_name: string;
-  username?: string;
-  email?: string;
+  account_name: string;
+  platform: string;
   account_type: string;
+  email?: string;
+  username?: string;
+  website_url?: string;
   notes?: string;
-  is_critical: boolean;
   created_at: string;
 }
 
 const Accounts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [accounts, setAccounts] = useState<DigitalAccount[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'critical' | 'non-critical' | 'all'>('all');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<DigitalAccount | null>(null);
   const [formData, setFormData] = useState({
-    platform_name: '',
-    username: '',
+    account_name: '',
+    platform: '',
+    account_type: 'other',
     email: '',
-    account_type: '',
+    username: '',
+    website_url: '',
     notes: '',
-    is_critical: false,
   });
+
+  const filteredAccounts = useMemo(() => {
+    return accounts.filter(account => {
+      // Safe string conversion with null checks
+      const accountName = (account.account_name || '').toLowerCase();
+      const platform = (account.platform || '').toLowerCase();
+      const email = (account.email || '').toLowerCase();
+      const username = (account.username || '').toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
+      
+      const matchesSearch = !searchTerm || 
+        accountName.includes(searchLower) ||
+        platform.includes(searchLower) ||
+        email.includes(searchLower) ||
+        username.includes(searchLower);
+      
+      const matchesFilter = filterType === 'all' || account.account_type === filterType;
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [accounts, searchTerm, filterType]);
 
   useEffect(() => {
     if (user) {
@@ -82,8 +105,9 @@ const Accounts = () => {
           .from('digital_accounts')
           .update(formData)
           .eq('id', editingAccount.id);
-
+        
         if (error) throw error;
+        
         toast({
           title: "Success",
           description: "Account updated successfully",
@@ -92,17 +116,26 @@ const Accounts = () => {
         const { error } = await supabase
           .from('digital_accounts')
           .insert([{ ...formData, user_id: user?.id }]);
-
+        
         if (error) throw error;
+        
         toast({
           title: "Success",
           description: "Account added successfully",
         });
       }
-
-      setShowAddDialog(false);
+      
+      setFormData({
+        account_name: '',
+        platform: '',
+        account_type: 'other',
+        email: '',
+        username: '',
+        website_url: '',
+        notes: '',
+      });
+      setShowAddForm(false);
       setEditingAccount(null);
-      resetForm();
       fetchAccounts();
     } catch (error) {
       console.error('Error saving account:', error);
@@ -114,13 +147,29 @@ const Accounts = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleEdit = (account: DigitalAccount) => {
+    setFormData({
+      account_name: account.account_name,
+      platform: account.platform,
+      account_type: account.account_type,
+      email: account.email || '',
+      username: account.username || '',
+      website_url: account.website_url || '',
+      notes: account.notes || '',
+    });
+    setEditingAccount(account);
+    setShowAddForm(true);
+  };
+
+  const handleDelete = async (accountId: string) => {
+    if (!confirm('Are you sure you want to delete this account?')) return;
+    
     try {
       const { error } = await supabase
         .from('digital_accounts')
         .delete()
-        .eq('id', id);
-
+        .eq('id', accountId);
+      
       if (error) throw error;
       
       toast({
@@ -140,65 +189,26 @@ const Accounts = () => {
 
   const resetForm = () => {
     setFormData({
-      platform_name: '',
-      username: '',
+      account_name: '',
+      platform: '',
+      account_type: 'other',
       email: '',
-      account_type: '',
+      username: '',
+      website_url: '',
       notes: '',
-      is_critical: false,
     });
-  };
-
-  const openAddDialog = () => {
-    resetForm();
+    setShowAddForm(false);
     setEditingAccount(null);
-    setShowAddDialog(true);
   };
-
-  const openEditDialog = (account: Account) => {
-    setFormData({
-      platform_name: account.platform_name,
-      username: account.username || '',
-      email: account.email || '',
-      account_type: account.account_type,
-      notes: account.notes || '',
-      is_critical: account.is_critical,
-    });
-    setEditingAccount(account);
-    setShowAddDialog(true);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const filteredAccounts = useMemo(() => {
-    return accounts.filter(account => {
-      const matchesSearch = 
-        account.platform_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (account.username && account.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (account.email && account.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        account.account_type.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesFilter = 
-        filterType === 'all' || 
-        (filterType === 'critical' && account.is_critical) ||
-        (filterType === 'non-critical' && !account.is_critical);
-      
-      return matchesSearch && matchesFilter;
-    });
-  }, [accounts, searchTerm, filterType]);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="text-center py-8">
-          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg animate-pulse mx-auto mb-4" />
-          <p className="text-slate-400">Loading accounts...</p>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
+            <p className="text-slate-400">Loading accounts...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -209,221 +219,258 @@ const Accounts = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Digital Accounts</h1>
-            <p className="text-slate-400">Manage your important digital accounts and credentials</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Digital Accounts</h1>
+            <p className="text-slate-400">Manage your digital accounts and credentials</p>
           </div>
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Account
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
-              <DialogHeader>
-                <DialogTitle className="text-white">
-                  {editingAccount ? 'Edit Account' : 'Add Digital Account'}
-                </DialogTitle>
-              </DialogHeader>
+          <Button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-emerald-600 hover:bg-emerald-500"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Account
+          </Button>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search accounts..."
+            />
+          </div>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-full sm:w-48 bg-slate-700 border-slate-600 text-white">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="social">Social Media</SelectItem>
+              <SelectItem value="financial">Financial</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="work">Work</SelectItem>
+              <SelectItem value="entertainment">Entertainment</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Add/Edit Form */}
+        {showAddForm && (
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <CreditCard className="w-5 h-5 mr-2 text-emerald-400" />
+                {editingAccount ? 'Edit Account' : 'Add New Account'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="platform_name" className="text-slate-300">Platform Name</Label>
+                    <Label className="text-slate-200">Account Name *</Label>
                     <Input
-                      id="platform_name"
-                      value={formData.platform_name}
-                      onChange={(e) => setFormData({...formData, platform_name: e.target.value})}
+                      value={formData.account_name}
+                      onChange={(e) => setFormData({...formData, account_name: e.target.value})}
                       className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="e.g., Gmail, Facebook, Bank"
+                      placeholder="My Gmail Account"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="account_type" className="text-slate-300">Account Type</Label>
-                    <Select
-                      value={formData.account_type}
+                    <Label className="text-slate-200">Platform *</Label>
+                    <Input
+                      value={formData.platform}
+                      onChange={(e) => setFormData({...formData, platform: e.target.value})}
+                      className="bg-slate-700 border-slate-600 text-white"
+                      placeholder="Gmail, Facebook, etc."
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-slate-200">Account Type</Label>
+                    <Select 
+                      value={formData.account_type} 
                       onValueChange={(value) => setFormData({...formData, account_type: value})}
                     >
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectContent>
                         <SelectItem value="social">Social Media</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
                         <SelectItem value="financial">Financial</SelectItem>
+                        <SelectItem value="email">Email</SelectItem>
                         <SelectItem value="work">Work</SelectItem>
                         <SelectItem value="entertainment">Entertainment</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="username" className="text-slate-300">Username</Label>
+                    <Label className="text-slate-200">Website URL</Label>
                     <Input
-                      id="username"
-                      value={formData.username}
-                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      value={formData.website_url}
+                      onChange={(e) => setFormData({...formData, website_url: e.target.value})}
                       className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="Your username"
+                      placeholder="https://example.com"
                     />
                   </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="email" className="text-slate-300">Email</Label>
+                    <Label className="text-slate-200">Email</Label>
                     <Input
-                      id="email"
-                      type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="account@example.com"
+                      placeholder="user@example.com"
+                      type="email"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-200">Username</Label>
+                    <Input
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      className="bg-slate-700 border-slate-600 text-white"
+                      placeholder="username"
                     />
                   </div>
                 </div>
+
                 <div>
-                  <Label htmlFor="notes" className="text-slate-300">Notes</Label>
+                  <Label className="text-slate-200">Notes</Label>
                   <Textarea
-                    id="notes"
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
                     className="bg-slate-700 border-slate-600 text-white"
                     rows={3}
-                    placeholder="Additional notes, recovery info, etc."
+                    placeholder="Additional notes about this account..."
                   />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="is_critical" className="text-slate-300">Mark as Critical Account</Label>
-                    <p className="text-sm text-slate-500">Important accounts that need immediate attention</p>
-                  </div>
-                  <Switch
-                    id="is_critical"
-                    checked={formData.is_critical}
-                    onCheckedChange={(checked) => setFormData({...formData, is_critical: checked})}
-                  />
-                </div>
+
                 <div className="flex gap-2">
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 flex-1">
+                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500">
                     {editingAccount ? 'Update Account' : 'Add Account'}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
+                  <Button type="button" variant="outline" onClick={resetForm}>
                     Cancel
                   </Button>
                 </div>
               </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Search and Filter */}
-        <div className="flex gap-4 items-center">
-          <div className="flex-1">
-            <SearchInput
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Search accounts by platform, username, email..."
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <Select value={filterType} onValueChange={(value: 'critical' | 'non-critical' | 'all') => setFilterType(value)}>
-              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="all">All Accounts</SelectItem>
-                <SelectItem value="critical">Critical Only</SelectItem>
-                <SelectItem value="non-critical">Non-Critical</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
+        {/* Accounts List */}
         <div className="grid gap-4">
           {filteredAccounts.length === 0 ? (
-            <Card className="bg-slate-800 border-slate-700">
-              <CardContent className="text-center py-8">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardContent className="p-8 text-center">
                 <CreditCard className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  {searchTerm || filterType !== 'all' ? 'No Matching Accounts' : 'No accounts added yet'}
-                </h3>
+                <h3 className="text-lg font-medium text-white mb-2">No accounts found</h3>
                 <p className="text-slate-400 mb-4">
                   {searchTerm || filterType !== 'all' 
-                    ? 'Try adjusting your search or filter criteria.'
-                    : 'Add your first digital account to get started'
-                  }
+                    ? 'No accounts match your search criteria.' 
+                    : 'Get started by adding your first digital account.'}
                 </p>
-                {!searchTerm && filterType === 'all' && (
-                  <Button onClick={openAddDialog} className="bg-emerald-600 hover:bg-emerald-500">
+                {(!searchTerm && filterType === 'all') && (
+                  <Button 
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-emerald-600 hover:bg-emerald-500"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Account
+                    Add Your First Account
                   </Button>
                 )}
               </CardContent>
             </Card>
           ) : (
             filteredAccounts.map((account) => (
-              <Card key={account.id} className="bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
-                      <CreditCard className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-white text-lg">{account.platform_name}</CardTitle>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={account.is_critical ? "destructive" : "secondary"}>
-                          {account.is_critical ? 'Critical' : 'Standard'}
-                        </Badge>
-                        <Badge variant="outline" className="text-slate-400">
+              <Card key={account.id} className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-medium text-white">{account.account_name}</h3>
+                        <Badge variant="secondary" className="text-xs">
                           {account.account_type}
                         </Badge>
-                        <span className="text-sm text-slate-400">
-                          Added {formatDate(account.created_at)}
-                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">Platform:</span>
+                          <span className="text-white">{account.platform}</span>
+                        </div>
+                        
+                        {account.email && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">Email:</span>
+                            <span className="text-white">{account.email}</span>
+                          </div>
+                        )}
+                        
+                        {account.username && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">Username:</span>
+                            <span className="text-white">{account.username}</span>
+                          </div>
+                        )}
+                        
+                        {account.website_url && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">Website:</span>
+                            <a 
+                              href={account.website_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-emerald-400 hover:text-emerald-300"
+                            >
+                              {account.website_url}
+                            </a>
+                          </div>
+                        )}
+                        
+                        {account.notes && (
+                          <div className="mt-3">
+                            <span className="text-slate-400">Notes:</span>
+                            <p className="text-white mt-1">{account.notes}</p>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2 mt-3">
+                          <span className="text-slate-400">Created:</span>
+                          <span className="text-slate-300">
+                            {new Date(account.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(account)}
-                      className="text-slate-400 hover:text-white"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(account.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {account.username && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-slate-400">Username:</span>
-                        <span className="text-slate-300">{account.username}</span>
-                      </div>
-                    )}
-                    {account.email && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-slate-400">Email:</span>
-                        <span className="text-slate-300">{account.email}</span>
-                      </div>
-                    )}
-                    {account.notes && (
-                      <div className="mt-3">
-                        <span className="text-slate-400 text-sm">Notes:</span>
-                        <p className="text-slate-300 text-sm mt-1">{account.notes}</p>
-                      </div>
-                    )}
+                    
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(account)}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(account.id)}
+                        className="text-slate-400 hover:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

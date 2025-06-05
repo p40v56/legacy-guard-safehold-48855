@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -10,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { User, Bell, Shield, Save, Mail, Phone } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 
@@ -30,11 +30,21 @@ interface NotificationSettings {
   emergency_alerts: boolean;
 }
 
+interface ActivationRule {
+  id: string;
+  contact_category: 'immediate' | 'family' | 'friends' | 'professional' | 'legal';
+  delay_hours: number;
+  access_level: 'basic' | 'documents' | 'accounts' | 'full';
+  custom_message: string;
+  enabled: boolean;
+}
+
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
   const [profile, setProfile] = useState<Profile>({
     id: '',
     first_name: '',
@@ -49,6 +59,33 @@ const Settings = () => {
     sms_notifications: false,
     emergency_alerts: true,
   });
+
+  const [activationRules, setActivationRules] = useState<ActivationRule[]>([
+    {
+      id: '1',
+      contact_category: 'immediate',
+      delay_hours: 0,
+      access_level: 'basic',
+      custom_message: 'This is an automated message. I have not checked in as scheduled.',
+      enabled: true,
+    },
+    {
+      id: '2',
+      contact_category: 'family',
+      delay_hours: 24,
+      access_level: 'documents',
+      custom_message: 'Important family documents and instructions are available.',
+      enabled: true,
+    },
+    {
+      id: '3',
+      contact_category: 'legal',
+      delay_hours: 72,
+      access_level: 'full',
+      custom_message: 'Full access to legal documents and account information.',
+      enabled: false,
+    },
+  ]);
 
   useEffect(() => {
     if (user) {
@@ -100,6 +137,64 @@ const Settings = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateActivationRule = (id: string, updates: Partial<ActivationRule>) => {
+    setActivationRules(prev => 
+      prev.map(rule => 
+        rule.id === id ? { ...rule, ...updates } : rule
+      )
+    );
+  };
+
+  const saveActivationRules = async () => {
+    try {
+      // Mock save - in a real app this would save to your backend
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      toast({
+        title: "Success",
+        description: "Dead Man's Switch rules updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating activation rules:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update activation rules",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels = {
+      immediate: 'Immediate Family',
+      family: 'Extended Family',
+      friends: 'Close Friends',
+      professional: 'Professional Contacts',
+      legal: 'Legal/Financial',
+    };
+    return labels[category as keyof typeof labels] || category;
+  };
+
+  const getAccessLevelLabel = (level: string) => {
+    const labels = {
+      basic: 'Basic Info Only',
+      documents: 'Documents Access',
+      accounts: 'Account Information',
+      full: 'Full Access',
+    };
+    return labels[level as keyof typeof labels] || level;
+  };
+
+  const getAccessLevelDescription = (level: string) => {
+    const descriptions = {
+      basic: 'Contact information and emergency message only',
+      documents: 'Access to uploaded documents and instructions',
+      accounts: 'Account details and financial information',
+      full: 'Complete access to all stored information',
+    };
+    return descriptions[level as keyof typeof descriptions] || '';
   };
 
   if (loading) {
@@ -213,6 +308,144 @@ const Settings = () => {
                 </>
               )}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Dead Man's Switch Activation Rules */}
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
+              Dead Man's Switch Activation Rules
+            </CardTitle>
+            <p className="text-slate-400 text-sm mt-2">
+              Configure what happens when your Dead Man's Switch is triggered. Rules are executed in order based on delay times.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {activationRules.map((rule, index) => (
+              <div key={rule.id} className="border border-slate-600 rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Badge variant="outline" className="border-slate-500 text-slate-300">
+                      Rule {index + 1}
+                    </Badge>
+                    <Switch
+                      checked={rule.enabled}
+                      onCheckedChange={(checked) => 
+                        updateActivationRule(rule.id, { enabled: checked })
+                      }
+                    />
+                    <span className="text-slate-300 text-sm">
+                      {rule.enabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-slate-400">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">
+                      {rule.delay_hours === 0 ? 'Immediate' : `${rule.delay_hours}h delay`}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-slate-200">Contact Category</Label>
+                    <Select
+                      value={rule.contact_category}
+                      onValueChange={(value) => 
+                        updateActivationRule(rule.id, { contact_category: value as any })
+                      }
+                    >
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="immediate">Immediate Family</SelectItem>
+                        <SelectItem value="family">Extended Family</SelectItem>
+                        <SelectItem value="friends">Close Friends</SelectItem>
+                        <SelectItem value="professional">Professional Contacts</SelectItem>
+                        <SelectItem value="legal">Legal/Financial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-slate-200">Delay (hours)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="8760"
+                      value={rule.delay_hours}
+                      onChange={(e) => 
+                        updateActivationRule(rule.id, { delay_hours: parseInt(e.target.value) || 0 })
+                      }
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-slate-200">Access Level</Label>
+                    <Select
+                      value={rule.access_level}
+                      onValueChange={(value) => 
+                        updateActivationRule(rule.id, { access_level: value as any })
+                      }
+                    >
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="basic">Basic Info Only</SelectItem>
+                        <SelectItem value="documents">Documents Access</SelectItem>
+                        <SelectItem value="accounts">Account Information</SelectItem>
+                        <SelectItem value="full">Full Access</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {getAccessLevelDescription(rule.access_level)}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-slate-200">Custom Message</Label>
+                  <Textarea
+                    value={rule.custom_message}
+                    onChange={(e) => 
+                      updateActivationRule(rule.id, { custom_message: e.target.value })
+                    }
+                    className="bg-slate-700 border-slate-600 text-white"
+                    rows={2}
+                    placeholder="Message to send to this contact category..."
+                  />
+                </div>
+              </div>
+            ))}
+
+            <div className="pt-4 border-t border-slate-700">
+              <Button 
+                onClick={saveActivationRules}
+                className="bg-red-600 hover:bg-red-500"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Activation Rules
+              </Button>
+            </div>
+
+            <div className="bg-slate-700/30 rounded-lg p-4 space-y-2">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-blue-400" />
+                <span className="text-slate-200 font-medium">How Activation Works</span>
+              </div>
+              <ul className="text-sm text-slate-300 space-y-1 list-disc list-inside ml-6">
+                <li>When your check-in deadline is missed, activation begins</li>
+                <li>Rules execute based on their delay times (0 hours = immediate)</li>
+                <li>Each contact category receives their configured access level</li>
+                <li>Contacts can only access information according to their assigned level</li>
+                <li>Custom messages are sent along with access notifications</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
 

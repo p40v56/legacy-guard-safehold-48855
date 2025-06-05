@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, Clock, Users, FileText, Key, Bell } from 'lucide-react';
 import AuthModal from '@/components/auth/AuthModal';
 import Navigation from '@/components/layout/Navigation';
-
 const Index = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const { user, loading } = useAuth();
+  const {
+    user,
+    loading
+  } = useAuth();
   const navigate = useNavigate();
 
   // Redirect authenticated users to dashboard
@@ -21,12 +22,10 @@ const Index = () => {
       navigate('/dashboard');
     }
   }, [user, loading, navigate]);
-
   const handleGetStarted = () => {
     setAuthMode('register');
     setShowAuth(true);
   };
-
   const handleSignIn = () => {
     setAuthMode('login');
     setShowAuth(true);
@@ -34,53 +33,41 @@ const Index = () => {
 
   // Show loading state while checking auth
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+    return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Shield className="w-6 h-6 text-white animate-pulse" />
           </div>
           <p className="text-slate-400">Loading...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  const features = [
-    {
-      icon: Clock,
-      title: "Dead Man's Switch",
-      description: "Automated check-in system with customizable frequency and emergency protocols"
-    },
-    {
-      icon: Shield,
-      title: "Bank-Grade Security",
-      description: "End-to-end encryption and zero-knowledge architecture protect your digital legacy"
-    },
-    {
-      icon: Key,
-      title: "Digital Asset Management",
-      description: "Securely store and organize all your digital accounts, passwords, and access codes"
-    },
-    {
-      icon: Users,
-      title: "Contact Hierarchy",
-      description: "Define primary, secondary, and professional contacts with granular permissions"
-    },
-    {
-      icon: FileText,
-      title: "Automated Documents",
-      description: "Generate legal documents and closure letters automatically when needed"
-    },
-    {
-      icon: Bell,
-      title: "Smart Notifications",
-      description: "Multi-channel alerts ensure your system stays active and your contacts stay informed"
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+  const features = [{
+    icon: Clock,
+    title: "Dead Man's Switch",
+    description: "Automated check-in system with customizable frequency and emergency protocols"
+  }, {
+    icon: Shield,
+    title: "Bank-Grade Security",
+    description: "End-to-end encryption and zero-knowledge architecture protect your digital legacy"
+  }, {
+    icon: Key,
+    title: "Digital Asset Management",
+    description: "Securely store and organize all your digital accounts, passwords, and access codes"
+  }, {
+    icon: Users,
+    title: "Contact Hierarchy",
+    description: "Define primary, secondary, and professional contacts with granular permissions"
+  }, {
+    icon: FileText,
+    title: "Automated Documents",
+    description: "Generate legal documents and closure letters automatically when needed"
+  }, {
+    icon: Bell,
+    title: "Smart Notifications",
+    description: "Multi-channel alerts ensure your system stays active and your contacts stay informed"
+  }];
+  return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <Navigation onSignIn={handleSignIn} />
       
       {/* Hero Section */}
@@ -99,21 +86,10 @@ const Index = () => {
               Protect your loved ones with an intelligent dead man's switch system that automatically manages your digital assets when you can't.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={handleGetStarted}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
-              >
+              <Button size="lg" onClick={handleGetStarted} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105">
                 Start Your Legacy Plan
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                onClick={handleSignIn}
-                className="border-white/20 text-white hover:bg-white/10 px-8 py-4 text-lg rounded-xl"
-              >
-                Sign In
-              </Button>
+              
             </div>
           </div>
         </div>
@@ -133,9 +109,8 @@ const Index = () => {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Card key={index} className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/70 transition-all duration-300 transform hover:scale-105">
+            const Icon = feature.icon;
+            return <Card key={index} className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/70 transition-all duration-300 transform hover:scale-105">
                   <CardHeader>
                     <div className="w-12 h-12 bg-emerald-600/20 rounded-lg flex items-center justify-center mb-4">
                       <Icon className="w-6 h-6 text-emerald-400" />
@@ -147,9 +122,8 @@ const Index = () => {
                       {feature.description}
                     </CardDescription>
                   </CardContent>
-                </Card>
-              );
-            })}
+                </Card>;
+          })}
           </div>
         </div>
       </section>
@@ -193,24 +167,11 @@ const Index = () => {
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Start building your digital legacy plan today. Your future self and loved ones will thank you.
           </p>
-          <Button 
-            size="lg" 
-            onClick={handleGetStarted}
-            className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
-          >
-            Create Your Account Now
-          </Button>
+          
         </div>
       </section>
 
-      <AuthModal 
-        isOpen={showAuth} 
-        onClose={() => setShowAuth(false)} 
-        mode={authMode}
-        onModeChange={setAuthMode}
-      />
-    </div>
-  );
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} mode={authMode} onModeChange={setAuthMode} />
+    </div>;
 };
-
 export default Index;

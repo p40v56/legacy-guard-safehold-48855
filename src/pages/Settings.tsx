@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -10,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText } from 'lucide-react';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 
@@ -30,11 +31,14 @@ interface NotificationSettings {
   emergency_alerts: boolean;
 }
 
+type ContactCategory = 'immediate_family' | 'extended_family' | 'close_friends' | 'professional' | 'legal' | 'financial';
+type AccessLevel = 'basic' | 'documents' | 'accounts' | 'full';
+
 interface ActivationRule {
   id: string;
-  contact_category: 'immediate' | 'family' | 'friends' | 'professional' | 'legal';
+  contact_category: ContactCategory;
   delay_hours: number;
-  access_level: 'basic' | 'documents' | 'accounts' | 'full';
+  access_level: AccessLevel;
   custom_message: string;
   enabled: boolean;
 }
@@ -63,7 +67,7 @@ const Settings = () => {
   const [activationRules, setActivationRules] = useState<ActivationRule[]>([
     {
       id: '1',
-      contact_category: 'immediate',
+      contact_category: 'immediate_family',
       delay_hours: 0,
       access_level: 'basic',
       custom_message: 'This is an automated message. I have not checked in as scheduled.',
@@ -71,7 +75,7 @@ const Settings = () => {
     },
     {
       id: '2',
-      contact_category: 'family',
+      contact_category: 'extended_family',
       delay_hours: 24,
       access_level: 'documents',
       custom_message: 'Important family documents and instructions are available.',
@@ -147,6 +151,22 @@ const Settings = () => {
     );
   };
 
+  const addActivationRule = () => {
+    const newRule: ActivationRule = {
+      id: `rule-${Date.now()}`,
+      contact_category: 'immediate_family',
+      delay_hours: 0,
+      access_level: 'basic',
+      custom_message: 'This is an automated message.',
+      enabled: true,
+    };
+    setActivationRules(prev => [...prev, newRule]);
+  };
+
+  const deleteActivationRule = (id: string) => {
+    setActivationRules(prev => prev.filter(rule => rule.id !== id));
+  };
+
   const saveActivationRules = async () => {
     try {
       // Mock save - in a real app this would save to your backend
@@ -166,35 +186,36 @@ const Settings = () => {
     }
   };
 
-  const getCategoryLabel = (category: string) => {
+  const getCategoryLabel = (category: ContactCategory) => {
     const labels = {
-      immediate: 'Immediate Family',
-      family: 'Extended Family',
-      friends: 'Close Friends',
-      professional: 'Professional Contacts',
-      legal: 'Legal/Financial',
+      immediate_family: 'Immediate Family',
+      extended_family: 'Extended Family',
+      close_friends: 'Close Friends',
+      professional: 'Professional',
+      legal: 'Legal',
+      financial: 'Financial',
     };
-    return labels[category as keyof typeof labels] || category;
+    return labels[category];
   };
 
-  const getAccessLevelLabel = (level: string) => {
+  const getAccessLevelLabel = (level: AccessLevel) => {
     const labels = {
       basic: 'Basic Info Only',
       documents: 'Documents Access',
       accounts: 'Account Information',
       full: 'Full Access',
     };
-    return labels[level as keyof typeof labels] || level;
+    return labels[level];
   };
 
-  const getAccessLevelDescription = (level: string) => {
+  const getAccessLevelDescription = (level: AccessLevel) => {
     const descriptions = {
       basic: 'Contact information and emergency message only',
       documents: 'Access to uploaded documents and instructions',
       accounts: 'Account details and financial information',
       full: 'Complete access to all stored information',
     };
-    return descriptions[level as keyof typeof descriptions] || '';
+    return descriptions[level];
   };
 
   if (loading) {
@@ -314,9 +335,19 @@ const Settings = () => {
         {/* Dead Man's Switch Activation Rules */}
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
-              Dead Man's Switch Activation Rules
+            <CardTitle className="text-white flex items-center justify-between">
+              <div className="flex items-center">
+                <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
+                Dead Man's Switch Activation Rules
+              </div>
+              <Button 
+                onClick={addActivationRule}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-500"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Rule
+              </Button>
             </CardTitle>
             <p className="text-slate-400 text-sm mt-2">
               Configure what happens when your Dead Man's Switch is triggered. Rules are executed in order based on delay times.
@@ -340,11 +371,21 @@ const Settings = () => {
                       {rule.enabled ? 'Enabled' : 'Disabled'}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-2 text-slate-400">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm">
-                      {rule.delay_hours === 0 ? 'Immediate' : `${rule.delay_hours}h delay`}
-                    </span>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2 text-slate-400">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm">
+                        {rule.delay_hours === 0 ? 'Immediate' : `${rule.delay_hours}h delay`}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteActivationRule(rule.id)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
 
@@ -354,18 +395,19 @@ const Settings = () => {
                     <Select
                       value={rule.contact_category}
                       onValueChange={(value) => 
-                        updateActivationRule(rule.id, { contact_category: value as any })
+                        updateActivationRule(rule.id, { contact_category: value as ContactCategory })
                       }
                     >
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="immediate">Immediate Family</SelectItem>
-                        <SelectItem value="family">Extended Family</SelectItem>
-                        <SelectItem value="friends">Close Friends</SelectItem>
-                        <SelectItem value="professional">Professional Contacts</SelectItem>
-                        <SelectItem value="legal">Legal/Financial</SelectItem>
+                        <SelectItem value="immediate_family">Immediate Family</SelectItem>
+                        <SelectItem value="extended_family">Extended Family</SelectItem>
+                        <SelectItem value="close_friends">Close Friends</SelectItem>
+                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="legal">Legal</SelectItem>
+                        <SelectItem value="financial">Financial</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -389,7 +431,7 @@ const Settings = () => {
                     <Select
                       value={rule.access_level}
                       onValueChange={(value) => 
-                        updateActivationRule(rule.id, { access_level: value as any })
+                        updateActivationRule(rule.id, { access_level: value as AccessLevel })
                       }
                     >
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -543,3 +585,4 @@ const Settings = () => {
 };
 
 export default Settings;
+

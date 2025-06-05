@@ -40,17 +40,25 @@ class MockPostgrestFilterBuilder<T> {
   single(): Promise<MockSupabaseResponse<T>> {
     const data = getMockData<T>(this.table, this.userId);
     return Promise.resolve({
-      data: data[0] || null,
+      data: (data[0] as T) || null,
       error: null
     });
   }
 
-  then(onResolve: (value: MockSupabaseResponse<T[]>) => any) {
+  then<TResult1 = MockSupabaseResponse<T[]>, TResult2 = never>(
+    onResolve?: ((value: MockSupabaseResponse<T[]>) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+    onReject?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+  ): Promise<TResult1 | TResult2> {
     const data = getMockData<T>(this.table, this.userId);
-    return onResolve({
-      data,
+    const response: MockSupabaseResponse<T[]> = {
+      data: data as T[],
       error: null
-    });
+    };
+    
+    if (onResolve) {
+      return Promise.resolve(onResolve(response));
+    }
+    return Promise.resolve(response as any);
   }
 }
 
@@ -78,13 +86,13 @@ class MockTable<T> {
 
   update(values: Partial<T>) {
     return {
-      eq: (column: string, value: any): Promise<MockSupabaseResponse<null>> => {
+      eq: (column: string, value: any): Promise<MockSupabaseResponse<T[]>> => {
         const existing = getMockData<T>(this.tableName);
         const updated = existing.map((item: any) => 
           item[column] === value ? { ...item, ...values, updated_at: new Date().toISOString() } : item
         );
         setMockData(this.tableName, updated);
-        return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: updated as T[], error: null });
       }
     };
   }
@@ -114,5 +122,3 @@ export const supabase = {
 
 // Export for compatibility (though not used)
 export type Database = any;
-
-

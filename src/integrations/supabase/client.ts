@@ -1,4 +1,5 @@
 
+
 // Mock Supabase client - completely disconnected from real Supabase
 // This file now provides a mock implementation that uses localStorage
 
@@ -31,6 +32,10 @@ class MockPostgrestFilterBuilder<T> {
     return this;
   }
 
+  order(column: string, options?: { ascending?: boolean }) {
+    return this;
+  }
+
   single(): Promise<MockSupabaseResponse<T>> {
     const data = getMockData<T>(this.table, this.userId);
     return Promise.resolve({
@@ -56,7 +61,7 @@ class MockTable<T> {
     return new MockPostgrestFilterBuilder<T>(this.tableName);
   }
 
-  insert(values: Partial<T> | Partial<T>[]) {
+  insert(values: Partial<T> | Partial<T>[]): Promise<MockSupabaseResponse<T[]>> {
     const data = Array.isArray(values) ? values : [values];
     const existing = getMockData<T>(this.tableName);
     const newData = data.map(item => ({
@@ -64,17 +69,15 @@ class MockTable<T> {
       id: Math.random().toString(36).substr(2, 9),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
-    }));
+    })) as T[];
     setMockData(this.tableName, [...existing, ...newData]);
     
-    return {
-      eq: () => Promise.resolve({ data: newData, error: null })
-    };
+    return Promise.resolve({ data: newData, error: null });
   }
 
   update(values: Partial<T>) {
     return {
-      eq: (column: string, value: any) => {
+      eq: (column: string, value: any): Promise<MockSupabaseResponse<null>> => {
         const existing = getMockData<T>(this.tableName);
         const updated = existing.map((item: any) => 
           item[column] === value ? { ...item, ...values, updated_at: new Date().toISOString() } : item
@@ -87,7 +90,7 @@ class MockTable<T> {
 
   delete() {
     return {
-      eq: (column: string, value: any) => {
+      eq: (column: string, value: any): Promise<MockSupabaseResponse<null>> => {
         const existing = getMockData<T>(this.tableName);
         const filtered = existing.filter((item: any) => item[column] !== value);
         setMockData(this.tableName, filtered);
@@ -110,3 +113,4 @@ export const supabase = {
 
 // Export for compatibility (though not used)
 export type Database = any;
+

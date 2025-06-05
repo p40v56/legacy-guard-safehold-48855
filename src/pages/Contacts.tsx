@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -14,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
 
-type ContactType = 'primary' | 'secondary' | 'legal' | 'medical';
+type ContactType = 'immediate_family' | 'extended_family' | 'close_friends' | 'professional' | 'legal' | 'financial';
 
 interface EmergencyContact {
   id: string;
@@ -43,7 +42,7 @@ const Contacts = () => {
     email: '',
     phone: '',
     relationship: '',
-    contact_type: 'primary' as ContactType,
+    contact_type: 'immediate_family' as ContactType,
     priority_order: 1,
     can_access_accounts: false,
     can_receive_messages: true,
@@ -85,7 +84,7 @@ const Contacts = () => {
           email: 'john@example.com',
           phone: '+1 (555) 123-4567',
           relationship: 'Spouse',
-          contact_type: 'primary',
+          contact_type: 'immediate_family',
           priority_order: 1,
           can_access_accounts: true,
           can_receive_messages: true,
@@ -97,7 +96,7 @@ const Contacts = () => {
           email: 'jane@example.com',
           phone: '+1 (555) 987-6543',
           relationship: 'Sister',
-          contact_type: 'secondary',
+          contact_type: 'extended_family',
           priority_order: 2,
           can_access_accounts: false,
           can_receive_messages: true,
@@ -200,13 +199,25 @@ const Contacts = () => {
       email: '',
       phone: '',
       relationship: '',
-      contact_type: 'primary',
+      contact_type: 'immediate_family',
       priority_order: 1,
       can_access_accounts: false,
       can_receive_messages: true,
     });
     setShowAddForm(false);
     setEditingContact(null);
+  };
+
+  const getContactTypeLabel = (type: ContactType) => {
+    const labels = {
+      immediate_family: 'Immediate Family',
+      extended_family: 'Extended Family',
+      close_friends: 'Close Friends',
+      professional: 'Professional',
+      legal: 'Legal',
+      financial: 'Financial',
+    };
+    return labels[type];
   };
 
   if (loading) {
@@ -254,10 +265,12 @@ const Contacts = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="primary">Primary</SelectItem>
-              <SelectItem value="secondary">Secondary</SelectItem>
+              <SelectItem value="immediate_family">Immediate Family</SelectItem>
+              <SelectItem value="extended_family">Extended Family</SelectItem>
+              <SelectItem value="close_friends">Close Friends</SelectItem>
+              <SelectItem value="professional">Professional</SelectItem>
               <SelectItem value="legal">Legal</SelectItem>
-              <SelectItem value="medical">Medical</SelectItem>
+              <SelectItem value="financial">Financial</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -329,10 +342,12 @@ const Contacts = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="primary">Primary</SelectItem>
-                        <SelectItem value="secondary">Secondary</SelectItem>
+                        <SelectItem value="immediate_family">Immediate Family</SelectItem>
+                        <SelectItem value="extended_family">Extended Family</SelectItem>
+                        <SelectItem value="close_friends">Close Friends</SelectItem>
+                        <SelectItem value="professional">Professional</SelectItem>
                         <SelectItem value="legal">Legal</SelectItem>
-                        <SelectItem value="medical">Medical</SelectItem>
+                        <SelectItem value="financial">Financial</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -417,7 +432,7 @@ const Contacts = () => {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-medium text-white">{contact.name}</h3>
                         <Badge variant="secondary" className="text-xs">
-                          {contact.contact_type}
+                          {getContactTypeLabel(contact.contact_type)}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
                           Priority {contact.priority_order}

@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { mockSignIn, mockSignUp } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,28 +31,21 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
 
     try {
       if (mode === 'register') {
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-            },
-          },
-        });
+        const { user, error } = await mockSignUp(
+          formData.email,
+          formData.password,
+          formData.firstName,
+          formData.lastName
+        );
 
         if (error) throw error;
 
         toast({
           title: "Account created successfully",
-          description: "Please check your email to verify your account.",
+          description: "You have been signed up and logged in.",
         });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
+        const { user, error } = await mockSignIn(formData.email, formData.password);
 
         if (error) throw error;
 
@@ -63,6 +55,8 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
         });
       }
 
+      // Refresh the page to trigger auth state update
+      window.location.reload();
       onClose();
       setFormData({ email: '', password: '', firstName: '', lastName: '' });
     } catch (error: any) {
@@ -84,6 +78,14 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </DialogTitle>
         </DialogHeader>
+        
+        {mode === 'login' && (
+          <div className="bg-slate-700/50 p-3 rounded-lg mb-4">
+            <p className="text-xs text-slate-300 text-center">
+              Test credentials: test@test.com / 123456789
+            </p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'register' && (

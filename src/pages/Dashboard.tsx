@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatsCard from '@/components/dashboard/StatsCard';
 import QuickActions from '@/components/dashboard/QuickActions';
@@ -32,73 +31,21 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
-    contactsCount: 0,
-    accountsCount: 0,
-    documentsCount: 0,
-    userSettings: null,
+    contactsCount: 3,
+    accountsCount: 8,
+    documentsCount: 5,
+    userSettings: {
+      is_active: true,
+      last_check_in: new Date().toISOString(),
+      next_check_in_due: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    },
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetchDashboardStats();
-    }
+    // Mock data loading
+    setLoading(false);
   }, [user]);
-
-  const fetchDashboardStats = async () => {
-    if (!user) return;
-
-    try {
-      const [contactsResult, accountsResult, documentsResult, settingsResult] = await Promise.all([
-        supabase
-          .from('emergency_contacts')
-          .select('id')
-          .eq('user_id', user.id),
-        supabase
-          .from('digital_accounts')
-          .select('id')
-          .eq('user_id', user.id),
-        supabase
-          .from('legacy_documents')
-          .select('id')
-          .eq('user_id', user.id),
-        supabase
-          .from('user_settings')
-          .select('is_active, last_check_in, next_check_in_due')
-          .eq('user_id', user.id)
-          .single(),
-      ]);
-
-      setStats({
-        contactsCount: contactsResult.data?.length || 0,
-        accountsCount: accountsResult.data?.length || 0,
-        documentsCount: documentsResult.data?.length || 0,
-        userSettings: settingsResult.data || null,
-      });
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard statistics",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
-            <p className="text-slate-400">Loading dashboard...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   const getTimeOfDay = () => {
     const hour = new Date().getHours();

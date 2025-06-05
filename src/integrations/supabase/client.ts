@@ -1,5 +1,6 @@
 
 
+
 // Mock Supabase client - completely disconnected from real Supabase
 // This file now provides a mock implementation that uses localStorage
 
@@ -28,11 +29,11 @@ const setMockData = <T>(table: string, data: T[], userId?: string) => {
 class MockPostgrestFilterBuilder<T> {
   constructor(private table: string, private userId?: string) {}
 
-  eq(column: string, value: any) {
+  eq(column: string, value: any): MockPostgrestFilterBuilder<T> {
     return this;
   }
 
-  order(column: string, options?: { ascending?: boolean }) {
+  order(column: string, options?: { ascending?: boolean }): MockPostgrestFilterBuilder<T> {
     return this;
   }
 
@@ -57,7 +58,7 @@ class MockPostgrestFilterBuilder<T> {
 class MockTable<T> {
   constructor(private tableName: string) {}
 
-  select(columns: string = '*') {
+  select(columns: string = '*'): MockPostgrestFilterBuilder<T> {
     return new MockPostgrestFilterBuilder<T>(this.tableName);
   }
 
@@ -113,4 +114,5 @@ export const supabase = {
 
 // Export for compatibility (though not used)
 export type Database = any;
+
 

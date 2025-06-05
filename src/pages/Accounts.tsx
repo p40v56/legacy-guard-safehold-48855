@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,17 +9,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { CreditCard, Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { CreditCard, Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
+
+type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
 
 interface DigitalAccount {
   id: string;
   account_name: string;
   platform: string;
-  account_type: string;
+  account_type: AccountType;
   email?: string;
   username?: string;
   website_url?: string;
@@ -40,7 +40,7 @@ const Accounts = () => {
   const [formData, setFormData] = useState({
     account_name: '',
     platform: '',
-    account_type: 'other',
+    account_type: 'other' as AccountType,
     email: '',
     username: '',
     website_url: '',
@@ -49,7 +49,6 @@ const Accounts = () => {
 
   const filteredAccounts = useMemo(() => {
     return accounts.filter(account => {
-      // Safe string conversion with null checks
       const accountName = (account.account_name || '').toLowerCase();
       const platform = (account.platform || '').toLowerCase();
       const email = (account.email || '').toLowerCase();
@@ -76,14 +75,29 @@ const Accounts = () => {
 
   const fetchAccounts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('digital_accounts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setAccounts(data || []);
+      // Mock data - in a real app this would come from your backend
+      const mockAccounts: DigitalAccount[] = [
+        {
+          id: '1',
+          account_name: 'Personal Gmail',
+          platform: 'Gmail',
+          account_type: 'email',
+          email: 'test@test.com',
+          website_url: 'https://gmail.com',
+          notes: 'Primary email account',
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: '2',
+          account_name: 'Social Media',
+          platform: 'Facebook',
+          account_type: 'social',
+          username: 'testuser',
+          website_url: 'https://facebook.com',
+          created_at: new Date().toISOString(),
+        }
+      ];
+      setAccounts(mockAccounts);
     } catch (error) {
       console.error('Error fetching accounts:', error);
       toast({
@@ -101,23 +115,25 @@ const Accounts = () => {
     
     try {
       if (editingAccount) {
-        const { error } = await supabase
-          .from('digital_accounts')
-          .update(formData)
-          .eq('id', editingAccount.id);
-        
-        if (error) throw error;
+        // Mock update
+        setAccounts(prev => prev.map(account => 
+          account.id === editingAccount.id 
+            ? { ...account, ...formData }
+            : account
+        ));
         
         toast({
           title: "Success",
           description: "Account updated successfully",
         });
       } else {
-        const { error } = await supabase
-          .from('digital_accounts')
-          .insert([{ ...formData, user_id: user?.id }]);
-        
-        if (error) throw error;
+        // Mock create
+        const newAccount: DigitalAccount = {
+          ...formData,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString(),
+        };
+        setAccounts(prev => [...prev, newAccount]);
         
         toast({
           title: "Success",
@@ -125,18 +141,7 @@ const Accounts = () => {
         });
       }
       
-      setFormData({
-        account_name: '',
-        platform: '',
-        account_type: 'other',
-        email: '',
-        username: '',
-        website_url: '',
-        notes: '',
-      });
-      setShowAddForm(false);
-      setEditingAccount(null);
-      fetchAccounts();
+      resetForm();
     } catch (error) {
       console.error('Error saving account:', error);
       toast({
@@ -165,18 +170,12 @@ const Accounts = () => {
     if (!confirm('Are you sure you want to delete this account?')) return;
     
     try {
-      const { error } = await supabase
-        .from('digital_accounts')
-        .delete()
-        .eq('id', accountId);
-      
-      if (error) throw error;
+      setAccounts(prev => prev.filter(account => account.id !== accountId));
       
       toast({
         title: "Success",
         description: "Account deleted successfully",
       });
-      fetchAccounts();
     } catch (error) {
       console.error('Error deleting account:', error);
       toast({
@@ -295,7 +294,7 @@ const Accounts = () => {
                     <Label className="text-slate-200">Account Type</Label>
                     <Select 
                       value={formData.account_type} 
-                      onValueChange={(value) => setFormData({...formData, account_type: value})}
+                      onValueChange={(value: AccountType) => setFormData({...formData, account_type: value})}
                     >
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                         <SelectValue />

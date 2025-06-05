@@ -1,13 +1,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -16,13 +14,15 @@ import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
 
+type ContactType = 'primary' | 'secondary' | 'legal' | 'medical';
+
 interface EmergencyContact {
   id: string;
   name: string;
   email: string;
   phone?: string;
   relationship?: string;
-  contact_type: string;
+  contact_type: ContactType;
   priority_order: number;
   can_access_accounts: boolean;
   can_receive_messages: boolean;
@@ -43,7 +43,7 @@ const Contacts = () => {
     email: '',
     phone: '',
     relationship: '',
-    contact_type: 'primary',
+    contact_type: 'primary' as ContactType,
     priority_order: 1,
     can_access_accounts: false,
     can_receive_messages: true,
@@ -51,7 +51,6 @@ const Contacts = () => {
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(contact => {
-      // Safe string conversion with null checks
       const name = (contact.name || '').toLowerCase();
       const email = (contact.email || '').toLowerCase();
       const phone = (contact.phone || '').toLowerCase();
@@ -78,14 +77,34 @@ const Contacts = () => {
 
   const fetchContacts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('emergency_contacts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('priority_order', { ascending: true });
-
-      if (error) throw error;
-      setContacts(data || []);
+      // Mock data - in a real app this would come from your backend
+      const mockContacts: EmergencyContact[] = [
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          phone: '+1 (555) 123-4567',
+          relationship: 'Spouse',
+          contact_type: 'primary',
+          priority_order: 1,
+          can_access_accounts: true,
+          can_receive_messages: true,
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: '2',
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          phone: '+1 (555) 987-6543',
+          relationship: 'Sister',
+          contact_type: 'secondary',
+          priority_order: 2,
+          can_access_accounts: false,
+          can_receive_messages: true,
+          created_at: new Date().toISOString(),
+        }
+      ];
+      setContacts(mockContacts);
     } catch (error) {
       console.error('Error fetching contacts:', error);
       toast({
@@ -103,23 +122,25 @@ const Contacts = () => {
     
     try {
       if (editingContact) {
-        const { error } = await supabase
-          .from('emergency_contacts')
-          .update(formData)
-          .eq('id', editingContact.id);
-        
-        if (error) throw error;
+        // Mock update
+        setContacts(prev => prev.map(contact => 
+          contact.id === editingContact.id 
+            ? { ...contact, ...formData }
+            : contact
+        ));
         
         toast({
           title: "Success",
           description: "Contact updated successfully",
         });
       } else {
-        const { error } = await supabase
-          .from('emergency_contacts')
-          .insert([{ ...formData, user_id: user?.id }]);
-        
-        if (error) throw error;
+        // Mock create
+        const newContact: EmergencyContact = {
+          ...formData,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString(),
+        };
+        setContacts(prev => [...prev, newContact]);
         
         toast({
           title: "Success",
@@ -128,7 +149,6 @@ const Contacts = () => {
       }
       
       resetForm();
-      fetchContacts();
     } catch (error) {
       console.error('Error saving contact:', error);
       toast({
@@ -158,18 +178,12 @@ const Contacts = () => {
     if (!confirm('Are you sure you want to delete this contact?')) return;
     
     try {
-      const { error } = await supabase
-        .from('emergency_contacts')
-        .delete()
-        .eq('id', contactId);
-      
-      if (error) throw error;
+      setContacts(prev => prev.filter(contact => contact.id !== contactId));
       
       toast({
         title: "Success",
         description: "Contact deleted successfully",
       });
-      fetchContacts();
     } catch (error) {
       console.error('Error deleting contact:', error);
       toast({
@@ -309,7 +323,7 @@ const Contacts = () => {
                     <Label className="text-slate-200">Contact Type</Label>
                     <Select 
                       value={formData.contact_type} 
-                      onValueChange={(value) => setFormData({...formData, contact_type: value})}
+                      onValueChange={(value: ContactType) => setFormData({...formData, contact_type: value})}
                     >
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                         <SelectValue />

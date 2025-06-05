@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Plus, Edit, Trash2, Download, Eye } from 'lucide-react';
+import { FileText, Plus, Edit, Trash2, Download, Eye, Upload, Calendar, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
@@ -202,91 +201,132 @@ const Documents = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Legacy Documents</h1>
-            <p className="text-slate-400">Store and manage important documents for your legacy</p>
+      <div className="space-y-8 max-w-7xl mx-auto">
+        {/* Header Section with Gradient */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-white/10 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
+          <div className="relative p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 backdrop-blur-sm">
+                    <FileText className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <h1 className="text-4xl font-bold text-white">Legacy Documents</h1>
+                </div>
+                <p className="text-lg text-slate-300 max-w-2xl">
+                  Securely store and manage important documents for your digital legacy. 
+                  Keep your essential papers organized and accessible to trusted contacts.
+                </p>
+                <div className="flex items-center gap-4 pt-2">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm">End-to-end encrypted</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <Upload className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm">Secure storage</span>
+                  </div>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setShowAddForm(true)}
+                size="lg"
+                className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-500/25 border-0 text-white font-semibold px-8"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Document
+              </Button>
+            </div>
           </div>
-          <Button 
-            onClick={() => setShowAddForm(true)}
-            className="bg-emerald-600 hover:bg-emerald-500"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Document
-          </Button>
         </div>
 
-        {/* Search and Filter */}
+        {/* Search and Filter Section */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search documents..."
+              placeholder="Search documents by title or description..."
+              className="h-12 text-base"
             />
           </div>
           <Select value={filterVisibility} onValueChange={setFilterVisibility}>
-            <SelectTrigger className="w-full sm:w-48 bg-slate-700 border-slate-600 text-white">
+            <SelectTrigger className="w-full sm:w-56 h-12 bg-slate-800/50 border-slate-600 text-white backdrop-blur-sm">
               <SelectValue placeholder="Filter by visibility" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-slate-800 border-slate-600">
               <SelectItem value="all">All Documents</SelectItem>
-              <SelectItem value="private">Private</SelectItem>
-              <SelectItem value="public">Public</SelectItem>
+              <SelectItem value="private">Private Only</SelectItem>
+              <SelectItem value="public">Public Only</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Add/Edit Form */}
         {showAddForm && (
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <FileText className="w-5 h-5 mr-2 text-emerald-400" />
+          <Card className="bg-slate-800/60 border-slate-700/50 backdrop-blur-sm shadow-2xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-white flex items-center text-xl">
+                <div className="p-2 rounded-lg bg-emerald-500/20 mr-3">
+                  <FileText className="w-5 h-5 text-emerald-400" />
+                </div>
                 {editingDocument ? 'Edit Document' : 'Add New Document'}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label className="text-slate-200">Document Title *</Label>
-                  <Input
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    placeholder="Last Will and Testament"
-                    required
-                  />
+            <CardContent className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Document Title *</Label>
+                    <Input
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm"
+                      placeholder="Last Will and Testament"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Visibility</Label>
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-slate-700/30 border border-slate-600">
+                      <div>
+                        <div className="font-medium text-white">Make Public</div>
+                        <p className="text-sm text-slate-400">Allow emergency contacts to access this document</p>
+                      </div>
+                      <Switch
+                        checked={formData.is_public}
+                        onCheckedChange={(checked) => setFormData({...formData, is_public: checked})}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <Label className="text-slate-200">Description</Label>
+                <div className="space-y-2">
+                  <Label className="text-slate-200 font-medium">Description</Label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    rows={3}
-                    placeholder="Brief description of the document..."
+                    className="bg-slate-700/50 border-slate-600 text-white backdrop-blur-sm"
+                    rows={4}
+                    placeholder="Brief description of the document and its importance..."
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-slate-200">Make Public</Label>
-                    <p className="text-xs text-slate-400">Allow emergency contacts to access this document</p>
-                  </div>
-                  <Switch
-                    checked={formData.is_public}
-                    onCheckedChange={(checked) => setFormData({...formData, is_public: checked})}
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500">
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    type="submit" 
+                    className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg font-semibold"
+                  >
                     {editingDocument ? 'Update Document' : 'Add Document'}
                   </Button>
-                  <Button type="button" variant="outline" onClick={resetForm}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={resetForm}
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700/50"
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -296,109 +336,126 @@ const Documents = () => {
         )}
 
         {/* Documents List */}
-        <div className="grid gap-4">
+        <div className="space-y-4">
           {filteredDocuments.length === 0 ? (
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardContent className="p-8 text-center">
-                <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No documents found</h3>
-                <p className="text-slate-400 mb-4">
-                  {searchTerm || filterVisibility !== 'all' 
-                    ? 'No documents match your search criteria.' 
-                    : 'Get started by adding your first legacy document.'}
-                </p>
-                {(!searchTerm && filterVisibility === 'all') && (
-                  <Button 
-                    onClick={() => setShowAddForm(true)}
-                    className="bg-emerald-600 hover:bg-emerald-500"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Your First Document
-                  </Button>
-                )}
+            <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
+              <CardContent className="p-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="p-4 rounded-2xl bg-slate-700/30 w-fit mx-auto mb-6">
+                    <FileText className="w-12 h-12 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">No documents found</h3>
+                  <p className="text-slate-400 mb-6 leading-relaxed">
+                    {searchTerm || filterVisibility !== 'all' 
+                      ? 'No documents match your search criteria. Try adjusting your filters or search terms.' 
+                      : 'Start building your digital legacy by adding your first important document.'}
+                  </p>
+                  {(!searchTerm && filterVisibility === 'all') && (
+                    <Button 
+                      onClick={() => setShowAddForm(true)}
+                      className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg font-semibold"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Document
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ) : (
-            filteredDocuments.map((document) => (
-              <Card key={document.id} className="bg-slate-800/50 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-medium text-white">{document.title}</h3>
-                        <Badge variant={document.is_public ? "default" : "secondary"} className="text-xs">
-                          {document.is_public ? 'Public' : 'Private'}
-                        </Badge>
-                      </div>
-                      
-                      {document.description && (
-                        <p className="text-slate-300 mb-3">{document.description}</p>
-                      )}
-                      
-                      <div className="space-y-2 text-sm">
-                        {document.file_type && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">Type:</span>
-                            <span className="text-white">{document.file_type}</span>
+            <div className="grid gap-6">
+              {filteredDocuments.map((document) => (
+                <Card key={document.id} className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:bg-slate-800/60 transition-all duration-300 group">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="p-2 rounded-lg bg-slate-700/50 group-hover:bg-emerald-500/20 transition-colors">
+                            <FileText className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 transition-colors" />
                           </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-white mb-1 truncate">{document.title}</h3>
+                            <div className="flex items-center gap-3">
+                              <Badge 
+                                variant={document.is_public ? "default" : "secondary"} 
+                                className={`text-xs font-medium ${
+                                  document.is_public 
+                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                                    : 'bg-slate-600/50 text-slate-300 border-slate-500/50'
+                                }`}
+                              >
+                                {document.is_public ? 'Public' : 'Private'}
+                              </Badge>
+                              <div className="flex items-center gap-1 text-slate-400 text-sm">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(document.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {document.description && (
+                          <p className="text-slate-300 mb-4 leading-relaxed">{document.description}</p>
                         )}
                         
-                        {document.file_size && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">Size:</span>
-                            <span className="text-white">{formatFileSize(document.file_size)}</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-400">Created:</span>
-                          <span className="text-slate-300">
-                            {new Date(document.created_at).toLocaleDateString()}
-                          </span>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {document.file_type && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 font-medium">Type:</span>
+                              <span className="text-slate-300">{document.file_type}</span>
+                            </div>
+                          )}
+                          
+                          {document.file_size && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 font-medium">Size:</span>
+                              <span className="text-slate-300">{formatFileSize(document.file_size)}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
+                      
+                      <div className="flex items-center gap-1 ml-6">
+                        {document.file_path && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-slate-400 hover:text-white hover:bg-slate-700/50 h-10 w-10 p-0"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-slate-400 hover:text-white hover:bg-slate-700/50 h-10 w-10 p-0"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(document)}
+                          className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 h-10 w-10 p-0"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(document.id)}
+                          className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-10 w-10 p-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <div className="flex gap-2 ml-4">
-                      {document.file_path && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-slate-400 hover:text-white"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-slate-400 hover:text-white"
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(document)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(document.id)}
-                        className="text-slate-400 hover:text-red-400"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
       </div>

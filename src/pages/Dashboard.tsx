@@ -12,7 +12,9 @@ import {
   Users, 
   CreditCard, 
   FileText, 
-  Shield 
+  Shield,
+  Activity,
+  Clock
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -89,20 +91,48 @@ const Dashboard = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <LoadingSpinner size="lg" />
+          <div className="text-center">
+            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
+            <p className="text-slate-400">Loading dashboard...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
   }
 
+  const getTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-          <p className="text-slate-400">
-            Welcome back! Here's an overview of your digital legacy system.
-          </p>
+      <div className="space-y-8 max-w-7xl mx-auto">
+        {/* Welcome Header */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-white/10 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
+          <div className="relative p-8">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-emerald-500/20 backdrop-blur-sm">
+                <Activity className="w-8 h-8 text-emerald-400" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-1">
+                  {getTimeOfDay()}!
+                </h1>
+                <p className="text-lg text-slate-300">
+                  Welcome back to your digital legacy dashboard
+                </p>
+              </div>
+            </div>
+            <p className="text-slate-400 max-w-2xl leading-relaxed">
+              Here's an overview of your digital legacy system. Monitor your dead man's switch, 
+              manage your accounts, and ensure your important information is secure and accessible 
+              to your trusted contacts.
+            </p>
+          </div>
         </div>
 
         {/* System Status */}
@@ -142,6 +172,44 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <QuickActions />
+
+        {/* Recent Activity placeholder for future enhancement */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <Clock className="w-5 h-5 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+            </div>
+            <p className="text-slate-400 text-center py-8">
+              Activity tracking will be displayed here in future updates
+            </p>
+          </div>
+          
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <Shield className="w-5 h-5 text-purple-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Security Status</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Two-Factor Auth</span>
+                <span className="text-emerald-400 text-sm">Enabled</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Data Encryption</span>
+                <span className="text-emerald-400 text-sm">Active</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Backup Status</span>
+                <span className="text-emerald-400 text-sm">Current</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -58,17 +58,57 @@ const createMockClient = () => {
     from: (table: string) => ({
       select: (columns?: string) => ({
         eq: (column: string, value: any) => ({
+          order: (column: string, options?: any) => ({
+            then: (callback: any) => callback({ 
+              data: [
+                {
+                  id: 'doc-1',
+                  title: 'Last Will and Testament',
+                  description: 'Important legal document outlining my final wishes',
+                  file_path: '/documents/will.pdf',
+                  file_type: 'PDF',
+                  file_size: 2048000,
+                  is_public: false,
+                  created_at: new Date().toISOString(),
+                  user_id: 'mock-user-id'
+                },
+                {
+                  id: 'doc-2',
+                  title: 'Insurance Policies',
+                  description: 'Life and health insurance policy information',
+                  file_path: '/documents/insurance.pdf',
+                  file_type: 'PDF',
+                  file_size: 1024000,
+                  is_public: true,
+                  created_at: new Date(Date.now() - 86400000).toISOString(),
+                  user_id: 'mock-user-id'
+                },
+                {
+                  id: 'doc-3',
+                  title: 'Property Deeds',
+                  description: 'House and property ownership documents',
+                  file_path: null,
+                  file_type: null,
+                  file_size: null,
+                  is_public: false,
+                  created_at: new Date(Date.now() - 172800000).toISOString(),
+                  user_id: 'mock-user-id'
+                }
+              ], 
+              error: null 
+            })
+          }),
           single: () => Promise.resolve({ 
             data: { id: 'mock-id', [column]: value }, 
             error: null 
           }),
           then: (callback: any) => callback({ 
-            data: [] as any[], 
+            data: [], 
             error: null 
           })
         }),
         then: (callback: any) => callback({ 
-          data: [] as any[], 
+          data: [], 
           error: null 
         })
       }),
@@ -98,4 +138,3 @@ const createMockClient = () => {
 }
 
 export const supabase = createMockClient() as any
-

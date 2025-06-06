@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
@@ -10,6 +11,44 @@ interface SystemStatusProps {
 }
 
 const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusProps) => {
+  const [countdown, setCountdown] = useState<string>('');
+
+  useEffect(() => {
+    if (!isActive || !nextCheckInDue) {
+      setCountdown('');
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const dueDate = new Date(nextCheckInDue);
+      const timeDiff = dueDate.getTime() - now.getTime();
+
+      if (timeDiff <= 0) {
+        setCountdown('OVERDUE');
+        return;
+      }
+
+      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      if (days > 0) {
+        setCountdown(`${days}d ${hours}h ${minutes}m`);
+      } else if (hours > 0) {
+        setCountdown(`${hours}h ${minutes}m ${seconds}s`);
+      } else {
+        setCountdown(`${minutes}m ${seconds}s`);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [isActive, nextCheckInDue]);
+
   const getStatusInfo = () => {
     if (!isActive) {
       return {
@@ -50,6 +89,16 @@ const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusPro
     return new Date(dateString).toLocaleString();
   };
 
+  const getCountdownColor = () => {
+    if (countdown === 'OVERDUE') return 'text-red-400';
+    if (countdown.includes('h') && !countdown.includes('d')) {
+      const hours = parseInt(countdown.split('h')[0]);
+      if (hours < 24) return 'text-amber-400';
+    }
+    if (!countdown.includes('h') && !countdown.includes('d')) return 'text-amber-400';
+    return 'text-emerald-400';
+  };
+
   return (
     <Card className="bg-slate-700/50 border-slate-600">
       <CardHeader>
@@ -66,6 +115,21 @@ const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusPro
             {statusInfo.status}
           </Badge>
         </div>
+        
+        {/* Live Countdown */}
+        {isActive && nextCheckInDue && countdown && (
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-slate-400" />
+                <span className="text-sm text-slate-300">Next check-in in:</span>
+              </div>
+              <div className={`font-mono text-lg font-bold ${getCountdownColor()}`}>
+                {countdown}
+              </div>
+            </div>
+          </div>
+        )}
         
         {lastCheckIn && (
           <div className="flex items-center gap-2 text-sm text-slate-300">

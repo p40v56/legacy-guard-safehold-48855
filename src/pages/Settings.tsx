@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
+import { ContactTypePermissions as ContactTypePermissionsType } from '@/types/access-control';
 
 interface Profile {
   id: string;
@@ -84,6 +86,28 @@ const Settings = () => {
     custom_message: 'Full access to legal documents and account information.',
     enabled: false
   }]);
+  const [typePermissions, setTypePermissions] = useState<ContactTypePermissionsType[]>([
+    {
+      contact_type: 'immediate_family',
+      default_permissions: {
+        digital_accounts: { all_accounts: true, by_category: [], specific_accounts: [] },
+        legacy_documents: { all_documents: true, by_category: [], specific_documents: [] },
+        contact_information: true,
+        emergency_instructions: true,
+        can_modify_information: true,
+      },
+    },
+    {
+      contact_type: 'extended_family',
+      default_permissions: {
+        digital_accounts: { all_accounts: false, by_category: ['banking'], specific_accounts: [] },
+        legacy_documents: { all_documents: false, by_category: ['legal'], specific_documents: [] },
+        contact_information: true,
+        emergency_instructions: true,
+        can_modify_information: false,
+      },
+    },
+  ]);
   useEffect(() => {
     if (user) {
       fetchProfile();
@@ -169,6 +193,24 @@ const Settings = () => {
       });
     }
   };
+  const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
+    try {
+      setTypePermissions(updatedPermissions);
+      // Mock save - in a real app this would save to your backend
+      await new Promise(resolve => setTimeout(resolve, 500));
+      toast({
+        title: "Success",
+        description: "Default permissions updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating type permissions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update default permissions",
+        variant: "destructive"
+      });
+    }
+  };
   const getCategoryLabel = (category: ContactCategory) => {
     const labels = {
       immediate_family: 'Immediate Family',
@@ -217,14 +259,18 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 border-slate-700">
+          <TabsList className="grid w-full grid-cols-4 bg-slate-800/50 border-slate-700">
             <TabsTrigger value="profile" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400">
               <User className="w-4 h-4 mr-2" />
-              Profile Information
+              Profile
             </TabsTrigger>
             <TabsTrigger value="activation" className="data-[state=active]:bg-red-600/20 data-[state=active]:text-red-400">
               <AlertTriangle className="w-4 h-4 mr-2" />
               Activation Rules
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="data-[state=active]:bg-purple-600/20 data-[state=active]:text-purple-400">
+              <Shield className="w-4 h-4 mr-2" />
+              Default Permissions
             </TabsTrigger>
             <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600/20 data-[state=active]:text-blue-400">
               <Bell className="w-4 h-4 mr-2" />
@@ -477,6 +523,13 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="permissions" className="space-y-6 mt-6">
+            <ContactTypePermissions 
+              typePermissions={typePermissions}
+              onUpdate={saveTypePermissions}
+            />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6 mt-6">

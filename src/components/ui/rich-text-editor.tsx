@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,52 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     'link'
   ];
 
+  useEffect(() => {
+    // Inject custom styles for dark theme
+    const styleId = 'quill-dark-theme';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .rich-text-editor .ql-toolbar {
+          background-color: rgb(51 65 85) !important;
+          border-color: rgb(71 85 105) !important;
+          border-bottom: 1px solid rgb(71 85 105) !important;
+        }
+        .rich-text-editor .ql-container {
+          background-color: rgb(51 65 85) !important;
+          border-color: rgb(71 85 105) !important;
+          color: white !important;
+        }
+        .rich-text-editor .ql-editor {
+          color: white !important;
+        }
+        .rich-text-editor .ql-editor.ql-blank::before {
+          color: rgb(148 163 184) !important;
+        }
+        .rich-text-editor .ql-toolbar .ql-stroke {
+          stroke: rgb(148 163 184) !important;
+        }
+        .rich-text-editor .ql-toolbar .ql-fill {
+          fill: rgb(148 163 184) !important;
+        }
+        .rich-text-editor .ql-toolbar button:hover .ql-stroke {
+          stroke: white !important;
+        }
+        .rich-text-editor .ql-toolbar button:hover .ql-fill {
+          fill: white !important;
+        }
+        .rich-text-editor .ql-toolbar button.ql-active .ql-stroke {
+          stroke: rgb(52 211 153) !important;
+        }
+        .rich-text-editor .ql-toolbar button.ql-active .ql-fill {
+          fill: rgb(52 211 153) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
     <div className={cn("rich-text-editor", className)}>
       <ReactQuill
@@ -42,47 +88,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         formats={formats}
         placeholder={placeholder}
         style={{
-          backgroundColor: 'rgb(51 65 85)', // slate-700
+          backgroundColor: 'rgb(51 65 85)',
           borderRadius: '0.375rem',
-          border: '1px solid rgb(71 85 105)', // slate-600
+          border: '1px solid rgb(71 85 105)',
         }}
       />
-      <style jsx>{`
-        .rich-text-editor .ql-toolbar {
-          background-color: rgb(51 65 85);
-          border-color: rgb(71 85 105);
-          border-bottom: 1px solid rgb(71 85 105);
-        }
-        .rich-text-editor .ql-container {
-          background-color: rgb(51 65 85);
-          border-color: rgb(71 85 105);
-          color: white;
-        }
-        .rich-text-editor .ql-editor {
-          color: white;
-        }
-        .rich-text-editor .ql-editor.ql-blank::before {
-          color: rgb(148 163 184);
-        }
-        .rich-text-editor .ql-toolbar .ql-stroke {
-          stroke: rgb(148 163 184);
-        }
-        .rich-text-editor .ql-toolbar .ql-fill {
-          fill: rgb(148 163 184);
-        }
-        .rich-text-editor .ql-toolbar button:hover .ql-stroke {
-          stroke: white;
-        }
-        .rich-text-editor .ql-toolbar button:hover .ql-fill {
-          fill: white;
-        }
-        .rich-text-editor .ql-toolbar button.ql-active .ql-stroke {
-          stroke: rgb(52 211 153);
-        }
-        .rich-text-editor .ql-toolbar button.ql-active .ql-fill {
-          fill: rgb(52 211 153);
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,18 +1,16 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccounts } from '@/hooks/useAccounts';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { CreditCard, Plus, Edit, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { CreditCard, Plus } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
+import AccountForm from '@/components/accounts/AccountForm';
+import AccountCard from '@/components/accounts/AccountCard';
 
 type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
 
@@ -30,9 +28,7 @@ interface DigitalAccount {
 
 const Accounts = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<DigitalAccount[]>([]);
+  const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -67,89 +63,16 @@ const Accounts = () => {
     });
   }, [accounts, searchTerm, filterType]);
 
-  useEffect(() => {
-    if (user) {
-      fetchAccounts();
-    }
-  }, [user]);
-
-  const fetchAccounts = async () => {
-    try {
-      // Mock data - in a real app this would come from your backend
-      const mockAccounts: DigitalAccount[] = [
-        {
-          id: '1',
-          account_name: 'Personal Gmail',
-          platform: 'Gmail',
-          account_type: 'email',
-          email: 'test@test.com',
-          website_url: 'https://gmail.com',
-          notes: 'Primary email account',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          account_name: 'Social Media',
-          platform: 'Facebook',
-          account_type: 'social',
-          username: 'testuser',
-          website_url: 'https://facebook.com',
-          created_at: new Date().toISOString(),
-        }
-      ];
-      setAccounts(mockAccounts);
-    } catch (error) {
-      console.error('Error fetching accounts:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load accounts",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      if (editingAccount) {
-        // Mock update
-        setAccounts(prev => prev.map(account => 
-          account.id === editingAccount.id 
-            ? { ...account, ...formData }
-            : account
-        ));
-        
-        toast({
-          title: "Success",
-          description: "Account updated successfully",
-        });
-      } else {
-        // Mock create
-        const newAccount: DigitalAccount = {
-          ...formData,
-          id: Date.now().toString(),
-          created_at: new Date().toISOString(),
-        };
-        setAccounts(prev => [...prev, newAccount]);
-        
-        toast({
-          title: "Success",
-          description: "Account added successfully",
-        });
-      }
-      
-      resetForm();
-    } catch (error) {
-      console.error('Error saving account:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save account",
-        variant: "destructive",
-      });
+    if (editingAccount) {
+      await updateAccount(editingAccount.id, formData);
+    } else {
+      await createAccount(formData);
     }
+    
+    resetForm();
   };
 
   const handleEdit = (account: DigitalAccount) => {
@@ -164,26 +87,6 @@ const Accounts = () => {
     });
     setEditingAccount(account);
     setShowAddForm(true);
-  };
-
-  const handleDelete = async (accountId: string) => {
-    if (!confirm('Are you sure you want to delete this account?')) return;
-    
-    try {
-      setAccounts(prev => prev.filter(account => account.id !== accountId));
-      
-      toast({
-        title: "Success",
-        description: "Account deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete account",
-        variant: "destructive",
-      });
-    }
   };
 
   const resetForm = () => {
@@ -257,113 +160,13 @@ const Accounts = () => {
 
         {/* Add/Edit Form */}
         {showAddForm && (
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <CreditCard className="w-5 h-5 mr-2 text-emerald-400" />
-                {editingAccount ? 'Edit Account' : 'Add New Account'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-slate-200">Account Name *</Label>
-                    <Input
-                      value={formData.account_name}
-                      onChange={(e) => setFormData({...formData, account_name: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="My Gmail Account"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-slate-200">Platform *</Label>
-                    <Input
-                      value={formData.platform}
-                      onChange={(e) => setFormData({...formData, platform: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="Gmail, Facebook, etc."
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-slate-200">Account Type</Label>
-                    <Select 
-                      value={formData.account_type} 
-                      onValueChange={(value: AccountType) => setFormData({...formData, account_type: value})}
-                    >
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="social">Social Media</SelectItem>
-                        <SelectItem value="financial">Financial</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="work">Work</SelectItem>
-                        <SelectItem value="entertainment">Entertainment</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-slate-200">Website URL</Label>
-                    <Input
-                      value={formData.website_url}
-                      onChange={(e) => setFormData({...formData, website_url: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="https://example.com"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-slate-200">Email</Label>
-                    <Input
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="user@example.com"
-                      type="email"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-slate-200">Username</Label>
-                    <Input
-                      value={formData.username}
-                      onChange={(e) => setFormData({...formData, username: e.target.value})}
-                      className="bg-slate-700 border-slate-600 text-white"
-                      placeholder="username"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-slate-200">Notes</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    rows={3}
-                    placeholder="Additional notes about this account..."
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500">
-                    {editingAccount ? 'Update Account' : 'Add Account'}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={resetForm}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <AccountForm
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleSubmit}
+            onCancel={resetForm}
+            isEditing={!!editingAccount}
+          />
         )}
 
         {/* Accounts List */}
@@ -391,88 +194,12 @@ const Accounts = () => {
             </Card>
           ) : (
             filteredAccounts.map((account) => (
-              <Card key={account.id} className="bg-slate-800/50 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-medium text-white">{account.account_name}</h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {account.account_type}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-400">Platform:</span>
-                          <span className="text-white">{account.platform}</span>
-                        </div>
-                        
-                        {account.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">Email:</span>
-                            <span className="text-white">{account.email}</span>
-                          </div>
-                        )}
-                        
-                        {account.username && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">Username:</span>
-                            <span className="text-white">{account.username}</span>
-                          </div>
-                        )}
-                        
-                        {account.website_url && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">Website:</span>
-                            <a 
-                              href={account.website_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-emerald-400 hover:text-emerald-300"
-                            >
-                              {account.website_url}
-                            </a>
-                          </div>
-                        )}
-                        
-                        {account.notes && (
-                          <div className="mt-3">
-                            <span className="text-slate-400">Notes:</span>
-                            <p className="text-white mt-1">{account.notes}</p>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center gap-2 mt-3">
-                          <span className="text-slate-400">Created:</span>
-                          <span className="text-slate-300">
-                            {new Date(account.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(account)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(account.id)}
-                        className="text-slate-400 hover:text-red-400"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <AccountCard
+                key={account.id}
+                account={account}
+                onEdit={handleEdit}
+                onDelete={deleteAccount}
+              />
             ))
           )}
         </div>

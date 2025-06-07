@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Users, Save } from 'lucide-react';
-import { ContactType, ContactTypePermissions, ContactPermissions } from '@/types/access-control';
+import { ContactType, type ContactTypePermissions as ContactTypePermissionsType, ContactPermissions } from '@/types/access-control';
 import PermissionsConfig from './PermissionsConfig';
 
 interface ContactTypePermissionsProps {
-  typePermissions: ContactTypePermissions[];
-  onUpdate: (typePermissions: ContactTypePermissions[]) => void;
+  typePermissions: ContactTypePermissionsType[];
+  onUpdate: (typePermissions: ContactTypePermissionsType[]) => void;
 }
 
 const contactTypeLabels: Record<ContactType, string> = {

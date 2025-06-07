@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
 import { ContactTypePermissions as ContactTypePermissionsType } from '@/types/access-control';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface Profile {
   id: string;
@@ -365,12 +366,11 @@ const Settings = () => {
 
                 <div>
                   <Label className="text-slate-200">Emergency Instructions</Label>
-                  <Textarea 
-                    value={profile.emergency_instructions} 
-                    onChange={e => setProfile({...profile, emergency_instructions: e.target.value})} 
-                    className="bg-slate-700 border-slate-600 text-white" 
-                    rows={4} 
-                    placeholder="Special instructions for emergency contacts (medical conditions, preferences, etc.)" 
+                  <RichTextEditor
+                    value={profile.emergency_instructions || ''}
+                    onChange={(value) => setProfile({...profile, emergency_instructions: value})}
+                    placeholder="Special instructions for emergency contacts (medical conditions, preferences, etc.)"
+                    className="mt-1"
                   />
                 </div>
 
@@ -550,12 +550,11 @@ const Settings = () => {
 
                     <div>
                       <Label className="text-slate-200">Custom Message</Label>
-                      <Textarea 
-                        value={rule.custom_message} 
-                        onChange={e => updateActivationRule(rule.id, { custom_message: e.target.value })} 
-                        className="bg-slate-700 border-slate-600 text-white" 
-                        rows={2} 
-                        placeholder="Message to send to selected targets..." 
+                      <RichTextEditor
+                        value={rule.custom_message}
+                        onChange={(value) => updateActivationRule(rule.id, { custom_message: value })}
+                        placeholder="Message to send to selected targets..."
+                        className="mt-1"
                       />
                     </div>
                   </div>

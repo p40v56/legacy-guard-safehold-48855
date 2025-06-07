@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
@@ -26,30 +27,39 @@ interface Profile {
   bio?: string;
   emergency_instructions?: string;
 }
+
 interface NotificationSettings {
   email_notifications: boolean;
   sms_notifications: boolean;
   emergency_alerts: boolean;
 }
+
 type ContactCategory = 'immediate_family' | 'extended_family' | 'close_friends' | 'professional' | 'legal' | 'financial';
-type AccessLevel = 'basic' | 'documents' | 'accounts' | 'full';
+
+interface EmergencyContact {
+  id: string;
+  name: string;
+  email: string;
+  relationship?: string;
+  contact_type: ContactCategory;
+}
+
 interface ActivationRule {
   id: string;
-  contact_category: ContactCategory;
+  target_type: 'category' | 'contacts';
+  contact_category?: ContactCategory;
+  contact_ids?: string[];
   delay_hours: number;
-  access_level: AccessLevel;
   custom_message: string;
   enabled: boolean;
 }
+
 const Settings = () => {
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [profile, setProfile] = useState<Profile>({
     id: '',
     first_name: '',
@@ -64,28 +74,42 @@ const Settings = () => {
     sms_notifications: false,
     emergency_alerts: true
   });
-  const [activationRules, setActivationRules] = useState<ActivationRule[]>([{
-    id: '1',
-    contact_category: 'immediate_family',
-    delay_hours: 0,
-    access_level: 'basic',
-    custom_message: 'This is an automated message. I have not checked in as scheduled.',
-    enabled: true
-  }, {
-    id: '2',
-    contact_category: 'extended_family',
-    delay_hours: 24,
-    access_level: 'documents',
-    custom_message: 'Important family documents and instructions are available.',
-    enabled: true
-  }, {
-    id: '3',
-    contact_category: 'legal',
-    delay_hours: 72,
-    access_level: 'full',
-    custom_message: 'Full access to legal documents and account information.',
-    enabled: false
-  }]);
+
+  const [activationRules, setActivationRules] = useState<ActivationRule[]>([
+    {
+      id: '1',
+      target_type: 'category',
+      contact_category: 'immediate_family',
+      delay_hours: 0,
+      custom_message: 'This is an automated message. I have not checked in as scheduled.',
+      enabled: true
+    },
+    {
+      id: '2',
+      target_type: 'category',
+      contact_category: 'extended_family',
+      delay_hours: 24,
+      custom_message: 'Important family documents and instructions are available.',
+      enabled: true
+    },
+    {
+      id: '3',
+      target_type: 'category',
+      contact_category: 'legal',
+      delay_hours: 72,
+      custom_message: 'Full access to legal documents and account information.',
+      enabled: false
+    }
+  ]);
+
+  // Mock emergency contacts for selection
+  const [emergencyContacts] = useState<EmergencyContact[]>([
+    { id: '1', name: 'John Smith', email: 'john@example.com', relationship: 'Spouse', contact_type: 'immediate_family' },
+    { id: '2', name: 'Jane Doe', email: 'jane@example.com', relationship: 'Sister', contact_type: 'immediate_family' },
+    { id: '3', name: 'Bob Johnson', email: 'bob@example.com', relationship: 'Friend', contact_type: 'close_friends' },
+    { id: '4', name: 'Alice Wilson', email: 'alice@example.com', relationship: 'Lawyer', contact_type: 'legal' },
+  ]);
+
   const [typePermissions, setTypePermissions] = useState<ContactTypePermissionsType[]>([
     {
       contact_type: 'immediate_family',
@@ -108,11 +132,13 @@ const Settings = () => {
       },
     },
   ]);
+
   useEffect(() => {
     if (user) {
       fetchProfile();
     }
   }, [user]);
+
   const fetchProfile = async () => {
     try {
       // Mock profile data - in a real app this would come from your backend
@@ -136,6 +162,7 @@ const Settings = () => {
       setLoading(false);
     }
   };
+
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
@@ -156,26 +183,29 @@ const Settings = () => {
       setSaving(false);
     }
   };
+
   const updateActivationRule = (id: string, updates: Partial<ActivationRule>) => {
-    setActivationRules(prev => prev.map(rule => rule.id === id ? {
-      ...rule,
-      ...updates
-    } : rule));
+    setActivationRules(prev => prev.map(rule => 
+      rule.id === id ? { ...rule, ...updates } : rule
+    ));
   };
+
   const addActivationRule = () => {
     const newRule: ActivationRule = {
       id: `rule-${Date.now()}`,
+      target_type: 'category',
       contact_category: 'immediate_family',
       delay_hours: 0,
-      access_level: 'basic',
       custom_message: 'This is an automated message.',
       enabled: true
     };
     setActivationRules(prev => [...prev, newRule]);
   };
+
   const deleteActivationRule = (id: string) => {
     setActivationRules(prev => prev.filter(rule => rule.id !== id));
   };
+
   const saveActivationRules = async () => {
     try {
       // Mock save - in a real app this would save to your backend
@@ -193,6 +223,7 @@ const Settings = () => {
       });
     }
   };
+
   const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
     try {
       setTypePermissions(updatedPermissions);
@@ -211,6 +242,7 @@ const Settings = () => {
       });
     }
   };
+
   const getCategoryLabel = (category: ContactCategory) => {
     const labels = {
       immediate_family: 'Immediate Family',
@@ -222,24 +254,24 @@ const Settings = () => {
     };
     return labels[category];
   };
-  const getAccessLevelLabel = (level: AccessLevel) => {
-    const labels = {
-      basic: 'Basic Info Only',
-      documents: 'Documents Access',
-      accounts: 'Account Information',
-      full: 'Full Access'
-    };
-    return labels[level];
+
+  const toggleContactSelection = (ruleId: string, contactId: string) => {
+    setActivationRules(prev => prev.map(rule => {
+      if (rule.id === ruleId) {
+        const currentContacts = rule.contact_ids || [];
+        const isSelected = currentContacts.includes(contactId);
+        
+        return {
+          ...rule,
+          contact_ids: isSelected 
+            ? currentContacts.filter(id => id !== contactId)
+            : [...currentContacts, contactId]
+        };
+      }
+      return rule;
+    }));
   };
-  const getAccessLevelDescription = (level: AccessLevel) => {
-    const descriptions = {
-      basic: 'Contact information and emergency message only',
-      documents: 'Access to uploaded documents and instructions',
-      accounts: 'Account details and financial information',
-      full: 'Complete access to all stored information'
-    };
-    return descriptions[level];
-  };
+
   if (loading) {
     return <DashboardLayout>
         <div className="flex items-center justify-center h-64">
@@ -250,6 +282,7 @@ const Settings = () => {
         </div>
       </DashboardLayout>;
   }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -435,24 +468,46 @@ const Settings = () => {
 
                     <div className="grid md:grid-cols-3 gap-4">
                       <div>
-                        <Label className="text-slate-200">Contact Category</Label>
+                        <Label className="text-slate-200">Target Type</Label>
                         <Select 
-                          value={rule.contact_category} 
-                          onValueChange={value => updateActivationRule(rule.id, { contact_category: value as ContactCategory })}
+                          value={rule.target_type} 
+                          onValueChange={value => updateActivationRule(rule.id, { 
+                            target_type: value as 'category' | 'contacts',
+                            contact_category: value === 'category' ? 'immediate_family' : undefined,
+                            contact_ids: value === 'contacts' ? [] : undefined
+                          })}
                         >
                           <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="immediate_family">Immediate Family</SelectItem>
-                            <SelectItem value="extended_family">Extended Family</SelectItem>
-                            <SelectItem value="close_friends">Close Friends</SelectItem>
-                            <SelectItem value="professional">Professional</SelectItem>
-                            <SelectItem value="legal">Legal</SelectItem>
-                            <SelectItem value="financial">Financial</SelectItem>
+                            <SelectItem value="category">Contact Category</SelectItem>
+                            <SelectItem value="contacts">Specific Contacts</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {rule.target_type === 'category' && (
+                        <div>
+                          <Label className="text-slate-200">Contact Category</Label>
+                          <Select 
+                            value={rule.contact_category} 
+                            onValueChange={value => updateActivationRule(rule.id, { contact_category: value as ContactCategory })}
+                          >
+                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="immediate_family">Immediate Family</SelectItem>
+                              <SelectItem value="extended_family">Extended Family</SelectItem>
+                              <SelectItem value="close_friends">Close Friends</SelectItem>
+                              <SelectItem value="professional">Professional</SelectItem>
+                              <SelectItem value="legal">Legal</SelectItem>
+                              <SelectItem value="financial">Financial</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
 
                       <div>
                         <Label className="text-slate-200">Delay (hours)</Label>
@@ -465,28 +520,33 @@ const Settings = () => {
                           className="bg-slate-700 border-slate-600 text-white" 
                         />
                       </div>
-
-                      <div>
-                        <Label className="text-slate-200">Access Level</Label>
-                        <Select 
-                          value={rule.access_level} 
-                          onValueChange={value => updateActivationRule(rule.id, { access_level: value as AccessLevel })}
-                        >
-                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="basic">Basic Info Only</SelectItem>
-                            <SelectItem value="documents">Documents Access</SelectItem>
-                            <SelectItem value="accounts">Account Information</SelectItem>
-                            <SelectItem value="full">Full Access</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-slate-400 mt-1">
-                          {getAccessLevelDescription(rule.access_level)}
-                        </p>
-                      </div>
                     </div>
+
+                    {rule.target_type === 'contacts' && (
+                      <div>
+                        <Label className="text-slate-200">Select Contacts</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
+                          {emergencyContacts.map(contact => (
+                            <div key={contact.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`contact-${rule.id}-${contact.id}`}
+                                checked={(rule.contact_ids || []).includes(contact.id)}
+                                onCheckedChange={() => toggleContactSelection(rule.id, contact.id)}
+                              />
+                              <label 
+                                htmlFor={`contact-${rule.id}-${contact.id}`}
+                                className="text-sm text-slate-300 cursor-pointer flex-1"
+                              >
+                                {contact.name} ({contact.relationship})
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        {(rule.contact_ids || []).length === 0 && (
+                          <p className="text-xs text-slate-400 mt-1">No contacts selected</p>
+                        )}
+                      </div>
+                    )}
 
                     <div>
                       <Label className="text-slate-200">Custom Message</Label>
@@ -495,7 +555,7 @@ const Settings = () => {
                         onChange={e => updateActivationRule(rule.id, { custom_message: e.target.value })} 
                         className="bg-slate-700 border-slate-600 text-white" 
                         rows={2} 
-                        placeholder="Message to send to this contact category..." 
+                        placeholder="Message to send to selected targets..." 
                       />
                     </div>
                   </div>
@@ -516,8 +576,8 @@ const Settings = () => {
                   <ul className="text-sm text-slate-300 space-y-1 list-disc list-inside ml-6">
                     <li>When your check-in deadline is missed, activation begins</li>
                     <li>Rules execute based on their delay times (0 hours = immediate)</li>
-                    <li>Each contact category receives their configured access level</li>
-                    <li>Contacts can only access information according to their assigned level</li>
+                    <li>Each rule targets either a contact category or specific contacts</li>
+                    <li>Contacts receive access according to their individual permissions</li>
                     <li>Custom messages are sent along with access notifications</li>
                   </ul>
                 </div>

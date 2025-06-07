@@ -140,7 +140,7 @@ const Contacts = () => {
           contact_type: 'extended_family',
           default_permissions: {
             digital_accounts: { all_accounts: false, by_category: ['banking'], specific_accounts: [] },
-            legacy_documents: { all_documents: false, by_category: ['legal'], specific_accounts: [] },
+            legacy_documents: { all_documents: false, by_category: ['legal'], specific_documents: [] },
             contact_information: true,
             emergency_instructions: true,
             can_modify_information: false,

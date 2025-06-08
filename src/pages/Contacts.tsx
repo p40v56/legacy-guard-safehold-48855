@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -7,7 +6,9 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactCard from '@/components/contacts/ContactCard';
 import ContactDialog from '@/components/contacts/ContactDialog';
-import { Users, UserPlus } from 'lucide-react';
+import SearchInput from '@/components/ui/search-input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, UserPlus, Filter } from 'lucide-react';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 
 const Contacts = () => {
@@ -16,6 +17,8 @@ const Contacts = () => {
   const [loading, setLoading] = useState(true);
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<ContactType | 'all'>('all');
 
   const contactTypeLabels: Record<ContactType, string> = {
     immediate_family: 'Immediate Family',
@@ -114,6 +117,19 @@ const Contacts = () => {
       setLoading(false);
     }
   };
+
+  // Filter and search contacts
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(contact => {
+      const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          contact.relationship?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = filterCategory === 'all' || contact.contact_type === filterCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [contacts, searchQuery, filterCategory]);
 
   useEffect(() => {
     fetchContacts();
@@ -252,6 +268,34 @@ const Contacts = () => {
           </Button>
         </div>
 
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+          <div className="flex-1">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search contacts by name, email, or relationship..."
+              className="w-full"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <Select value={filterCategory} onValueChange={(value: ContactType | 'all') => setFilterCategory(value)}>
+              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="all" className="text-white hover:bg-slate-600">All Categories</SelectItem>
+                {Object.entries(contactTypeLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key} className="text-white hover:bg-slate-600">
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <ContactDialog
           isOpen={isDialogOpen}
           onOpenChange={setIsDialogOpen}
@@ -264,25 +308,46 @@ const Contacts = () => {
 
         {/* Contacts List */}
         <div className="grid gap-4">
-          {contacts.length === 0 ? (
+          {filteredContacts.length === 0 ? (
             <Card className="bg-slate-800/50 border-slate-700">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Users className="w-12 h-12 text-slate-400 mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">No Emergency Contacts</h3>
-                <p className="text-slate-400 text-center mb-4">
-                  Start by adding your first emergency contact who will be notified if something happens to you.
-                </p>
-                <Button 
-                  onClick={() => setIsDialogOpen(true)}
-                  className="bg-emerald-600 hover:bg-emerald-500"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add Your First Contact
-                </Button>
+                {contacts.length === 0 ? (
+                  <>
+                    <h3 className="text-lg font-semibold text-white mb-2">No Emergency Contacts</h3>
+                    <p className="text-slate-400 text-center mb-4">
+                      Start by adding your first emergency contact who will be notified if something happens to you.
+                    </p>
+                    <Button 
+                      onClick={() => setIsDialogOpen(true)}
+                      className="bg-emerald-600 hover:bg-emerald-500"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add Your First Contact
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-semibold text-white mb-2">No Contacts Found</h3>
+                    <p className="text-slate-400 text-center mb-4">
+                      No contacts match your search criteria. Try adjusting your search or filter.
+                    </p>
+                    <Button 
+                      onClick={() => {
+                        setSearchQuery('');
+                        setFilterCategory('all');
+                      }}
+                      variant="outline"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    >
+                      Clear Filters
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           ) : (
-            contacts.map((contact) => (
+            filteredContacts.map((contact) => (
               <ContactCard
                 key={contact.id}
                 contact={contact}

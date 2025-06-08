@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Clock, Shield, AlertTriangle, CheckCircle, Calendar, Timer, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,6 +29,7 @@ const Switch = () => {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showActivationDialog, setShowActivationDialog] = useState(false);
   const [countdown, setCountdown] = useState<{
     days: number;
     hours: number;
@@ -149,6 +151,12 @@ const Switch = () => {
   };
 
   const performCheckIn = async () => {
+    // Check if system is deactivated
+    if (!settings?.is_active) {
+      setShowActivationDialog(true);
+      return;
+    }
+
     try {
       const now = new Date();
       const newSettings = {
@@ -171,6 +179,28 @@ const Switch = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleActivateAndCheckIn = async () => {
+    // First activate the system
+    await updateSettings({ is_active: true });
+    
+    // Then perform the check-in
+    const now = new Date();
+    const newSettings = {
+      ...settings!,
+      is_active: true,
+      last_check_in: now.toISOString(),
+      next_check_in_due: calculateNextCheckIn(settings!.check_in_frequency, now)
+    };
+
+    setSettings(newSettings);
+    setShowActivationDialog(false);
+
+    toast({
+      title: "System Activated & Check-in Successful! ✅",
+      description: "Your Dead Man's Switch is now active and your check-in has been recorded",
+    });
   };
 
   const getFrequencyLabel = (frequency: CheckInFrequency) => {
@@ -465,6 +495,33 @@ const Switch = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Activation Dialog */}
+      <AlertDialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2 text-amber-400" />
+              System Deactivated
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300">
+              Your Dead Man's Switch is currently deactivated. To perform a check-in, you need to activate the system first. 
+              Would you like to activate it now and proceed with the check-in?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleActivateAndCheckIn}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+            >
+              Activate & Check-in
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

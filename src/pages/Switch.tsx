@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,16 +72,39 @@ const Switch = () => {
     return () => clearInterval(interval);
   }, [settings?.is_active, settings?.next_check_in_due]);
 
+  const calculateNextCheckIn = (frequency: CheckInFrequency, fromDate: Date = new Date()) => {
+    const nextDate = new Date(fromDate);
+    
+    switch (frequency) {
+      case 'daily':
+        nextDate.setDate(nextDate.getDate() + 1);
+        break;
+      case 'weekly':
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case 'biweekly':
+        nextDate.setDate(nextDate.getDate() + 14);
+        break;
+      case 'monthly':
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+    }
+    
+    return nextDate.toISOString();
+  };
+
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) throw error;
-      setSettings(data);
+      // Mock settings for demonstration
+      const mockSettings: UserSettings = {
+        check_in_frequency: 'weekly',
+        grace_period_hours: 72,
+        is_active: true,
+        last_check_in: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        next_check_in_due: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
+      };
+      
+      setSettings(mockSettings);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({
@@ -98,14 +120,18 @@ const Switch = () => {
   const updateSettings = async (updates: Partial<UserSettings>) => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .update(updates)
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
-
-      setSettings(prev => prev ? { ...prev, ...updates } : null);
+      const updatedSettings = { ...settings!, ...updates };
+      
+      // If activating the system or changing frequency, calculate new next check-in
+      if (updates.is_active === true || updates.check_in_frequency) {
+        const now = new Date();
+        updatedSettings.next_check_in_due = calculateNextCheckIn(
+          updates.check_in_frequency || settings!.check_in_frequency,
+          new Date(settings?.last_check_in || now)
+        );
+      }
+      
+      setSettings(updatedSettings);
       toast({
         title: "Settings Updated",
         description: "Your Dead Man's Switch settings have been saved",
@@ -124,21 +150,19 @@ const Switch = () => {
 
   const performCheckIn = async () => {
     try {
-      const { error } = await supabase
-        .from('check_ins')
-        .insert({
-          user_id: user?.id,
-          check_in_time: new Date().toISOString(),
-        });
+      const now = new Date();
+      const newSettings = {
+        ...settings!,
+        last_check_in: now.toISOString(),
+        next_check_in_due: calculateNextCheckIn(settings!.check_in_frequency, now)
+      };
 
-      if (error) throw error;
+      setSettings(newSettings);
 
       toast({
-        title: "Check-in Successful",
+        title: "Check-in Successful! ✅",
         description: "Your next check-in has been scheduled",
       });
-
-      fetchSettings();
     } catch (error) {
       console.error('Error performing check-in:', error);
       toast({

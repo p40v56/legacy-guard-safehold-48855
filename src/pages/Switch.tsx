@@ -10,10 +10,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Clock, Shield, AlertTriangle, CheckCircle, Calendar, Timer, Activity } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Switch as ToggleSwitch } from '@/components/ui/switch';
+import { Clock, Shield, AlertTriangle, CheckCircle, Calendar as CalendarIcon, Timer, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
+type DeadlineMode = 'frequency' | 'custom';
 
 interface UserSettings {
   check_in_frequency: CheckInFrequency;
@@ -21,6 +27,8 @@ interface UserSettings {
   is_active: boolean;
   last_check_in: string | null;
   next_check_in_due: string | null;
+  deadline_mode: DeadlineMode;
+  custom_deadline: string | null;
 }
 
 const Switch = () => {
@@ -30,6 +38,8 @@ const Switch = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showActivationDialog, setShowActivationDialog] = useState(false);
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [customTime, setCustomTime] = useState('12:00');
   const [countdown, setCountdown] = useState<{
     days: number;
     hours: number;
@@ -45,14 +55,27 @@ const Switch = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!settings?.is_active || !settings?.next_check_in_due) {
+    if (!settings?.is_active) {
+      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: false });
+      return;
+    }
+
+    const getDeadline = () => {
+      if (settings.deadline_mode === 'custom' && settings.custom_deadline) {
+        return settings.custom_deadline;
+      }
+      return settings.next_check_in_due;
+    };
+
+    const deadline = getDeadline();
+    if (!deadline) {
       setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: false });
       return;
     }
 
     const updateCountdown = () => {
       const now = new Date();
-      const dueDate = new Date(settings.next_check_in_due!);
+      const dueDate = new Date(deadline);
       const timeDiff = dueDate.getTime() - now.getTime();
 
       if (timeDiff <= 0) {
@@ -72,7 +95,7 @@ const Switch = () => {
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [settings?.is_active, settings?.next_check_in_due]);
+  }, [settings?.is_active, settings?.next_check_in_due, settings?.custom_deadline, settings?.deadline_mode]);
 
   const calculateNextCheckIn = (frequency: CheckInFrequency, fromDate: Date = new Date()) => {
     const nextDate = new Date(fromDate);
@@ -104,6 +127,8 @@ const Switch = () => {
         is_active: true,
         last_check_in: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
         next_check_in_due: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
+        deadline_mode: 'frequency',
+        custom_deadline: null,
       };
       
       setSettings(mockSettings);
@@ -127,10 +152,12 @@ const Switch = () => {
       // If activating the system or changing frequency, calculate new next check-in
       if (updates.is_active === true || updates.check_in_frequency) {
         const now = new Date();
-        updatedSettings.next_check_in_due = calculateNextCheckIn(
-          updates.check_in_frequency || settings!.check_in_frequency,
-          new Date(settings?.last_check_in || now)
-        );
+        if (updatedSettings.deadline_mode === 'frequency') {
+          updatedSettings.next_check_in_due = calculateNextCheckIn(
+            updates.check_in_frequency || settings!.check_in_frequency,
+            new Date(settings?.last_check_in || now)
+          );
+        }
       }
       
       setSettings(updatedSettings);
@@ -150,6 +177,38 @@ const Switch = () => {
     }
   };
 
+  const handleCustomDateTimeUpdate = () => {
+    if (!customDate) return;
+
+    const [hours, minutes] = customTime.split(':').map(Number);
+    const deadline = new Date(customDate);
+    deadline.setHours(hours, minutes, 0, 0);
+
+    // Check if the deadline is in the past
+    if (deadline <= new Date()) {
+      toast({
+        title: "Invalid Deadline",
+        description: "Please select a future date and time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateSettings({
+      deadline_mode: 'custom',
+      custom_deadline: deadline.toISOString(),
+    });
+  };
+
+  const switchToFrequencyMode = () => {
+    const now = new Date();
+    updateSettings({
+      deadline_mode: 'frequency',
+      custom_deadline: null,
+      next_check_in_due: calculateNextCheckIn(settings!.check_in_frequency, new Date(settings?.last_check_in || now))
+    });
+  };
+
   const performCheckIn = async () => {
     // Check if system is deactivated
     if (!settings?.is_active) {
@@ -162,14 +221,21 @@ const Switch = () => {
       const newSettings = {
         ...settings!,
         last_check_in: now.toISOString(),
-        next_check_in_due: calculateNextCheckIn(settings!.check_in_frequency, now)
       };
+
+      // Update deadline based on current mode
+      if (settings.deadline_mode === 'frequency') {
+        newSettings.next_check_in_due = calculateNextCheckIn(settings!.check_in_frequency, now);
+      }
+      // For custom mode, keep the custom deadline as is until user changes it
 
       setSettings(newSettings);
 
       toast({
         title: "Check-in Successful! ✅",
-        description: "Your next check-in has been scheduled",
+        description: settings.deadline_mode === 'custom' 
+          ? "Your check-in has been recorded. Custom deadline remains unchanged."
+          : "Your next check-in has been scheduled",
       });
     } catch (error) {
       console.error('Error performing check-in:', error);
@@ -191,8 +257,11 @@ const Switch = () => {
       ...settings!,
       is_active: true,
       last_check_in: now.toISOString(),
-      next_check_in_due: calculateNextCheckIn(settings!.check_in_frequency, now)
     };
+
+    if (settings?.deadline_mode === 'frequency') {
+      newSettings.next_check_in_due = calculateNextCheckIn(settings!.check_in_frequency, now);
+    }
 
     setSettings(newSettings);
     setShowActivationDialog(false);
@@ -268,6 +337,9 @@ const Switch = () => {
   }
 
   const colors = getUrgencyColors();
+  const currentDeadline = settings?.deadline_mode === 'custom' && settings?.custom_deadline 
+    ? settings.custom_deadline 
+    : settings?.next_check_in_due;
 
   return (
     <DashboardLayout>
@@ -306,7 +378,7 @@ const Switch = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Live Countdown Display */}
-            {settings?.is_active && settings?.next_check_in_due && (
+            {settings?.is_active && currentDeadline && (
               <div className={`relative overflow-hidden rounded-xl border-2 ${colors.border} ${colors.bg} ${colors.pulse}`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
                 <div className="relative p-6">
@@ -317,16 +389,21 @@ const Switch = () => {
                         {countdown.isOverdue ? 'CHECK-IN OVERDUE' : 'Next Check-in'}
                       </span>
                     </div>
-                    {getUrgencyLevel() === 'critical' && (
-                      <Badge variant="destructive" className="animate-pulse">
-                        CRITICAL
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="border-slate-500 text-slate-300">
+                        {settings?.deadline_mode === 'custom' ? 'Custom Deadline' : 'Frequency Based'}
                       </Badge>
-                    )}
-                    {getUrgencyLevel() === 'urgent' && (
-                      <Badge className="bg-orange-600/20 text-orange-400 border-orange-600/30">
-                        URGENT
-                      </Badge>
-                    )}
+                      {getUrgencyLevel() === 'critical' && (
+                        <Badge variant="destructive" className="animate-pulse">
+                          CRITICAL
+                        </Badge>
+                      )}
+                      {getUrgencyLevel() === 'urgent' && (
+                        <Badge className="bg-orange-600/20 text-orange-400 border-orange-600/30">
+                          URGENT
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   {!countdown.isOverdue ? (
@@ -364,6 +441,14 @@ const Switch = () => {
                       <p className="text-red-300">Your check-in deadline has passed</p>
                     </div>
                   )}
+
+                  {currentDeadline && (
+                    <div className="mt-4 pt-4 border-t border-slate-600">
+                      <p className="text-slate-300 text-sm text-center">
+                        Deadline: {format(new Date(currentDeadline), 'PPP p')}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -386,9 +471,9 @@ const Switch = () => {
             <div className="grid md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-slate-700/30 rounded-lg">
                 <div className="text-2xl font-bold text-emerald-400">
-                  {settings ? getFrequencyLabel(settings.check_in_frequency) : 'Not set'}
+                  {settings?.deadline_mode === 'custom' ? 'Custom' : getFrequencyLabel(settings?.check_in_frequency || 'weekly')}
                 </div>
-                <div className="text-slate-400 text-sm">Check-in Frequency</div>
+                <div className="text-slate-400 text-sm">Deadline Mode</div>
               </div>
               <div className="text-center p-4 bg-slate-700/30 rounded-lg">
                 <div className="text-2xl font-bold text-blue-400">
@@ -410,47 +495,140 @@ const Switch = () => {
             <Separator className="bg-slate-700" />
 
             {/* Configuration */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-white">Configuration</h3>
               
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-slate-200">Check-in Frequency</Label>
-                  <Select
-                    value={settings?.check_in_frequency || 'weekly'}
-                    onValueChange={(value: CheckInFrequency) => 
-                      updateSettings({ check_in_frequency: value })
-                    }
-                  >
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Every Day</SelectItem>
-                      <SelectItem value="weekly">Every Week</SelectItem>
-                      <SelectItem value="biweekly">Every 2 Weeks</SelectItem>
-                      <SelectItem value="monthly">Every Month</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-200">Grace Period (hours)</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="168"
-                    value={settings?.grace_period_hours || 72}
-                    onChange={(e) => 
-                      updateSettings({ grace_period_hours: parseInt(e.target.value) })
-                    }
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                  <p className="text-xs text-slate-400">
-                    Time buffer after missed check-in before alerts trigger
-                  </p>
+              {/* Deadline Mode Selection */}
+              <div className="space-y-4">
+                <Label className="text-slate-200">Deadline Mode</Label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <ToggleSwitch
+                      checked={settings?.deadline_mode === 'frequency'}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          switchToFrequencyMode();
+                        }
+                      }}
+                    />
+                    <span className="text-slate-300">Frequency Based</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <ToggleSwitch
+                      checked={settings?.deadline_mode === 'custom'}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          updateSettings({ deadline_mode: 'custom' });
+                        }
+                      }}
+                    />
+                    <span className="text-slate-300">Custom Date & Time</span>
+                  </div>
                 </div>
               </div>
+
+              {settings?.deadline_mode === 'frequency' && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-slate-200">Check-in Frequency</Label>
+                    <Select
+                      value={settings?.check_in_frequency || 'weekly'}
+                      onValueChange={(value: CheckInFrequency) => 
+                        updateSettings({ check_in_frequency: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Every Day</SelectItem>
+                        <SelectItem value="weekly">Every Week</SelectItem>
+                        <SelectItem value="biweekly">Every 2 Weeks</SelectItem>
+                        <SelectItem value="monthly">Every Month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-200">Grace Period (hours)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="168"
+                      value={settings?.grace_period_hours || 72}
+                      onChange={(e) => 
+                        updateSettings({ grace_period_hours: parseInt(e.target.value) })
+                      }
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                    <p className="text-xs text-slate-400">
+                      Time buffer after missed check-in before alerts trigger
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {settings?.deadline_mode === 'custom' && (
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-slate-200">Select Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-white hover:bg-slate-600",
+                              !customDate && "text-slate-400"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {customDate ? format(customDate, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={customDate}
+                            onSelect={setCustomDate}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-200">Select Time</Label>
+                      <Input
+                        type="time"
+                        value={customTime}
+                        onChange={(e) => setCustomTime(e.target.value)}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleCustomDateTimeUpdate}
+                    disabled={!customDate || saving}
+                    className="bg-blue-600 hover:bg-blue-500"
+                  >
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    Set Custom Deadline
+                  </Button>
+
+                  {settings?.custom_deadline && (
+                    <div className="p-4 bg-slate-700/30 rounded-lg">
+                      <p className="text-slate-300 text-sm">
+                        <strong>Current Custom Deadline:</strong><br />
+                        {format(new Date(settings.custom_deadline), 'PPP p')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center justify-between pt-4">
                 <Button
@@ -477,19 +655,20 @@ const Switch = () => {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white flex items-center">
-              <Calendar className="w-5 h-5 mr-2 text-blue-400" />
+              <CalendarIcon className="w-5 h-5 mr-2 text-blue-400" />
               How It Works
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-slate-300">
             <p>
-              Your Dead Man's Switch monitors your regular check-ins. If you fail to check in within 
-              your configured frequency plus the grace period, emergency protocols will activate.
+              Your Dead Man's Switch monitors your regular check-ins. You can choose between frequency-based 
+              scheduling or set a specific deadline date and time.
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Configure your preferred check-in schedule and grace period</li>
-              <li>Perform manual check-ins anytime to reset the countdown</li>
-              <li>Real-time countdown shows exactly when your next check-in is due</li>
+              <li><strong>Frequency Mode:</strong> Check-ins reset based on your chosen schedule (daily, weekly, etc.)</li>
+              <li><strong>Custom Mode:</strong> Set a specific date and time for your deadline</li>
+              <li>Grace period applies only to frequency-based schedules</li>
+              <li>Perform manual check-ins anytime to update your status</li>
               <li>Emergency contacts are notified if deadlines are missed</li>
             </ul>
           </CardContent>

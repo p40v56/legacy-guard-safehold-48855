@@ -78,7 +78,12 @@ const getUrgencyColors = (urgencyLevel: UrgencyLevel) => {
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString();
+  try {
+    return new Date(dateString).toLocaleString();
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid date';
+  }
 };
 
 const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusProps) => {

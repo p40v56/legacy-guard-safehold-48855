@@ -11,7 +11,11 @@ interface CountdownState {
 
 export const useCountdown = (isActive: boolean, targetDate: string | null) => {
   const [countdown, setCountdown] = useState<CountdownState>({ 
-    days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: false 
+    days: 0, 
+    hours: 0, 
+    minutes: 0, 
+    seconds: 0, 
+    isOverdue: false 
   });
 
   useEffect(() => {
@@ -23,6 +27,14 @@ export const useCountdown = (isActive: boolean, targetDate: string | null) => {
     const updateCountdown = () => {
       const now = new Date();
       const dueDate = new Date(targetDate);
+      
+      // Validate the date
+      if (isNaN(dueDate.getTime())) {
+        console.error('Invalid date provided to useCountdown:', targetDate);
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: false });
+        return;
+      }
+
       const timeDiff = dueDate.getTime() - now.getTime();
 
       if (timeDiff <= 0) {

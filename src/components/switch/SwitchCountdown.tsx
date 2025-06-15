@@ -50,6 +50,15 @@ const getUrgencyColors = (urgencyLevel: UrgencyLevel) => {
   return colorMap[urgencyLevel];
 };
 
+const formatDeadlineDate = (dateString: string) => {
+  try {
+    return format(new Date(dateString), 'PPP p');
+  } catch (error) {
+    console.error('Error formatting deadline date:', error);
+    return 'Invalid date';
+  }
+};
+
 const SwitchCountdown = ({ isActive, currentDeadline, deadlineMode }: SwitchCountdownProps) => {
   const countdown = useCountdown(isActive, currentDeadline);
   const urgencyLevel = getUrgencyLevel(countdown);
@@ -112,7 +121,7 @@ const SwitchCountdown = ({ isActive, currentDeadline, deadlineMode }: SwitchCoun
         {currentDeadline && (
           <div className="mt-4 pt-4 border-t border-slate-600">
             <p className="text-slate-300 text-sm text-center">
-              Deadline: {format(new Date(currentDeadline), 'PPP p')}
+              Deadline: {formatDeadlineDate(currentDeadline)}
             </p>
           </div>
         )}

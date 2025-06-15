@@ -11,22 +11,33 @@ interface SwitchQuickStatsProps {
   lastCheckIn: string | null;
 }
 
+const getFrequencyLabel = (frequency: CheckInFrequency): string => {
+  const labels = {
+    daily: 'Every Day',
+    weekly: 'Every Week',
+    biweekly: 'Every 2 Weeks',
+    monthly: 'Every Month'
+  };
+  return labels[frequency];
+};
+
+const formatLastCheckIn = (lastCheckIn: string | null): string => {
+  if (!lastCheckIn) return 'Never';
+  
+  try {
+    return new Date(lastCheckIn).toLocaleDateString();
+  } catch (error) {
+    console.error('Error formatting last check-in date:', error);
+    return 'Invalid date';
+  }
+};
+
 const SwitchQuickStats = ({ 
   checkInFrequency, 
   deadlineMode, 
   gracePeriodHours, 
   lastCheckIn 
 }: SwitchQuickStatsProps) => {
-  const getFrequencyLabel = (frequency: CheckInFrequency) => {
-    const labels = {
-      daily: 'Every Day',
-      weekly: 'Every Week',
-      biweekly: 'Every 2 Weeks',
-      monthly: 'Every Month'
-    };
-    return labels[frequency];
-  };
-
   return (
     <>
       <Separator className="bg-slate-700" />
@@ -45,10 +56,7 @@ const SwitchQuickStats = ({
         </div>
         <div className="text-center p-4 bg-slate-700/30 rounded-lg">
           <div className="text-2xl font-bold text-amber-400">
-            {lastCheckIn 
-              ? new Date(lastCheckIn).toLocaleDateString()
-              : 'Never'
-            }
+            {formatLastCheckIn(lastCheckIn)}
           </div>
           <div className="text-slate-400 text-sm">Last Check-in</div>
         </div>

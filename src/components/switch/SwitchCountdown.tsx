@@ -1,8 +1,7 @@
-
 import { Badge } from '@/components/ui/badge';
 import { Timer, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
 import { useCountdown } from '@/hooks/useCountdown';
+import { formatDeadlineDate } from '@/utils/dateUtils';
 
 interface SwitchCountdownProps {
   isActive: boolean;
@@ -48,15 +47,6 @@ const getUrgencyColors = (urgencyLevel: UrgencyLevel) => {
   };
 
   return colorMap[urgencyLevel];
-};
-
-const formatDeadlineDate = (dateString: string) => {
-  try {
-    return format(new Date(dateString), 'PPP p');
-  } catch (error) {
-    console.error('Error formatting deadline date:', error);
-    return 'Invalid date';
-  }
 };
 
 const SwitchCountdown = ({ isActive, currentDeadline, deadlineMode }: SwitchCountdownProps) => {

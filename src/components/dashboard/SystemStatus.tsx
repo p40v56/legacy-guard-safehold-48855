@@ -1,8 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, CheckCircle, AlertTriangle, Clock, Calendar, Timer } from 'lucide-react';
 import { useCountdown } from '@/hooks/useCountdown';
+import { formatDate } from '@/utils/dateUtils';
 
 interface SystemStatusProps {
   isActive: boolean;
@@ -75,15 +75,6 @@ const getUrgencyColors = (urgencyLevel: UrgencyLevel) => {
   };
 
   return colorMap[urgencyLevel];
-};
-
-const formatDate = (dateString: string) => {
-  try {
-    return new Date(dateString).toLocaleString();
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'Invalid date';
-  }
 };
 
 const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusProps) => {

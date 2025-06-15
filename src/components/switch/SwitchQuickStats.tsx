@@ -1,5 +1,5 @@
-
 import { Separator } from '@/components/ui/separator';
+import { formatDateShort } from '@/utils/dateUtils';
 
 type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 type DeadlineMode = 'frequency' | 'custom';
@@ -23,13 +23,7 @@ const getFrequencyLabel = (frequency: CheckInFrequency): string => {
 
 const formatLastCheckIn = (lastCheckIn: string | null): string => {
   if (!lastCheckIn) return 'Never';
-  
-  try {
-    return new Date(lastCheckIn).toLocaleDateString();
-  } catch (error) {
-    console.error('Error formatting last check-in date:', error);
-    return 'Invalid date';
-  }
+  return formatDateShort(lastCheckIn);
 };
 
 const SwitchQuickStats = ({ 

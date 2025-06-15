@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -7,8 +6,8 @@ import { Switch as ToggleSwitch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatDeadlineDate, isValidDate } from '@/utils/dateUtils';
 
 type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 type DeadlineMode = 'frequency' | 'custom';
@@ -42,6 +41,11 @@ const FREQUENCY_OPTIONS = [
   { value: 'monthly' as const, label: 'Every Month' },
 ] as const;
 
+const GRACE_PERIOD_LIMITS = {
+  min: 1,
+  max: 168
+} as const;
+
 const SwitchConfiguration = ({
   settings,
   customDate,
@@ -59,7 +63,7 @@ const SwitchConfiguration = ({
 
   const handleGracePeriodChange = (value: string) => {
     const hours = parseInt(value, 10);
-    if (!isNaN(hours) && hours >= 1 && hours <= 168) {
+    if (!isNaN(hours) && hours >= GRACE_PERIOD_LIMITS.min && hours <= GRACE_PERIOD_LIMITS.max) {
       onUpdateSettings({ grace_period_hours: hours });
     }
   };
@@ -71,6 +75,8 @@ const SwitchConfiguration = ({
       onUpdateSettings({ deadline_mode: 'custom' });
     }
   };
+
+  const isCustomDateValid = customDate && customDate > new Date();
 
   return (
     <div className="space-y-6">
@@ -130,14 +136,14 @@ const SwitchConfiguration = ({
             <Label className="text-slate-200">Grace Period (hours)</Label>
             <Input
               type="number"
-              min="1"
-              max="168"
+              min={GRACE_PERIOD_LIMITS.min}
+              max={GRACE_PERIOD_LIMITS.max}
               value={settings.grace_period_hours}
               onChange={(e) => handleGracePeriodChange(e.target.value)}
               className="bg-slate-700 border-slate-600 text-white"
             />
             <p className="text-xs text-slate-400">
-              Time buffer after missed check-in before alerts trigger
+              Time buffer after missed check-in before alerts trigger ({GRACE_PERIOD_LIMITS.min}-{GRACE_PERIOD_LIMITS.max} hours)
             </p>
           </div>
         </div>
@@ -158,7 +164,7 @@ const SwitchConfiguration = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customDate ? format(customDate, "PPP") : "Pick a date"}
+                    {customDate ? customDate.toLocaleDateString() : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -186,18 +192,18 @@ const SwitchConfiguration = ({
 
           <Button
             onClick={onCustomDateTimeUpdate}
-            disabled={!customDate || saving}
-            className="bg-blue-600 hover:bg-blue-500"
+            disabled={!isCustomDateValid || saving}
+            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50"
           >
             <CalendarIcon className="w-4 h-4 mr-2" />
             Set Custom Deadline
           </Button>
 
-          {settings.custom_deadline && (
+          {settings.custom_deadline && isValidDate(settings.custom_deadline) && (
             <div className="p-4 bg-slate-700/30 rounded-lg">
               <p className="text-slate-300 text-sm">
                 <strong>Current Custom Deadline:</strong><br />
-                {format(new Date(settings.custom_deadline), 'PPP p')}
+                {formatDeadlineDate(settings.custom_deadline)}
               </p>
             </div>
           )}

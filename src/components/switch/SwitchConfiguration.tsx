@@ -35,6 +35,13 @@ interface SwitchConfigurationProps {
   onCustomTimeChange: (time: string) => void;
 }
 
+const FREQUENCY_OPTIONS = [
+  { value: 'daily' as const, label: 'Every Day' },
+  { value: 'weekly' as const, label: 'Every Week' },
+  { value: 'biweekly' as const, label: 'Every 2 Weeks' },
+  { value: 'monthly' as const, label: 'Every Month' },
+] as const;
+
 const SwitchConfiguration = ({
   settings,
   customDate,
@@ -46,6 +53,25 @@ const SwitchConfiguration = ({
   onCustomDateChange,
   onCustomTimeChange,
 }: SwitchConfigurationProps) => {
+  const handleFrequencyChange = (value: CheckInFrequency) => {
+    onUpdateSettings({ check_in_frequency: value });
+  };
+
+  const handleGracePeriodChange = (value: string) => {
+    const hours = parseInt(value, 10);
+    if (!isNaN(hours) && hours >= 1 && hours <= 168) {
+      onUpdateSettings({ grace_period_hours: hours });
+    }
+  };
+
+  const handleDeadlineModeChange = (mode: DeadlineMode) => {
+    if (mode === 'frequency') {
+      onSwitchToFrequencyMode();
+    } else {
+      onUpdateSettings({ deadline_mode: 'custom' });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-white">Configuration</h3>
@@ -59,7 +85,7 @@ const SwitchConfiguration = ({
               checked={settings.deadline_mode === 'frequency'}
               onCheckedChange={(checked) => {
                 if (checked) {
-                  onSwitchToFrequencyMode();
+                  handleDeadlineModeChange('frequency');
                 }
               }}
             />
@@ -70,7 +96,7 @@ const SwitchConfiguration = ({
               checked={settings.deadline_mode === 'custom'}
               onCheckedChange={(checked) => {
                 if (checked) {
-                  onUpdateSettings({ deadline_mode: 'custom' });
+                  handleDeadlineModeChange('custom');
                 }
               }}
             />
@@ -85,18 +111,17 @@ const SwitchConfiguration = ({
             <Label className="text-slate-200">Check-in Frequency</Label>
             <Select
               value={settings.check_in_frequency}
-              onValueChange={(value: CheckInFrequency) => 
-                onUpdateSettings({ check_in_frequency: value })
-              }
+              onValueChange={handleFrequencyChange}
             >
               <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Every Day</SelectItem>
-                <SelectItem value="weekly">Every Week</SelectItem>
-                <SelectItem value="biweekly">Every 2 Weeks</SelectItem>
-                <SelectItem value="monthly">Every Month</SelectItem>
+                {FREQUENCY_OPTIONS.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -108,9 +133,7 @@ const SwitchConfiguration = ({
               min="1"
               max="168"
               value={settings.grace_period_hours}
-              onChange={(e) => 
-                onUpdateSettings({ grace_period_hours: parseInt(e.target.value) })
-              }
+              onChange={(e) => handleGracePeriodChange(e.target.value)}
               className="bg-slate-700 border-slate-600 text-white"
             />
             <p className="text-xs text-slate-400">
@@ -145,7 +168,6 @@ const SwitchConfiguration = ({
                     onSelect={onCustomDateChange}
                     disabled={(date) => date < new Date()}
                     initialFocus
-                    className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
               </Popover>

@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, CheckCircle, AlertTriangle, Clock, Calendar, Timer } from 'lucide-react';
+import { useCountdown } from '@/hooks/useCountdown';
 
 interface SystemStatusProps {
   isActive: boolean;
@@ -10,122 +10,84 @@ interface SystemStatusProps {
   nextCheckInDue?: string;
 }
 
-const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusProps) => {
-  const [countdown, setCountdown] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    isOverdue: boolean;
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: false });
+type UrgencyLevel = 'normal' | 'warning' | 'urgent' | 'critical';
 
-  useEffect(() => {
-    if (!isActive || !nextCheckInDue) {
-      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: false });
-      return;
-    }
-
-    const updateCountdown = () => {
-      const now = new Date();
-      const dueDate = new Date(nextCheckInDue);
-      const timeDiff = dueDate.getTime() - now.getTime();
-
-      if (timeDiff <= 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isOverdue: true });
-        return;
-      }
-
-      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-      setCountdown({ days, hours, minutes, seconds, isOverdue: false });
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-
-    return () => clearInterval(interval);
-  }, [isActive, nextCheckInDue]);
-
-  const getStatusInfo = () => {
-    if (!isActive) {
-      return {
-        status: 'Inactive',
-        color: 'bg-red-500',
-        icon: AlertTriangle,
-        variant: 'destructive' as const,
-      };
-    }
-
-    if (countdown.isOverdue) {
-      return {
-        status: 'Check-in Overdue',
-        color: 'bg-red-500',
-        icon: AlertTriangle,
-        variant: 'destructive' as const,
-      };
-    }
-
+const getStatusInfo = (isActive: boolean, isOverdue: boolean) => {
+  if (!isActive) {
     return {
-      status: 'Active & Monitoring',
-      color: 'bg-emerald-500',
-      icon: CheckCircle,
-      variant: 'default' as const,
+      status: 'Inactive',
+      color: 'bg-red-500',
+      icon: AlertTriangle,
+      variant: 'destructive' as const,
     };
+  }
+
+  if (isOverdue) {
+    return {
+      status: 'Check-in Overdue',
+      color: 'bg-red-500',
+      icon: AlertTriangle,
+      variant: 'destructive' as const,
+    };
+  }
+
+  return {
+    status: 'Active & Monitoring',
+    color: 'bg-emerald-500',
+    icon: CheckCircle,
+    variant: 'default' as const,
+  };
+};
+
+const getUrgencyLevel = (countdown: ReturnType<typeof useCountdown>): UrgencyLevel => {
+  if (countdown.isOverdue) return 'critical';
+  if (countdown.days === 0 && countdown.hours < 12) return 'urgent';
+  if (countdown.days === 0) return 'warning';
+  return 'normal';
+};
+
+const getUrgencyColors = (urgencyLevel: UrgencyLevel) => {
+  const colorMap = {
+    critical: {
+      bg: 'bg-red-500/20',
+      border: 'border-red-500/50',
+      text: 'text-red-400',
+      pulse: 'animate-pulse',
+    },
+    urgent: {
+      bg: 'bg-orange-500/20',
+      border: 'border-orange-500/50',
+      text: 'text-orange-400',
+      pulse: 'animate-pulse',
+    },
+    warning: {
+      bg: 'bg-amber-500/20',
+      border: 'border-amber-500/50',
+      text: 'text-amber-400',
+      pulse: '',
+    },
+    normal: {
+      bg: 'bg-emerald-500/20',
+      border: 'border-emerald-500/50',
+      text: 'text-emerald-400',
+      pulse: '',
+    },
   };
 
-  const statusInfo = getStatusInfo();
+  return colorMap[urgencyLevel];
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString();
+};
+
+const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusProps) => {
+  const countdown = useCountdown(isActive, nextCheckInDue || null);
+  const statusInfo = getStatusInfo(isActive, countdown.isOverdue);
+  const urgencyLevel = getUrgencyLevel(countdown);
+  const colors = getUrgencyColors(urgencyLevel);
+  
   const StatusIcon = statusInfo.icon;
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  const getUrgencyLevel = () => {
-    if (countdown.isOverdue) return 'critical';
-    if (countdown.days === 0 && countdown.hours < 12) return 'urgent';
-    if (countdown.days === 0) return 'warning';
-    return 'normal';
-  };
-
-  const urgencyLevel = getUrgencyLevel();
-
-  const getUrgencyColors = () => {
-    switch (urgencyLevel) {
-      case 'critical':
-        return {
-          bg: 'bg-red-500/20',
-          border: 'border-red-500/50',
-          text: 'text-red-400',
-          pulse: 'animate-pulse',
-        };
-      case 'urgent':
-        return {
-          bg: 'bg-orange-500/20',
-          border: 'border-orange-500/50',
-          text: 'text-orange-400',
-          pulse: 'animate-pulse',
-        };
-      case 'warning':
-        return {
-          bg: 'bg-amber-500/20',
-          border: 'border-amber-500/50',
-          text: 'text-amber-400',
-          pulse: '',
-        };
-      default:
-        return {
-          bg: 'bg-emerald-500/20',
-          border: 'border-emerald-500/50',
-          text: 'text-emerald-400',
-          pulse: '',
-        };
-    }
-  };
-
-  const colors = getUrgencyColors();
 
   return (
     <Card className="bg-slate-700/50 border-slate-600 overflow-hidden">
@@ -171,30 +133,16 @@ const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusPro
 
               {!countdown.isOverdue ? (
                 <div className="grid grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className={`text-3xl font-bold font-mono ${colors.text} mb-1`}>
-                      {countdown.days.toString().padStart(2, '0')}
+                  {(['days', 'hours', 'minutes', 'seconds'] as const).map((unit) => (
+                    <div key={unit} className="text-center">
+                      <div className={`text-3xl font-bold font-mono ${colors.text} mb-1`}>
+                        {countdown[unit].toString().padStart(2, '0')}
+                      </div>
+                      <div className="text-xs text-slate-400 uppercase tracking-wide">
+                        {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-400 uppercase tracking-wide">Days</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-3xl font-bold font-mono ${colors.text} mb-1`}>
-                      {countdown.hours.toString().padStart(2, '0')}
-                    </div>
-                    <div className="text-xs text-slate-400 uppercase tracking-wide">Hours</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-3xl font-bold font-mono ${colors.text} mb-1`}>
-                      {countdown.minutes.toString().padStart(2, '0')}
-                    </div>
-                    <div className="text-xs text-slate-400 uppercase tracking-wide">Minutes</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-3xl font-bold font-mono ${colors.text} mb-1`}>
-                      {countdown.seconds.toString().padStart(2, '0')}
-                    </div>
-                    <div className="text-xs text-slate-400 uppercase tracking-wide">Seconds</div>
-                  </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-4">

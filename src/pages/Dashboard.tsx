@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -8,6 +7,8 @@ import SystemStatus from '@/components/dashboard/SystemStatus';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import { Users, CreditCard, FileText, Shield, Activity, Clock } from 'lucide-react';
+import { DashboardStats } from '@/types/common';
+import { MockDataService } from '@/services/mockDataService';
 
 type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 
@@ -19,50 +20,32 @@ interface UserSettings {
   next_check_in_due: string | null;
 }
 
-interface DashboardStats {
-  contactsCount: number;
-  accountsCount: number;
-  documentsCount: number;
-  userSettings: UserSettings | null;
-}
-
 const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
-    contactsCount: 3,
-    accountsCount: 8,
-    documentsCount: 5,
+    contactsCount: 0,
+    accountsCount: 0,
+    documentsCount: 0,
     userSettings: null
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchSettings();
+      fetchStats();
     }
   }, [user]);
 
-  const fetchSettings = async () => {
+  const fetchStats = async () => {
     try {
-      // Mock settings for demonstration - same as Switch page
-      const mockSettings: UserSettings = {
-        check_in_frequency: 'weekly',
-        grace_period_hours: 72,
-        is_active: true,
-        last_check_in: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-        next_check_in_due: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
-      };
-      
-      setStats(prev => ({
-        ...prev,
-        userSettings: mockSettings
-      }));
+      const dashboardStats = await MockDataService.getDashboardStats();
+      setStats(dashboardStats);
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      console.error('Error fetching stats:', error);
       toast({
         title: "Error",
-        description: "Failed to load settings",
+        description: "Failed to load dashboard data",
         variant: "destructive",
       });
     } finally {

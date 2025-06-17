@@ -12,7 +12,8 @@ import SwitchHeader from '@/components/switch/SwitchHeader';
 import SwitchQuickStats from '@/components/switch/SwitchQuickStats';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
 import SwitchInfoCard from '@/components/switch/SwitchInfoCard';
-import { CheckInFrequency, UserSettings } from '@/types/switch';
+import { CheckInFrequency, UserSettings } from '@/types/common';
+import { MockDataService } from '@/services/mockDataService';
 
 const Switch = () => {
   const { user } = useAuth();
@@ -53,18 +54,8 @@ const Switch = () => {
 
   const fetchSettings = async () => {
     try {
-      // Mock settings for demonstration
-      const mockSettings: UserSettings = {
-        check_in_frequency: 'weekly',
-        grace_period_hours: 72,
-        is_active: true,
-        last_check_in: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-        next_check_in_due: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
-        deadline_mode: 'frequency',
-        custom_deadline: null,
-      };
-      
-      setSettings(mockSettings);
+      const userSettings = await MockDataService.getUserSettings();
+      setSettings(userSettings);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({

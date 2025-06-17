@@ -8,19 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDeadlineDate, isValidDate } from '@/utils/dateUtils';
-
-type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
-type DeadlineMode = 'frequency' | 'custom';
-
-interface UserSettings {
-  check_in_frequency: CheckInFrequency;
-  grace_period_hours: number;
-  is_active: boolean;
-  last_check_in: string | null;
-  next_check_in_due: string | null;
-  deadline_mode: DeadlineMode;
-  custom_deadline: string | null;
-}
+import { CheckInFrequency, DeadlineMode, UserSettings } from '@/types/switch';
 
 interface SwitchConfigurationProps {
   settings: UserSettings;

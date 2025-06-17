@@ -1,8 +1,7 @@
+
 import { Separator } from '@/components/ui/separator';
 import { formatDateShort } from '@/utils/dateUtils';
-
-type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
-type DeadlineMode = 'frequency' | 'custom';
+import { CheckInFrequency, DeadlineMode } from '@/types/switch';
 
 interface SwitchQuickStatsProps {
   checkInFrequency: CheckInFrequency;

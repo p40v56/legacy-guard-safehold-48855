@@ -12,19 +12,7 @@ import SwitchHeader from '@/components/switch/SwitchHeader';
 import SwitchQuickStats from '@/components/switch/SwitchQuickStats';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
 import SwitchInfoCard from '@/components/switch/SwitchInfoCard';
-
-type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
-type DeadlineMode = 'frequency' | 'custom';
-
-interface UserSettings {
-  check_in_frequency: CheckInFrequency;
-  grace_period_hours: number;
-  is_active: boolean;
-  last_check_in: string | null;
-  next_check_in_due: string | null;
-  deadline_mode: DeadlineMode;
-  custom_deadline: string | null;
-}
+import { CheckInFrequency, UserSettings } from '@/types/switch';
 
 const Switch = () => {
   const { user } = useAuth();

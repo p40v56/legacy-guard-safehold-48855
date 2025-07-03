@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { mockSignIn, mockSignUp } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,21 +31,29 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
 
     try {
       if (mode === 'register') {
-        const { user, error } = await mockSignUp(
-          formData.email,
-          formData.password,
-          formData.firstName,
-          formData.lastName
-        );
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+            data: {
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+            }
+          }
+        });
 
         if (error) throw error;
 
         toast({
           title: "Account created successfully",
-          description: "You have been signed up and logged in.",
+          description: "Please check your email to verify your account.",
         });
       } else {
-        const { user, error } = await mockSignIn(formData.email, formData.password);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
 
         if (error) throw error;
 
@@ -55,8 +63,6 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
         });
       }
 
-      // Refresh the page to trigger auth state update
-      window.location.reload();
       onClose();
       setFormData({ email: '', password: '', firstName: '', lastName: '' });
     } catch (error: any) {

@@ -6,18 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Clock, Users, FileText, Key, Bell, ArrowRight, Sparkles, Star } from 'lucide-react';
-import AuthModal from '@/components/auth/AuthModal';
 import Navigation from '@/components/layout/Navigation';
 
 const Index = () => {
-  const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [scrollY, setScrollY] = useState(0);
-  const {
-    user,
-    loading
-  } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect authenticated users to dashboard
@@ -47,13 +41,11 @@ const Index = () => {
   }, []);
 
   const handleGetStarted = () => {
-    setAuthMode('register');
-    setShowAuth(true);
+    navigate('/auth');
   };
   
   const handleSignIn = () => {
-    setAuthMode('login');
-    setShowAuth(true);
+    navigate('/auth');
   };
 
   // Show loading state while checking auth
@@ -340,8 +332,6 @@ const Index = () => {
           </Button>
         </div>
       </section>
-
-      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} mode={authMode} onModeChange={setAuthMode} />
     </div>
   );
 };

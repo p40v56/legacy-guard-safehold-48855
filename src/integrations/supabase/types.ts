@@ -9,6 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_type: string
+          closure_action: string
+          created_at: string
+          email: string | null
+          id: string
+          importance: string
+          notes: string | null
+          platform: string
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          account_type?: string
+          closure_action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          importance?: string
+          notes?: string | null
+          platform: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          account_type?: string
+          closure_action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          importance?: string
+          notes?: string | null
+          platform?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          contact_type: string
+          created_at: string
+          email: string
+          id: string
+          is_primary: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          relationship: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_type?: string
+          created_at?: string
+          email: string
+          id?: string
+          is_primary?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          relationship?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string
+          email?: string
+          id?: string
+          is_primary?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          relationship?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       legacy_documents: {
         Row: {
           created_at: string
@@ -43,6 +127,75 @@ export type Database = {
           id?: string
           is_public?: boolean
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          check_in_frequency: string
+          created_at: string
+          custom_deadline: string | null
+          deadline_mode: string
+          grace_period_hours: number
+          id: string
+          is_active: boolean
+          last_check_in: string | null
+          next_check_in_due: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          check_in_frequency?: string
+          created_at?: string
+          custom_deadline?: string | null
+          deadline_mode?: string
+          grace_period_hours?: number
+          id?: string
+          is_active?: boolean
+          last_check_in?: string | null
+          next_check_in_due?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          check_in_frequency?: string
+          created_at?: string
+          custom_deadline?: string | null
+          deadline_mode?: string
+          grace_period_hours?: number
+          id?: string
+          is_active?: boolean
+          last_check_in?: string | null
+          next_check_in_due?: string | null
           updated_at?: string
           user_id?: string
         }

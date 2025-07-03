@@ -1,51 +1,51 @@
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { AccountsService } from '@/services/supabaseService';
 import { useToast } from '@/hooks/use-toast';
 
-type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
+type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'other';
+type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
+type ClosureAction = 'delete' | 'memorialize' | 'transfer' | 'download';
 
 interface DigitalAccount {
   id: string;
-  account_name: string;
   platform: string;
-  account_type: AccountType;
-  email?: string;
   username?: string;
-  website_url?: string;
+  email?: string;
+  account_type: AccountType;
+  importance: ImportanceLevel;
+  closure_action: ClosureAction;
   notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export const useAccounts = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<DigitalAccount[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAccounts = async () => {
+    if (!user) return;
+    
     try {
-      // Mock data - in a real app this would come from your backend
-      const mockAccounts: DigitalAccount[] = [
-        {
-          id: '1',
-          account_name: 'Personal Gmail',
-          platform: 'Gmail',
-          account_type: 'email',
-          email: 'test@test.com',
-          website_url: 'https://gmail.com',
-          notes: 'Primary email account',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          account_name: 'Social Media',
-          platform: 'Facebook',
-          account_type: 'social',
-          username: 'testuser',
-          website_url: 'https://facebook.com',
-          created_at: new Date().toISOString(),
-        }
-      ];
-      setAccounts(mockAccounts);
+      const data = await AccountsService.getAccounts(user.id);
+      // Transform the data to match our interface
+      const transformedData: DigitalAccount[] = data.map(account => ({
+        id: account.id,
+        platform: account.platform,
+        username: account.username || undefined,
+        email: account.email || undefined,
+        account_type: account.account_type as AccountType,
+        importance: account.importance as ImportanceLevel,
+        closure_action: account.closure_action as ClosureAction,
+        notes: account.notes || undefined,
+        created_at: account.created_at,
+        updated_at: account.updated_at || undefined,
+      }));
+      setAccounts(transformedData);
     } catch (error) {
       console.error('Error fetching accounts:', error);
       toast({
@@ -58,14 +58,25 @@ export const useAccounts = () => {
     }
   };
 
-  const createAccount = async (formData: Omit<DigitalAccount, 'id' | 'created_at'>) => {
+  const createAccount = async (formData: Omit<DigitalAccount, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return;
+    
     try {
-      const newAccount: DigitalAccount = {
-        ...formData,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
+      const newAccount = await AccountsService.createAccount(user.id, formData);
+      // Transform the returned data
+      const transformedAccount: DigitalAccount = {
+        id: newAccount.id,
+        platform: newAccount.platform,
+        username: newAccount.username || undefined,
+        email: newAccount.email || undefined,
+        account_type: newAccount.account_type as AccountType,
+        importance: newAccount.importance as ImportanceLevel,
+        closure_action: newAccount.closure_action as ClosureAction,
+        notes: newAccount.notes || undefined,
+        created_at: newAccount.created_at,
+        updated_at: newAccount.updated_at || undefined,
       };
-      setAccounts(prev => [...prev, newAccount]);
+      setAccounts(prev => [...prev, transformedAccount]);
       
       toast({
         title: "Success",
@@ -81,12 +92,24 @@ export const useAccounts = () => {
     }
   };
 
-  const updateAccount = async (accountId: string, formData: Omit<DigitalAccount, 'id' | 'created_at'>) => {
+  const updateAccount = async (accountId: string, formData: Omit<DigitalAccount, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      const updatedAccount = await AccountsService.updateAccount(accountId, formData);
+      // Transform the returned data
+      const transformedAccount: DigitalAccount = {
+        id: updatedAccount.id,
+        platform: updatedAccount.platform,
+        username: updatedAccount.username || undefined,
+        email: updatedAccount.email || undefined,
+        account_type: updatedAccount.account_type as AccountType,
+        importance: updatedAccount.importance as ImportanceLevel,
+        closure_action: updatedAccount.closure_action as ClosureAction,
+        notes: updatedAccount.notes || undefined,
+        created_at: updatedAccount.created_at,
+        updated_at: updatedAccount.updated_at || undefined,
+      };
       setAccounts(prev => prev.map(account => 
-        account.id === accountId 
-          ? { ...account, ...formData }
-          : account
+        account.id === accountId ? transformedAccount : account
       ));
       
       toast({
@@ -107,6 +130,7 @@ export const useAccounts = () => {
     if (!confirm('Are you sure you want to delete this account?')) return;
     
     try {
+      await AccountsService.deleteAccount(accountId);
       setAccounts(prev => prev.filter(account => account.id !== accountId));
       
       toast({
@@ -124,8 +148,10 @@ export const useAccounts = () => {
   };
 
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+    if (user) {
+      fetchAccounts();
+    }
+  }, [user]);
 
   return {
     accounts,

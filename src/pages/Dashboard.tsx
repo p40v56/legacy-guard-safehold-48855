@@ -8,17 +8,8 @@ import LoadingSpinner from '@/components/ui/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import { Users, CreditCard, FileText, Shield, Activity, Clock } from 'lucide-react';
 import { DashboardStats } from '@/types/common';
-import { MockDataService } from '@/services/mockDataService';
+import { DashboardService } from '@/services/supabaseService';
 
-type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
-
-interface UserSettings {
-  check_in_frequency: CheckInFrequency;
-  grace_period_hours: number;
-  is_active: boolean;
-  last_check_in: string | null;
-  next_check_in_due: string | null;
-}
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -38,8 +29,10 @@ const Dashboard = () => {
   }, [user]);
 
   const fetchStats = async () => {
+    if (!user) return;
+    
     try {
-      const dashboardStats = await MockDataService.getDashboardStats();
+      const dashboardStats = await DashboardService.getDashboardStats(user.id);
       setStats(dashboardStats);
     } catch (error) {
       console.error('Error fetching stats:', error);

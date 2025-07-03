@@ -1,58 +1,57 @@
-
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccounts } from '@/hooks/useAccounts';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CreditCard, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CreditCard, Plus, Edit, Trash2 } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
-import AccountForm from '@/components/accounts/AccountForm';
-import AccountCard from '@/components/accounts/AccountCard';
 
-type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
+type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'other';
+type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
+type ClosureAction = 'delete' | 'memorialize' | 'transfer' | 'download';
 
-interface DigitalAccount {
-  id: string;
-  account_name: string;
+interface AccountFormData {
   platform: string;
+  username: string;
+  email: string;
   account_type: AccountType;
-  email?: string;
-  username?: string;
-  website_url?: string;
-  notes?: string;
-  created_at: string;
+  importance: ImportanceLevel;
+  closure_action: ClosureAction;
+  notes: string;
 }
 
 const Accounts = () => {
   const { user } = useAuth();
   const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
+  const [showForm, setShowForm] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<DigitalAccount | null>(null);
-  const [formData, setFormData] = useState({
-    account_name: '',
+  const [filterType, setFilterType] = useState<AccountType | 'all'>('all');
+  const [formData, setFormData] = useState<AccountFormData>({
     platform: '',
-    account_type: 'other' as AccountType,
-    email: '',
     username: '',
-    website_url: '',
+    email: '',
+    account_type: 'social',
+    importance: 'medium',
+    closure_action: 'memorialize',
     notes: '',
   });
 
   const filteredAccounts = useMemo(() => {
     return accounts.filter(account => {
-      const accountName = (account.account_name || '').toLowerCase();
       const platform = (account.platform || '').toLowerCase();
       const email = (account.email || '').toLowerCase();
       const username = (account.username || '').toLowerCase();
       const searchLower = searchTerm.toLowerCase();
       
       const matchesSearch = !searchTerm || 
-        accountName.includes(searchLower) ||
         platform.includes(searchLower) ||
         email.includes(searchLower) ||
         username.includes(searchLower);
@@ -75,31 +74,31 @@ const Accounts = () => {
     resetForm();
   };
 
-  const handleEdit = (account: DigitalAccount) => {
+  const handleEdit = (account: any) => {
     setFormData({
-      account_name: account.account_name,
       platform: account.platform,
-      account_type: account.account_type,
-      email: account.email || '',
       username: account.username || '',
-      website_url: account.website_url || '',
+      email: account.email || '',
+      account_type: account.account_type,
+      importance: account.importance,
+      closure_action: account.closure_action,
       notes: account.notes || '',
     });
     setEditingAccount(account);
-    setShowAddForm(true);
+    setShowForm(true);
   };
 
   const resetForm = () => {
     setFormData({
-      account_name: '',
       platform: '',
-      account_type: 'other',
-      email: '',
       username: '',
-      website_url: '',
+      email: '',
+      account_type: 'social',
+      importance: 'medium',
+      closure_action: 'memorialize',
       notes: '',
     });
-    setShowAddForm(false);
+    setShowForm(false);
     setEditingAccount(null);
   };
 
@@ -107,10 +106,7 @@ const Accounts = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
-            <p className="text-slate-400">Loading accounts...</p>
-          </div>
+          <LoadingSpinner size="lg" className="text-emerald-400" />
         </div>
       </DashboardLayout>
     );
@@ -118,19 +114,33 @@ const Accounts = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Digital Accounts</h1>
-            <p className="text-slate-400">Manage your digital accounts and credentials</p>
+      <div className="space-y-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-white/10 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
+          <div className="relative p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 backdrop-blur-sm">
+                    <CreditCard className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <h1 className="text-4xl font-bold text-white">Digital Accounts</h1>
+                </div>
+                <p className="text-lg text-slate-300 max-w-2xl">
+                  Manage your digital accounts and specify how they should be handled in your digital legacy plan.
+                </p>
+              </div>
+              <Button 
+                onClick={() => setShowForm(true)}
+                size="lg"
+                className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-500/25 border-0 text-white font-semibold px-8"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Account
+              </Button>
+            </div>
           </div>
-          <Button 
-            onClick={() => setShowAddForm(true)}
-            className="bg-emerald-600 hover:bg-emerald-500"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Account
-          </Button>
         </div>
 
         {/* Search and Filter */}
@@ -139,68 +149,259 @@ const Accounts = () => {
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search accounts..."
+              placeholder="Search accounts by platform, email, or username..."
+              className="h-12 text-base"
             />
           </div>
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-full sm:w-48 bg-slate-700 border-slate-600 text-white">
+          <Select value={filterType} onValueChange={(value) => setFilterType(value as AccountType | 'all')}>
+            <SelectTrigger className="w-full sm:w-56 h-12 bg-slate-800/50 border-slate-600 text-white backdrop-blur-sm">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-slate-800 border-slate-600">
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="social">Social Media</SelectItem>
+              <SelectItem value="social">Social</SelectItem>
               <SelectItem value="financial">Financial</SelectItem>
               <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="work">Work</SelectItem>
-              <SelectItem value="entertainment">Entertainment</SelectItem>
+              <SelectItem value="cloud">Cloud Storage</SelectItem>
+              <SelectItem value="subscription">Subscription</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Add/Edit Form */}
-        {showAddForm && (
-          <AccountForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleSubmit}
-            onCancel={resetForm}
-            isEditing={!!editingAccount}
-          />
+        {showForm && (
+          <Card className="bg-slate-800/60 border-slate-700/50 backdrop-blur-sm shadow-2xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-white flex items-center text-xl">
+                <div className="p-2 rounded-lg bg-emerald-500/20 mr-3">
+                  <CreditCard className="w-5 h-5 text-emerald-400" />
+                </div>
+                {editingAccount ? 'Edit Account' : 'Add New Account'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Platform/Service *</Label>
+                    <Input
+                      value={formData.platform}
+                      onChange={(e) => setFormData({...formData, platform: e.target.value})}
+                      className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm"
+                      placeholder="e.g., Gmail, Facebook, Bank of America"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Account Type</Label>
+                    <Select value={formData.account_type} onValueChange={(value) => setFormData({...formData, account_type: value as AccountType})}>
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="social">Social Media</SelectItem>
+                        <SelectItem value="financial">Financial</SelectItem>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="cloud">Cloud Storage</SelectItem>
+                        <SelectItem value="subscription">Subscription</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Email</Label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm"
+                      placeholder="account@example.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Username</Label>
+                    <Input
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm"
+                      placeholder="username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Importance</Label>
+                    <Select value={formData.importance} onValueChange={(value) => setFormData({...formData, importance: value as ImportanceLevel})}>
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Closure Action</Label>
+                    <Select value={formData.closure_action} onValueChange={(value) => setFormData({...formData, closure_action: value as ClosureAction})}>
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="memorialize">Memorialize</SelectItem>
+                        <SelectItem value="delete">Delete</SelectItem>
+                        <SelectItem value="transfer">Transfer</SelectItem>
+                        <SelectItem value="download">Download</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-200 font-medium">Notes</Label>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    className="bg-slate-700/50 border-slate-600 text-white backdrop-blur-sm"
+                    rows={4}
+                    placeholder="Additional notes about this account..."
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    type="submit" 
+                    className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg font-semibold"
+                  >
+                    {editingAccount ? 'Update Account' : 'Add Account'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={resetForm}
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700/50"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         )}
 
         {/* Accounts List */}
-        <div className="grid gap-4">
+        <div className="space-y-4">
           {filteredAccounts.length === 0 ? (
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardContent className="p-8 text-center">
-                <CreditCard className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No accounts found</h3>
-                <p className="text-slate-400 mb-4">
-                  {searchTerm || filterType !== 'all' 
-                    ? 'No accounts match your search criteria.' 
-                    : 'Get started by adding your first digital account.'}
-                </p>
-                {(!searchTerm && filterType === 'all') && (
-                  <Button 
-                    onClick={() => setShowAddForm(true)}
-                    className="bg-emerald-600 hover:bg-emerald-500"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Your First Account
-                  </Button>
-                )}
+            <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
+              <CardContent className="p-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="p-4 rounded-2xl bg-slate-700/30 w-fit mx-auto mb-6">
+                    <CreditCard className="w-12 h-12 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">No accounts found</h3>
+                  <p className="text-slate-400 mb-6 leading-relaxed">
+                    {searchTerm || filterType !== 'all' 
+                      ? 'No accounts match your search criteria. Try adjusting your filters or search terms.' 
+                      : 'Start adding your digital accounts to create a comprehensive digital legacy plan.'}
+                  </p>
+                  {(!searchTerm && filterType === 'all') && (
+                    <Button 
+                      onClick={() => setShowForm(true)}
+                      className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg font-semibold"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Account
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ) : (
-            filteredAccounts.map((account) => (
-              <AccountCard
-                key={account.id}
-                account={account}
-                onEdit={handleEdit}
-                onDelete={deleteAccount}
-              />
-            ))
+            <div className="grid gap-6">
+              {filteredAccounts.map((account) => (
+                <Card key={account.id} className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:bg-slate-800/60 transition-all duration-300 group">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="p-2 rounded-lg bg-slate-700/50 group-hover:bg-emerald-500/20 transition-colors">
+                            <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 transition-colors" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-white mb-1 truncate">{account.platform}</h3>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <Badge 
+                                variant="secondary" 
+                                className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs font-medium"
+                              >
+                                {account.account_type}
+                              </Badge>
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs font-medium ${
+                                  account.importance === 'critical' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+                                  account.importance === 'high' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                                  account.importance === 'medium' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                                  'bg-slate-500/20 text-slate-300 border-slate-500/30'
+                                }`}
+                              >
+                                {account.importance}
+                              </Badge>
+                              <span className="text-slate-400 text-sm">→ {account.closure_action}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          {account.email && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 font-medium">Email:</span>
+                              <span className="text-slate-300">{account.email}</span>
+                            </div>
+                          )}
+                          
+                          {account.username && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 font-medium">Username:</span>
+                              <span className="text-slate-300">{account.username}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {account.notes && (
+                          <p className="text-slate-300 mt-4 leading-relaxed">{account.notes}</p>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-1 ml-6">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(account)}
+                          className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 h-10 w-10 p-0"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteAccount(account.id)}
+                          className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-10 w-10 p-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
       </div>

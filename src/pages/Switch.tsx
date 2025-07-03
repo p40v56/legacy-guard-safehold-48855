@@ -13,7 +13,7 @@ import SwitchQuickStats from '@/components/switch/SwitchQuickStats';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
 import SwitchInfoCard from '@/components/switch/SwitchInfoCard';
 import { CheckInFrequency, UserSettings } from '@/types/common';
-import { MockDataService } from '@/services/mockDataService';
+import { SettingsService } from '@/services/supabaseService';
 
 const Switch = () => {
   const { user } = useAuth();
@@ -53,8 +53,10 @@ const Switch = () => {
   };
 
   const fetchSettings = async () => {
+    if (!user) return;
+    
     try {
-      const userSettings = await MockDataService.getUserSettings();
+      const userSettings = await SettingsService.getUserSettings(user.id);
       setSettings(userSettings);
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -69,6 +71,8 @@ const Switch = () => {
   };
 
   const updateSettings = async (updates: Partial<UserSettings>) => {
+    if (!user) return;
+    
     setSaving(true);
     try {
       const updatedSettings = { ...settings!, ...updates };
@@ -84,6 +88,7 @@ const Switch = () => {
         }
       }
       
+      await SettingsService.updateSettings(user.id, updatedSettings);
       setSettings(updatedSettings);
       toast({
         title: "Settings Updated",
@@ -134,6 +139,8 @@ const Switch = () => {
   };
 
   const performCheckIn = async () => {
+    if (!user) return;
+    
     // Check if system is deactivated
     if (!settings?.is_active) {
       setShowActivationDialog(true);
@@ -141,6 +148,8 @@ const Switch = () => {
     }
 
     try {
+      await SettingsService.checkIn(user.id);
+      
       const now = new Date();
       const newSettings = {
         ...settings!,
@@ -172,28 +181,42 @@ const Switch = () => {
   };
 
   const handleActivateAndCheckIn = async () => {
-    // First activate the system
-    await updateSettings({ is_active: true });
+    if (!user) return;
     
-    // Then perform the check-in
-    const now = new Date();
-    const newSettings = {
-      ...settings!,
-      is_active: true,
-      last_check_in: now.toISOString(),
-    };
+    try {
+      // First activate the system
+      const activationUpdates = { is_active: true };
+      await SettingsService.updateSettings(user.id, activationUpdates);
+      
+      // Then perform the check-in
+      await SettingsService.checkIn(user.id);
+      
+      const now = new Date();
+      const newSettings = {
+        ...settings!,
+        is_active: true,
+        last_check_in: now.toISOString(),
+      };
 
-    if (settings?.deadline_mode === 'frequency') {
-      newSettings.next_check_in_due = calculateNextCheckIn(settings!.check_in_frequency, now);
+      if (settings?.deadline_mode === 'frequency') {
+        newSettings.next_check_in_due = calculateNextCheckIn(settings!.check_in_frequency, now);
+      }
+
+      setSettings(newSettings);
+      setShowActivationDialog(false);
+
+      toast({
+        title: "System Activated & Check-in Successful! ✅",
+        description: "Your Dead Man's Switch is now active and your check-in has been recorded",
+      });
+    } catch (error) {
+      console.error('Error activating and checking in:', error);
+      toast({
+        title: "Error",
+        description: "Failed to activate system and perform check-in",
+        variant: "destructive",
+      });
     }
-
-    setSettings(newSettings);
-    setShowActivationDialog(false);
-
-    toast({
-      title: "System Activated & Check-in Successful! ✅",
-      description: "Your Dead Man's Switch is now active and your check-in has been recorded",
-    });
   };
 
   if (loading) {

@@ -14,6 +14,7 @@ export interface User {
   };
 }
 
+// Legacy interface - can be removed if no longer used
 export interface MockAuthResponse {
   user: User | null;
   error: { message: string } | null;

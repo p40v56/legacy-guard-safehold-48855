@@ -51,44 +51,119 @@ export type Database = {
         }
         Relationships: []
       }
-      contacts: {
+      activation_rules: {
         Row: {
-          contact_type: string
+          contact_category: string | null
+          contact_ids: string[] | null
           created_at: string
-          email: string
+          custom_message: string | null
+          delay_hours: number | null
+          enabled: boolean | null
           id: string
-          is_primary: boolean
-          name: string
-          notes: string | null
-          phone: string | null
-          relationship: string | null
+          target_type: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          contact_type?: string
+          contact_category?: string | null
+          contact_ids?: string[] | null
           created_at?: string
-          email: string
+          custom_message?: string | null
+          delay_hours?: number | null
+          enabled?: boolean | null
           id?: string
-          is_primary?: boolean
-          name: string
-          notes?: string | null
-          phone?: string | null
-          relationship?: string | null
+          target_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_category?: string | null
+          contact_ids?: string[] | null
+          created_at?: string
+          custom_message?: string | null
+          delay_hours?: number | null
+          enabled?: boolean | null
+          id?: string
+          target_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contact_type_permissions: {
+        Row: {
+          contact_type: string
+          created_at: string
+          default_permissions: Json
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_type: string
+          created_at?: string
+          default_permissions: Json
+          id?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           contact_type?: string
           created_at?: string
-          email?: string
+          default_permissions?: Json
           id?: string
-          is_primary?: boolean
-          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          can_receive_messages: boolean | null
+          contact_type: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          permissions: Json | null
+          phone: string | null
+          priority_order: number | null
+          relationship: string | null
+          updated_at: string
+          use_type_defaults: boolean | null
+          user_id: string
+        }
+        Insert: {
+          can_receive_messages?: boolean | null
+          contact_type?: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
           notes?: string | null
+          permissions?: Json | null
           phone?: string | null
+          priority_order?: number | null
           relationship?: string | null
           updated_at?: string
+          use_type_defaults?: boolean | null
+          user_id: string
+        }
+        Update: {
+          can_receive_messages?: boolean | null
+          contact_type?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          permissions?: Json | null
+          phone?: string | null
+          priority_order?: number | null
+          relationship?: string | null
+          updated_at?: string
+          use_type_defaults?: boolean | null
           user_id?: string
         }
         Relationships: []
@@ -132,28 +207,67 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      notification_settings: {
         Row: {
           created_at: string
-          first_name: string | null
+          email_notifications: boolean | null
+          emergency_alerts: boolean | null
           id: string
-          last_name: string | null
+          sms_notifications: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          first_name?: string | null
+          email_notifications?: boolean | null
+          emergency_alerts?: boolean | null
           id?: string
-          last_name?: string | null
+          sms_notifications?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          email_notifications?: boolean | null
+          emergency_alerts?: boolean | null
+          id?: string
+          sms_notifications?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          emergency_instructions: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          emergency_instructions?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          emergency_instructions?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }

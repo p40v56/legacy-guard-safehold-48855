@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSettings } from '@/hooks/useSettings';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,52 +59,26 @@ interface ActivationRule {
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const {
+    profile,
+    setProfile,
+    notifications,
+    setNotifications,
+    activationRules,
+    setActivationRules,
+    typePermissions,
+    setTypePermissions,
+    loading,
+    saving,
+    saveProfile,
+    saveNotifications,
+    saveActivationRules,
+    addActivationRule,
+    updateActivationRule,
+    deleteActivationRule,
+  } = useSettings();
 
-  const [profile, setProfile] = useState<Profile>({
-    id: '',
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    bio: '',
-    emergency_instructions: ''
-  });
-  const [notifications, setNotifications] = useState<NotificationSettings>({
-    email_notifications: true,
-    sms_notifications: false,
-    emergency_alerts: true
-  });
-
-  const [activationRules, setActivationRules] = useState<ActivationRule[]>([
-    {
-      id: '1',
-      target_type: 'category',
-      contact_category: 'immediate_family',
-      delay_hours: 0,
-      custom_message: 'This is an automated message. I have not checked in as scheduled.',
-      enabled: true
-    },
-    {
-      id: '2',
-      target_type: 'category',
-      contact_category: 'extended_family',
-      delay_hours: 24,
-      custom_message: 'Important family documents and instructions are available.',
-      enabled: true
-    },
-    {
-      id: '3',
-      target_type: 'category',
-      contact_category: 'legal',
-      delay_hours: 72,
-      custom_message: 'Full access to legal documents and account information.',
-      enabled: false
-    }
-  ]);
-
-  // Mock emergency contacts for selection
+  // Emergency contacts for activation rule selection - this would come from the contacts service
   const [emergencyContacts] = useState<EmergencyContact[]>([
     { id: '1', name: 'John Smith', email: 'john@example.com', relationship: 'Spouse', contact_type: 'immediate_family' },
     { id: '2', name: 'Jane Doe', email: 'jane@example.com', relationship: 'Sister', contact_type: 'immediate_family' },
@@ -111,125 +86,10 @@ const Settings = () => {
     { id: '4', name: 'Alice Wilson', email: 'alice@example.com', relationship: 'Lawyer', contact_type: 'legal' },
   ]);
 
-  const [typePermissions, setTypePermissions] = useState<ContactTypePermissionsType[]>([
-    {
-      contact_type: 'immediate_family',
-      default_permissions: {
-        digital_accounts: { all_accounts: true, by_category: [], specific_accounts: [] },
-        legacy_documents: { all_documents: true, by_category: [], specific_documents: [] },
-        contact_information: true,
-        emergency_instructions: true,
-        can_modify_information: true,
-      },
-    },
-    {
-      contact_type: 'extended_family',
-      default_permissions: {
-        digital_accounts: { all_accounts: false, by_category: ['banking'], specific_accounts: [] },
-        legacy_documents: { all_documents: false, by_category: ['legal'], specific_documents: [] },
-        contact_information: true,
-        emergency_instructions: true,
-        can_modify_information: false,
-      },
-    },
-  ]);
-
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    try {
-      // Mock profile data - in a real app this would come from your backend
-      setProfile({
-        id: user?.id || '',
-        first_name: user?.user_metadata?.first_name || '',
-        last_name: user?.user_metadata?.last_name || '',
-        email: user?.email || '',
-        phone: '',
-        bio: '',
-        emergency_instructions: ''
-      });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    setSaving(true);
-    try {
-      // Mock save - in a real app this would save to your backend
-      await new Promise(resolve => setTimeout(resolve, 500));
-      toast({
-        title: "Success",
-        description: "Profile updated successfully"
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile",
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateActivationRule = (id: string, updates: Partial<ActivationRule>) => {
-    setActivationRules(prev => prev.map(rule => 
-      rule.id === id ? { ...rule, ...updates } : rule
-    ));
-  };
-
-  const addActivationRule = () => {
-    const newRule: ActivationRule = {
-      id: `rule-${Date.now()}`,
-      target_type: 'category',
-      contact_category: 'immediate_family',
-      delay_hours: 0,
-      custom_message: 'This is an automated message.',
-      enabled: true
-    };
-    setActivationRules(prev => [...prev, newRule]);
-  };
-
-  const deleteActivationRule = (id: string) => {
-    setActivationRules(prev => prev.filter(rule => rule.id !== id));
-  };
-
-  const saveActivationRules = async () => {
-    try {
-      // Mock save - in a real app this would save to your backend
-      await new Promise(resolve => setTimeout(resolve, 500));
-      toast({
-        title: "Success",
-        description: "Dead Man's Switch rules updated successfully"
-      });
-    } catch (error) {
-      console.error('Error updating activation rules:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update activation rules",
-        variant: "destructive"
-      });
-    }
-  };
-
   const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
     try {
       setTypePermissions(updatedPermissions);
-      // Mock save - in a real app this would save to your backend
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // This would typically save to the database using ContactTypePermissionsService
       toast({
         title: "Success",
         description: "Default permissions updated successfully"
@@ -374,7 +234,7 @@ const Settings = () => {
                   />
                 </div>
 
-                <Button onClick={handleSaveProfile} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500">
+                <Button onClick={saveProfile} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500">
                   {saving ? (
                     <>
                       <LoadingSpinner size="sm" className="mr-2" />

@@ -10,11 +10,37 @@ export class ProfileService {
       .eq('user_id', userId)
       .single();
     
+    if (error && error.code !== 'PGRST116') throw error;
+    
+    if (!data) {
+      // Create default profile if none exists
+      return await this.createDefaultProfile(userId);
+    }
+    
+    return data;
+  }
+
+  static async createDefaultProfile(userId: string) {
+    const defaultProfile = {
+      user_id: userId,
+      first_name: '',
+      last_name: '',
+      phone: '',
+      bio: '',
+      emergency_instructions: '',
+    };
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([defaultProfile])
+      .select()
+      .single();
+    
     if (error) throw error;
     return data;
   }
 
-  static async updateProfile(userId: string, updates: { first_name?: string; last_name?: string }) {
+  static async updateProfile(userId: string, updates: any) {
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
@@ -121,7 +147,7 @@ export class ContactsService {
       .from('contacts')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('priority_order', { ascending: true });
     
     if (error) throw error;
     return data || [];
@@ -157,6 +183,130 @@ export class ContactsService {
       .eq('id', id);
     
     if (error) throw error;
+  }
+}
+
+// Notification Settings Service
+export class NotificationSettingsService {
+  static async getNotificationSettings(userId: string) {
+    const { data, error } = await supabase
+      .from('notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error;
+    
+    if (!data) {
+      // Create default settings if none exist
+      return await this.createDefaultSettings(userId);
+    }
+    
+    return data;
+  }
+
+  static async createDefaultSettings(userId: string) {
+    const defaultSettings = {
+      user_id: userId,
+      email_notifications: true,
+      sms_notifications: false,
+      emergency_alerts: true,
+    };
+
+    const { data, error } = await supabase
+      .from('notification_settings')
+      .insert([defaultSettings])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async updateNotificationSettings(userId: string, settings: any) {
+    const { data, error } = await supabase
+      .from('notification_settings')
+      .update(settings)
+      .eq('user_id', userId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+}
+
+// Activation Rules Service
+export class ActivationRulesService {
+  static async getActivationRules(userId: string) {
+    const { data, error } = await supabase
+      .from('activation_rules')
+      .select('*')
+      .eq('user_id', userId)
+      .order('delay_hours', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  static async createActivationRule(userId: string, rule: any) {
+    const { data, error } = await supabase
+      .from('activation_rules')
+      .insert([{ ...rule, user_id: userId }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async updateActivationRule(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('activation_rules')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async deleteActivationRule(id: string) {
+    const { error } = await supabase
+      .from('activation_rules')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+}
+
+// Contact Type Permissions Service
+export class ContactTypePermissionsService {
+  static async getContactTypePermissions(userId: string) {
+    const { data, error } = await supabase
+      .from('contact_type_permissions')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  static async upsertContactTypePermission(userId: string, contactType: string, permissions: any) {
+    const { data, error } = await supabase
+      .from('contact_type_permissions')
+      .upsert([{
+        user_id: userId,
+        contact_type: contactType,
+        default_permissions: permissions
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 }
 

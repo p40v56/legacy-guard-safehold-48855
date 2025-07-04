@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactCard from '@/components/contacts/ContactCard';
@@ -10,11 +9,19 @@ import SearchInput from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, UserPlus, Filter } from 'lucide-react';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
+import { useContacts } from '@/hooks/useContacts';
 
 const Contacts = () => {
-  const { toast } = useToast();
-  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    contacts,
+    loading,
+    createContact,
+    updateContact,
+    deleteContact,
+    updateContactPermissions,
+    updateUseTypeDefaults,
+  } = useContacts();
+  
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,65 +66,6 @@ const Contacts = () => {
     permissions: getDefaultPermissions('immediate_family')
   });
 
-  const fetchContacts = async () => {
-    try {
-      // Mock data loading - replace with your actual data fetching logic
-      const mockContacts: EmergencyContact[] = [
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          phone: '+1 (555) 123-4567',
-          relationship: 'Husband',
-          contact_type: 'immediate_family',
-          priority_order: 1,
-          can_receive_messages: true,
-          use_type_defaults: true,
-          permissions: getDefaultPermissions('immediate_family'),
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          phone: '+1 (555) 987-6543',
-          relationship: 'Sister',
-          contact_type: 'extended_family',
-          priority_order: 2,
-          can_receive_messages: false,
-          use_type_defaults: false,
-          permissions: {
-            digital_accounts: {
-              all_accounts: false,
-              by_category: ['banking'],
-              specific_accounts: [],
-            },
-            legacy_documents: {
-              all_documents: false,
-              by_category: ['legal'],
-              specific_documents: [],
-            },
-            contact_information: true,
-            emergency_instructions: true,
-            can_modify_information: false,
-          },
-          created_at: new Date().toISOString(),
-        },
-      ];
-
-      setContacts(mockContacts);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load emergency contacts",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Filter and search contacts
   const filteredContacts = useMemo(() => {
     return contacts.filter(contact => {
@@ -131,109 +79,33 @@ const Contacts = () => {
     });
   }, [contacts, searchQuery, filterCategory]);
 
-  useEffect(() => {
-    fetchContacts();
-  }, []);
-
-  const handleSaveContact = async (contactData: EmergencyContact) => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setContacts(prevContacts =>
-        prevContacts.map(contact =>
-          contact.id === contactData.id ? contactData : contact
-        )
-      );
-      toast({
-        title: "Success",
-        description: "Contact updated successfully"
-      });
-    } catch (error) {
-      console.error('Error updating contact:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update contact",
-        variant: "destructive"
-      });
-    } finally {
-      setEditingContact(null);
-    }
-  };
-
-  const handleDeleteContact = async (contactId: string) => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setContacts(prevContacts =>
-        prevContacts.filter(contact => contact.id !== contactId)
-      );
-      toast({
-        title: "Success",
-        description: "Contact deleted successfully"
-      });
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete contact",
-        variant: "destructive"
-      });
-    }
-  };
-
   const handleCreateContact = async () => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const contact: EmergencyContact = {
-        id: `contact-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        ...newContact,
-      } as EmergencyContact;
-
-      setContacts(prevContacts => [...prevContacts, contact]);
-      toast({
-        title: "Success",
-        description: "Contact created successfully"
-      });
-    } catch (error) {
-      console.error('Error creating contact:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create contact",
-        variant: "destructive"
-      });
-    } finally {
-      setNewContact({
-        name: '',
-        email: '',
-        phone: '',
-        relationship: '',
-        contact_type: 'immediate_family',
-        priority_order: 1,
-        can_receive_messages: true,
-        use_type_defaults: true,
-        permissions: getDefaultPermissions('immediate_family')
-      });
-      setIsDialogOpen(false);
-    }
-  };
-
-  const handlePermissionsChange = (contactId: string, newPermissions: ContactPermissions) => {
-    setContacts(prevContacts =>
-      prevContacts.map(contact =>
-        contact.id === contactId
-          ? { ...contact, permissions: newPermissions }
-          : contact
-      )
-    );
-  };
-
-  const handleUseTypeDefaultsChange = (contactId: string, useDefaults: boolean) => {
-    setContacts(prevContacts =>
-      prevContacts.map(contact =>
-        contact.id === contactId
-          ? { ...contact, use_type_defaults: useDefaults }
-          : contact
-      )
-    );
+    if (!newContact.name || !newContact.email) return;
+    
+    await createContact({
+      name: newContact.name,
+      email: newContact.email,
+      phone: newContact.phone,
+      relationship: newContact.relationship,
+      contact_type: newContact.contact_type || 'immediate_family',
+      priority_order: newContact.priority_order || 1,
+      can_receive_messages: newContact.can_receive_messages ?? true,
+      use_type_defaults: newContact.use_type_defaults ?? true,
+      permissions: newContact.permissions || getDefaultPermissions('immediate_family'),
+    });
+    
+    setNewContact({
+      name: '',
+      email: '',
+      phone: '',
+      relationship: '',
+      contact_type: 'immediate_family',
+      priority_order: 1,
+      can_receive_messages: true,
+      use_type_defaults: true,
+      permissions: getDefaultPermissions('immediate_family')
+    });
+    setIsDialogOpen(false);
   };
 
   if (loading) {
@@ -353,9 +225,9 @@ const Contacts = () => {
                 contact={contact}
                 contactTypeLabels={contactTypeLabels}
                 onEdit={setEditingContact}
-                onDelete={handleDeleteContact}
-                onPermissionsChange={handlePermissionsChange}
-                onUseTypeDefaultsChange={handleUseTypeDefaultsChange}
+                onDelete={deleteContact}
+                onPermissionsChange={updateContactPermissions}
+                onUseTypeDefaultsChange={updateUseTypeDefaults}
               />
             ))
           )}

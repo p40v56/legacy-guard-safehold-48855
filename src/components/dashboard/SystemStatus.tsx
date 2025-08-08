@@ -74,19 +74,21 @@ const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusPro
                 <div className="flex items-center gap-2">
                   <Timer className={`w-5 h-5 ${colors.text}`} />
                   <span className="text-lg font-semibold text-white">
-                    {countdown.isOverdue ? 'OVERDUE' : 'Next Check-in'}
+                    {countdown.isOverdue ? 'CHECK-IN OVERDUE' : 'Next Check-in'}
                   </span>
                 </div>
-                {urgencyLevel === 'critical' && (
-                  <Badge variant="destructive" className="animate-pulse">
-                    CRITICAL
-                  </Badge>
-                )}
-                {urgencyLevel === 'urgent' && (
-                  <Badge className="bg-orange-600/20 text-orange-400 border-orange-600/30">
-                    URGENT
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {urgencyLevel === 'critical' && (
+                    <Badge variant="destructive" className="animate-pulse">
+                      CRITICAL
+                    </Badge>
+                  )}
+                  {urgencyLevel === 'urgent' && (
+                    <Badge className="bg-orange-600/20 text-orange-400 border-orange-600/30">
+                      URGENT
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {!countdown.isOverdue ? (
@@ -105,9 +107,17 @@ const SystemStatus = ({ isActive, lastCheckIn, nextCheckInDue }: SystemStatusPro
               ) : (
                 <div className="text-center py-4">
                   <div className="text-4xl font-bold text-red-400 mb-2 animate-pulse">
-                    CHECK-IN REQUIRED
+                    ACTION REQUIRED
                   </div>
                   <p className="text-red-300">Your check-in deadline has passed</p>
+                </div>
+              )}
+
+              {nextCheckInDue && (
+                <div className="mt-4 pt-4 border-t border-slate-600">
+                  <p className="text-slate-300 text-sm text-center">
+                    Deadline: {formatDate(nextCheckInDue)}
+                  </p>
                 </div>
               )}
             </div>

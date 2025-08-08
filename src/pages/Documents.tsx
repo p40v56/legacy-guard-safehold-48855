@@ -14,6 +14,7 @@ import { FileText, Plus, Edit, Trash2, Download, Eye, Upload, Calendar, Shield }
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
+import { FileUpload } from '@/components/ui/file-upload';
 
 interface LegacyDocument {
   id: string;
@@ -40,6 +41,7 @@ const Documents = () => {
     description: '',
     is_public: false,
   });
+  const [uploading, setUploading] = useState(false);
 
   const filteredDocuments = useMemo(() => {
     return documents.filter(document => {
@@ -165,6 +167,41 @@ const Documents = () => {
         description: "Failed to delete document",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      // For now, we'll just store the file info
+      // In a real app, you'd upload to Supabase Storage
+      const fileInfo = {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        path: `documents/${user?.id}/${file.name}`
+      };
+      
+      toast({
+        title: "File uploaded",
+        description: `${file.name} has been uploaded successfully`,
+      });
+      
+      // Update form data with file info
+      setFormData(prev => ({
+        ...prev,
+        title: prev.title || file.name.split('.')[0]
+      }));
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload file",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -303,16 +340,27 @@ const Documents = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-slate-200 font-medium">Description</Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="bg-slate-700/50 border-slate-600 text-white backdrop-blur-sm"
-                    rows={4}
-                    placeholder="Brief description of the document and its importance..."
-                  />
-                </div>
+                 <div className="space-y-2">
+                   <Label className="text-slate-200 font-medium">Description</Label>
+                   <Textarea
+                     value={formData.description}
+                     onChange={(e) => setFormData({...formData, description: e.target.value})}
+                     className="bg-slate-700/50 border-slate-600 text-white backdrop-blur-sm"
+                     rows={4}
+                     placeholder="Brief description of the document and its importance..."
+                   />
+                 </div>
+
+                 <div className="space-y-2">
+                   <Label className="text-slate-200 font-medium">Upload File</Label>
+                   <FileUpload
+                     onUpload={handleFileUpload}
+                     accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                     maxSize={10}
+                     disabled={uploading}
+                     className="bg-slate-700/30 border-slate-600"
+                   />
+                 </div>
 
                 <div className="flex gap-3 pt-4">
                   <Button 

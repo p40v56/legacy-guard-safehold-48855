@@ -5,9 +5,10 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactCard from '@/components/contacts/ContactCard';
 import ContactDialog from '@/components/contacts/ContactDialog';
+import ContactPermissionsDialog from '@/components/contacts/ContactPermissionsDialog';
 import SearchInput from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, Filter } from 'lucide-react';
+import { Users, UserPlus, Filter, Shield } from 'lucide-react';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { useContacts } from '@/hooks/useContacts';
 
@@ -26,6 +27,8 @@ const Contacts = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<ContactType | 'all'>('all');
+  const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
+  const [selectedContactForPermissions, setSelectedContactForPermissions] = useState<EmergencyContact | null>(null);
 
   const contactTypeLabels: Record<ContactType, string> = {
     immediate_family: 'Immediate Family',
@@ -108,6 +111,18 @@ const Contacts = () => {
     setIsDialogOpen(false);
   };
 
+  const handleEditPermissions = (contact: EmergencyContact) => {
+    setSelectedContactForPermissions(contact);
+    setShowPermissionsDialog(true);
+  };
+
+  const handleSavePermissions = async (permissions: ContactPermissions) => {
+    if (!selectedContactForPermissions) return;
+    
+    await updateContactPermissions(selectedContactForPermissions.id, permissions);
+    setSelectedContactForPermissions(null);
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -177,6 +192,16 @@ const Contacts = () => {
           contactTypeLabels={contactTypeLabels}
           isEditing={false}
         />
+
+        {showPermissionsDialog && selectedContactForPermissions && (
+          <ContactPermissionsDialog
+            open={showPermissionsDialog}
+            onOpenChange={setShowPermissionsDialog}
+            contactName={selectedContactForPermissions.name}
+            permissions={selectedContactForPermissions.permissions}
+            onSave={handleSavePermissions}
+          />
+        )}
 
         {/* Contacts List */}
         <div className="grid gap-4">

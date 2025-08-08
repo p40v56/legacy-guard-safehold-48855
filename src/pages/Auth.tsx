@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import { EnhancedInput } from '@/components/ui/enhanced-input';
 import { Shield, Mail, Lock, User } from 'lucide-react';
 
 const Auth = () => {
@@ -18,12 +19,38 @@ const Auth = () => {
     firstName: '',
     lastName: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    return password.length >= 6;
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrors({});
+
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!validateEmail(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    if (!validatePassword(formData.password)) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -52,6 +79,28 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrors({});
+
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    }
+    if (!validateEmail(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    if (!validatePassword(formData.password)) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.signUp({
@@ -84,10 +133,19 @@ const Auth = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   return (
@@ -125,36 +183,37 @@ const Auth = () => {
 
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-200">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                      <Input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="bg-slate-700/50 border-slate-600 text-white pl-10"
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-200">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                      <Input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="bg-slate-700/50 border-slate-600 text-white pl-10"
-                        placeholder="Enter your password"
-                        required
-                      />
-                    </div>
-                  </div>
+                   <div className="space-y-2">
+                     <Label className="text-slate-200">Email</Label>
+                     <EnhancedInput
+                       type="email"
+                       name="email"
+                       value={formData.email}
+                       onChange={handleInputChange}
+                       className="bg-slate-700/50 border-slate-600 text-white"
+                       placeholder="Enter your email"
+                       leftIcon={<Mail className="w-4 h-4" />}
+                       error={errors.email}
+                       success={formData.email && validateEmail(formData.email) && !errors.email}
+                       required
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="text-slate-200">Password</Label>
+                     <EnhancedInput
+                       type="password"
+                       name="password"
+                       value={formData.password}
+                       onChange={handleInputChange}
+                       className="bg-slate-700/50 border-slate-600 text-white"
+                       placeholder="Enter your password"
+                       leftIcon={<Lock className="w-4 h-4" />}
+                       showPasswordToggle
+                       error={errors.password}
+                       success={formData.password && validatePassword(formData.password) && !errors.password}
+                       required
+                     />
+                   </div>
                   <Button 
                     type="submit" 
                     disabled={loading}
@@ -168,66 +227,69 @@ const Auth = () => {
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-slate-200">First Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                        <Input
-                          type="text"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          className="bg-slate-700/50 border-slate-600 text-white pl-10"
-                          placeholder="First name"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-slate-200">Last Name</Label>
-                      <Input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        className="bg-slate-700/50 border-slate-600 text-white"
-                        placeholder="Last name"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-200">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                      <Input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="bg-slate-700/50 border-slate-600 text-white pl-10"
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-200">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                      <Input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="bg-slate-700/50 border-slate-600 text-white pl-10"
-                        placeholder="Choose a strong password"
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                       <Label className="text-slate-200">First Name</Label>
+                       <EnhancedInput
+                         type="text"
+                         name="firstName"
+                         value={formData.firstName}
+                         onChange={handleInputChange}
+                         className="bg-slate-700/50 border-slate-600 text-white"
+                         placeholder="First name"
+                         leftIcon={<User className="w-4 h-4" />}
+                         error={errors.firstName}
+                         success={formData.firstName.trim() && !errors.firstName}
+                         required
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label className="text-slate-200">Last Name</Label>
+                       <EnhancedInput
+                         type="text"
+                         name="lastName"
+                         value={formData.lastName}
+                         onChange={handleInputChange}
+                         className="bg-slate-700/50 border-slate-600 text-white"
+                         placeholder="Last name"
+                         error={errors.lastName}
+                         success={formData.lastName.trim() && !errors.lastName}
+                         required
+                       />
+                     </div>
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="text-slate-200">Email</Label>
+                     <EnhancedInput
+                       type="email"
+                       name="email"
+                       value={formData.email}
+                       onChange={handleInputChange}
+                       className="bg-slate-700/50 border-slate-600 text-white"
+                       placeholder="Enter your email"
+                       leftIcon={<Mail className="w-4 h-4" />}
+                       error={errors.email}
+                       success={formData.email && validateEmail(formData.email) && !errors.email}
+                       required
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="text-slate-200">Password</Label>
+                     <EnhancedInput
+                       type="password"
+                       name="password"
+                       value={formData.password}
+                       onChange={handleInputChange}
+                       className="bg-slate-700/50 border-slate-600 text-white"
+                       placeholder="Choose a strong password"
+                       leftIcon={<Lock className="w-4 h-4" />}
+                       showPasswordToggle
+                       error={errors.password}
+                       success={formData.password && validatePassword(formData.password) && !errors.password}
+                       required
+                       minLength={6}
+                     />
+                   </div>
                   <Button 
                     type="submit" 
                     disabled={loading}

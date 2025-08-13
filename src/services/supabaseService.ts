@@ -69,15 +69,46 @@ export class SettingsService {
       return await this.createDefaultSettings(userId);
     }
     
+    // Calculate next_check_in_due if not set and system is active
+    let processedData = { ...data };
+    if (data.is_active && data.deadline_mode === 'frequency' && !data.next_check_in_due && data.last_check_in) {
+      const nextCheckIn = this.calculateNextCheckIn(data.check_in_frequency as CheckInFrequency, new Date(data.last_check_in));
+      processedData.next_check_in_due = nextCheckIn;
+      
+      // Update the database with the calculated deadline
+      await this.updateSettings(userId, { next_check_in_due: nextCheckIn });
+    }
+    
     return {
-      check_in_frequency: data.check_in_frequency as CheckInFrequency,
-      grace_period_hours: data.grace_period_hours,
-      is_active: data.is_active,
-      last_check_in: data.last_check_in,
-      next_check_in_due: data.next_check_in_due,
-      deadline_mode: data.deadline_mode as DeadlineMode,
-      custom_deadline: data.custom_deadline,
+      check_in_frequency: processedData.check_in_frequency as CheckInFrequency,
+      grace_period_hours: processedData.grace_period_hours,
+      is_active: processedData.is_active,
+      last_check_in: processedData.last_check_in,
+      next_check_in_due: processedData.next_check_in_due,
+      deadline_mode: processedData.deadline_mode as DeadlineMode,
+      custom_deadline: processedData.custom_deadline,
     };
+  }
+
+  static calculateNextCheckIn(frequency: CheckInFrequency, fromDate: Date = new Date()): string {
+    const nextDate = new Date(fromDate);
+    
+    switch (frequency) {
+      case 'daily':
+        nextDate.setDate(nextDate.getDate() + 1);
+        break;
+      case 'weekly':
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case 'biweekly':
+        nextDate.setDate(nextDate.getDate() + 14);
+        break;
+      case 'monthly':
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+    }
+    
+    return nextDate.toISOString();
   }
 
   static async createDefaultSettings(userId: string): Promise<UserSettings> {
@@ -125,11 +156,20 @@ export class SettingsService {
 
   static async checkIn(userId: string) {
     const now = new Date().toISOString();
+    
+    // Get current settings to calculate next deadline
+    const currentSettings = await this.getUserSettings(userId);
+    let nextCheckInDue = null;
+    
+    if (currentSettings?.is_active && currentSettings.deadline_mode === 'frequency') {
+      nextCheckInDue = this.calculateNextCheckIn(currentSettings.check_in_frequency, new Date(now));
+    }
+    
     const { data, error } = await supabase
       .from('user_settings')
       .update({ 
         last_check_in: now,
-        next_check_in_due: null // Will be calculated on next view
+        next_check_in_due: nextCheckInDue
       })
       .eq('user_id', userId)
       .select()

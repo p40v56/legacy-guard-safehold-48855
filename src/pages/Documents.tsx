@@ -97,10 +97,19 @@ const Documents = () => {
     e.preventDefault();
     
     try {
+      const submissionData = {
+        title: formData.title,
+        description: formData.description,
+        is_public: formData.is_public,
+        file_path: (formData as any).file_path || null,
+        file_type: (formData as any).file_type || null,
+        file_size: (formData as any).file_size || null,
+      };
+
       if (editingDocument) {
         const { error } = await supabase
           .from('legacy_documents')
-          .update(formData)
+          .update(submissionData)
           .eq('id', editingDocument.id);
         
         if (error) throw error;
@@ -112,7 +121,7 @@ const Documents = () => {
       } else {
         const { error } = await supabase
           .from('legacy_documents')
-          .insert([{ ...formData, user_id: user?.id }]);
+          .insert([{ ...submissionData, user_id: user?.id }]);
         
         if (error) throw error;
         
@@ -173,15 +182,18 @@ const Documents = () => {
   const handleFileUpload = async (file: File) => {
     setUploading(true);
     try {
-      // For now, we'll just store the file info
-      // In a real app, you'd upload to Supabase Storage
-      const fileInfo = {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        path: `documents/${user?.id}/${file.name}`
-      };
-      
+      // Generate a unique file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${user?.id}/${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
       toast({
         title: "File uploaded",
         description: `${file.name} has been uploaded successfully`,
@@ -190,7 +202,10 @@ const Documents = () => {
       // Update form data with file info
       setFormData(prev => ({
         ...prev,
-        title: prev.title || file.name.split('.')[0]
+        title: prev.title || file.name.split('.')[0],
+        file_path: uploadData.path,
+        file_type: file.type,
+        file_size: file.size
       }));
       
     } catch (error) {
@@ -213,6 +228,47 @@ const Documents = () => {
     });
     setShowAddForm(false);
     setEditingDocument(null);
+  };
+
+  const handleDownload = async (document: LegacyDocument) => {
+    if (!document.file_path) {
+      toast({
+        title: "No file",
+        description: "This document has no associated file to download",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .download(document.file_path);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = document.title + (document.file_type?.includes('pdf') ? '.pdf' : '');
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download started",
+        description: `${document.title} is being downloaded`,
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download failed",
+        description: "Failed to download file",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatFileSize = (bytes?: number) => {
@@ -476,6 +532,7 @@ const Documents = () => {
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => handleDownload(document)}
                               className="text-slate-400 hover:text-white hover:bg-slate-700/50 h-10 w-10 p-0"
                             >
                               <Download className="w-4 h-4" />

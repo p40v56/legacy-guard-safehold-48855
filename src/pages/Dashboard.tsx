@@ -28,6 +28,18 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  // Refresh data when user navigates back to dashboard
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user) {
+        fetchStats();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user]);
+
   const fetchStats = async () => {
     if (!user) return;
     
@@ -98,7 +110,11 @@ const Dashboard = () => {
         <SystemStatus 
           isActive={stats.userSettings?.is_active || false} 
           lastCheckIn={stats.userSettings?.last_check_in || undefined} 
-          nextCheckInDue={stats.userSettings?.next_check_in_due || undefined} 
+          nextCheckInDue={
+            stats.userSettings?.deadline_mode === 'custom' && stats.userSettings?.custom_deadline 
+              ? stats.userSettings.custom_deadline 
+              : stats.userSettings?.next_check_in_due || undefined
+          } 
         />
 
         {/* Stats Grid */}

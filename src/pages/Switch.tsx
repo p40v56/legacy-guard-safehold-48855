@@ -75,21 +75,12 @@ const Switch = () => {
     
     setSaving(true);
     try {
-      const updatedSettings = { ...settings!, ...updates };
+      await SettingsService.updateSettings(user.id, updates);
       
-      // If activating the system or changing frequency, calculate new next check-in
-      if (updates.is_active === true || updates.check_in_frequency) {
-        const now = new Date();
-        if (updatedSettings.deadline_mode === 'frequency') {
-          updatedSettings.next_check_in_due = calculateNextCheckIn(
-            updates.check_in_frequency || settings!.check_in_frequency,
-            new Date(settings?.last_check_in || now)
-          );
-        }
-      }
+      // Fetch fresh settings to ensure synchronization
+      const freshSettings = await SettingsService.getUserSettings(user.id);
+      setSettings(freshSettings);
       
-      await SettingsService.updateSettings(user.id, updatedSettings);
-      setSettings(updatedSettings);
       toast({
         title: "Settings Updated",
         description: "Your Dead Man's Switch settings have been saved",
@@ -150,19 +141,9 @@ const Switch = () => {
     try {
       await SettingsService.checkIn(user.id);
       
-      const now = new Date();
-      const newSettings = {
-        ...settings!,
-        last_check_in: now.toISOString(),
-      };
-
-      // Update deadline based on current mode
-      if (settings.deadline_mode === 'frequency') {
-        newSettings.next_check_in_due = calculateNextCheckIn(settings!.check_in_frequency, now);
-      }
-      // For custom mode, keep the custom deadline as is until user changes it
-
-      setSettings(newSettings);
+      // Fetch fresh settings to ensure synchronization
+      const freshSettings = await SettingsService.getUserSettings(user.id);
+      setSettings(freshSettings);
 
       toast({
         title: "Check-in Successful! ✅",
@@ -185,24 +166,15 @@ const Switch = () => {
     
     try {
       // First activate the system
-      const activationUpdates = { is_active: true };
-      await SettingsService.updateSettings(user.id, activationUpdates);
+      await SettingsService.updateSettings(user.id, { is_active: true });
       
       // Then perform the check-in
       await SettingsService.checkIn(user.id);
       
-      const now = new Date();
-      const newSettings = {
-        ...settings!,
-        is_active: true,
-        last_check_in: now.toISOString(),
-      };
-
-      if (settings?.deadline_mode === 'frequency') {
-        newSettings.next_check_in_due = calculateNextCheckIn(settings!.check_in_frequency, now);
-      }
-
-      setSettings(newSettings);
+      // Fetch fresh settings to ensure synchronization
+      const freshSettings = await SettingsService.getUserSettings(user.id);
+      setSettings(freshSettings);
+      
       setShowActivationDialog(false);
 
       toast({

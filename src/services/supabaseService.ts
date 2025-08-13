@@ -143,6 +143,19 @@ export class SettingsService {
   }
 
   static async updateSettings(userId: string, settings: Partial<UserSettings>) {
+    // If switching to frequency mode, calculate next deadline
+    if (settings.deadline_mode === 'frequency' && settings.check_in_frequency) {
+      const currentSettings = await this.getUserSettings(userId);
+      const lastCheckIn = currentSettings?.last_check_in || new Date().toISOString();
+      settings.next_check_in_due = this.calculateNextCheckIn(settings.check_in_frequency, new Date(lastCheckIn));
+      settings.custom_deadline = null; // Clear custom deadline when switching to frequency
+    }
+    
+    // If setting custom deadline, clear next_check_in_due
+    if (settings.deadline_mode === 'custom' && settings.custom_deadline) {
+      settings.next_check_in_due = null;
+    }
+
     const { data, error } = await supabase
       .from('user_settings')
       .update(settings)

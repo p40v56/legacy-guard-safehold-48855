@@ -7,89 +7,107 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
       accounts: {
         Row: {
+          account_name: string
           account_type: string
-          closure_action: string
+          closure_action: string | null
           created_at: string
+          credentials: string | null
           email: string | null
           id: string
-          importance: string
+          importance: string | null
           notes: string | null
-          platform: string
+          platform: string | null
           updated_at: string
           user_id: string
           username: string | null
+          website_url: string | null
         }
         Insert: {
-          account_type?: string
-          closure_action?: string
+          account_name: string
+          account_type: string
+          closure_action?: string | null
           created_at?: string
+          credentials?: string | null
           email?: string | null
           id?: string
-          importance?: string
+          importance?: string | null
           notes?: string | null
-          platform: string
+          platform?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
+          website_url?: string | null
         }
         Update: {
+          account_name?: string
           account_type?: string
-          closure_action?: string
+          closure_action?: string | null
           created_at?: string
+          credentials?: string | null
           email?: string | null
           id?: string
-          importance?: string
+          importance?: string | null
           notes?: string | null
-          platform?: string
+          platform?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
       activation_rules: {
         Row: {
+          action_config: Json | null
+          action_type: string
           contact_category: string | null
           contact_ids: string[] | null
           created_at: string
           custom_message: string | null
-          delay_hours: number | null
+          delay_hours: number
           enabled: boolean | null
           id: string
-          target_type: string
+          is_active: boolean
+          target_type: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          action_config?: Json | null
+          action_type: string
           contact_category?: string | null
           contact_ids?: string[] | null
           created_at?: string
           custom_message?: string | null
-          delay_hours?: number | null
+          delay_hours: number
           enabled?: boolean | null
           id?: string
-          target_type: string
+          is_active?: boolean
+          target_type?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          action_config?: Json | null
+          action_type?: string
           contact_category?: string | null
           contact_ids?: string[] | null
           created_at?: string
           custom_message?: string | null
-          delay_hours?: number | null
+          delay_hours?: number
           enabled?: boolean | null
           id?: string
-          target_type?: string
+          is_active?: boolean
+          target_type?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -99,7 +117,7 @@ export type Database = {
         Row: {
           contact_type: string
           created_at: string
-          default_permissions: Json
+          default_permissions: Json | null
           id: string
           updated_at: string
           user_id: string
@@ -107,7 +125,7 @@ export type Database = {
         Insert: {
           contact_type: string
           created_at?: string
-          default_permissions: Json
+          default_permissions?: Json | null
           id?: string
           updated_at?: string
           user_id: string
@@ -115,7 +133,7 @@ export type Database = {
         Update: {
           contact_type?: string
           created_at?: string
-          default_permissions?: Json
+          default_permissions?: Json | null
           id?: string
           updated_at?: string
           user_id?: string
@@ -127,13 +145,13 @@ export type Database = {
           can_receive_messages: boolean | null
           contact_type: string
           created_at: string
-          email: string
+          email: string | null
           id: string
           name: string
           notes: string | null
           permissions: Json | null
           phone: string | null
-          priority_order: number | null
+          priority_order: number
           relationship: string | null
           updated_at: string
           use_type_defaults: boolean | null
@@ -141,15 +159,15 @@ export type Database = {
         }
         Insert: {
           can_receive_messages?: boolean | null
-          contact_type?: string
+          contact_type: string
           created_at?: string
-          email: string
+          email?: string | null
           id?: string
           name: string
           notes?: string | null
           permissions?: Json | null
           phone?: string | null
-          priority_order?: number | null
+          priority_order?: number
           relationship?: string | null
           updated_at?: string
           use_type_defaults?: boolean | null
@@ -159,13 +177,13 @@ export type Database = {
           can_receive_messages?: boolean | null
           contact_type?: string
           created_at?: string
-          email?: string
+          email?: string | null
           id?: string
           name?: string
           notes?: string | null
           permissions?: Json | null
           phone?: string | null
-          priority_order?: number | null
+          priority_order?: number
           relationship?: string | null
           updated_at?: string
           use_type_defaults?: boolean | null
@@ -175,37 +193,43 @@ export type Database = {
       }
       legacy_documents: {
         Row: {
+          content: string | null
           created_at: string
           description: string | null
+          document_type: string
           file_path: string | null
           file_size: number | null
           file_type: string | null
           id: string
-          is_public: boolean
+          is_public: boolean | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          content?: string | null
           created_at?: string
           description?: string | null
+          document_type: string
           file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           id?: string
-          is_public?: boolean
+          is_public?: boolean | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          content?: string | null
           created_at?: string
           description?: string | null
+          document_type?: string
           file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           id?: string
-          is_public?: boolean
+          is_public?: boolean | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -215,28 +239,28 @@ export type Database = {
       notification_settings: {
         Row: {
           created_at: string
-          email_notifications: boolean | null
-          emergency_alerts: boolean | null
+          email_notifications: boolean
+          emergency_alerts: boolean
           id: string
-          sms_notifications: boolean | null
+          sms_notifications: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          email_notifications?: boolean | null
-          emergency_alerts?: boolean | null
+          email_notifications?: boolean
+          emergency_alerts?: boolean
           id?: string
-          sms_notifications?: boolean | null
+          sms_notifications?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          email_notifications?: boolean | null
-          emergency_alerts?: boolean | null
+          email_notifications?: boolean
+          emergency_alerts?: boolean
           id?: string
-          sms_notifications?: boolean | null
+          sms_notifications?: boolean
           updated_at?: string
           user_id?: string
         }

@@ -19,6 +19,7 @@ import { FileUpload } from '@/components/ui/file-upload';
 interface LegacyDocument {
   id: string;
   title: string;
+  document_type: string;
   description?: string;
   file_path?: string;
   file_type?: string;
@@ -38,6 +39,7 @@ const Documents = () => {
   const [editingDocument, setEditingDocument] = useState<LegacyDocument | null>(null);
   const [formData, setFormData] = useState({
     title: '',
+    document_type: 'legal',
     description: '',
     is_public: false,
   });
@@ -99,6 +101,7 @@ const Documents = () => {
     try {
       const submissionData = {
         title: formData.title,
+        document_type: formData.document_type,
         description: formData.description,
         is_public: formData.is_public,
         file_path: (formData as any).file_path || null,
@@ -146,6 +149,7 @@ const Documents = () => {
   const handleEdit = (document: LegacyDocument) => {
     setFormData({
       title: document.title,
+      document_type: document.document_type,
       description: document.description || '',
       is_public: document.is_public,
     });
@@ -223,6 +227,7 @@ const Documents = () => {
   const resetForm = () => {
     setFormData({
       title: '',
+      document_type: 'legal',
       description: '',
       is_public: false,
     });

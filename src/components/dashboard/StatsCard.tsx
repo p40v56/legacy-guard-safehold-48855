@@ -15,22 +15,37 @@ interface StatsCardProps {
 
 const StatsCard = ({ title, value, icon: Icon, description, trend }: StatsCardProps) => {
   return (
-    <Card className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/70 transition-colors">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-slate-300">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-emerald-400" />
+    <Card className="glass group relative overflow-hidden border-border/50 transition-all duration-500 hover:border-primary/50">
+      {/* Animated gradient background on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      {/* Floating icon decoration */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 group-hover:animate-pulse-subtle" />
+      
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-300">
+          {title}
+        </CardTitle>
+        <div className="relative">
+          <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <Icon className="h-5 w-5 text-primary relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-white">{value}</div>
+      <CardContent className="relative z-10">
+        <div className="text-3xl font-display font-bold bg-gradient-to-br from-foreground to-foreground/80 bg-clip-text text-transparent group-hover:from-primary group-hover:to-accent transition-all duration-500">
+          {value}
+        </div>
         {description && (
-          <p className="text-xs text-slate-400 mt-1">{description}</p>
+          <p className="text-xs text-muted-foreground mt-1 transition-colors duration-300 group-hover:text-muted-foreground/80">
+            {description}
+          </p>
         )}
         {trend && (
-          <div className="flex items-center mt-2">
-            <span className={`text-xs ${trend.value >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          <div className="flex items-center mt-3 pt-3 border-t border-border/50">
+            <span className={`text-xs font-semibold ${trend.value >= 0 ? 'text-success' : 'text-destructive'}`}>
               {trend.value >= 0 ? '+' : ''}{trend.value}%
             </span>
-            <span className="text-xs text-slate-400 ml-1">{trend.label}</span>
+            <span className="text-xs text-muted-foreground ml-2">{trend.label}</span>
           </div>
         )}
       </CardContent>

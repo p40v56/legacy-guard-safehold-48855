@@ -107,15 +107,17 @@ const Dashboard = () => {
         </div>
 
         {/* System Status */}
-        <SystemStatus 
-          isActive={stats.userSettings?.is_active || false} 
-          lastCheckIn={stats.userSettings?.last_check_in || undefined} 
-          nextCheckInDue={
-            stats.userSettings?.deadline_mode === 'custom' && stats.userSettings?.custom_deadline 
-              ? stats.userSettings.custom_deadline 
-              : stats.userSettings?.next_check_in_due || undefined
-          } 
-        />
+        <div className="animate-fade-in-up">
+          <SystemStatus 
+            isActive={stats.userSettings?.is_active || false} 
+            lastCheckIn={stats.userSettings?.last_check_in || undefined} 
+            nextCheckInDue={
+              stats.userSettings?.deadline_mode === 'custom' && stats.userSettings?.custom_deadline 
+                ? stats.userSettings.custom_deadline 
+                : stats.userSettings?.next_check_in_due || undefined
+            } 
+          />
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -126,7 +128,9 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <QuickActions />
+        <div className="animate-fade-in-up [animation-delay:400ms]">
+          <QuickActions />
+        </div>
 
         {/* Recent Activity placeholder for future enhancement */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

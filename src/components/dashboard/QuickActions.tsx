@@ -9,7 +9,8 @@ import {
   CreditCard,
   Settings,
   Bell,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 
 const QuickActions = () => {
@@ -20,7 +21,7 @@ const QuickActions = () => {
       icon: Timer,
       href: '/switch',
       variant: 'primary' as const,
-      gradient: 'from-emerald-600 to-emerald-500',
+      gradient: 'from-success via-success to-emerald-600',
     },
     {
       title: 'Add Contact',
@@ -28,7 +29,7 @@ const QuickActions = () => {
       icon: UserPlus,
       href: '/contacts',
       variant: 'secondary' as const,
-      gradient: 'from-blue-600 to-blue-500',
+      gradient: 'from-primary via-primary to-blue-600',
     },
     {
       title: 'Upload Document',
@@ -36,7 +37,7 @@ const QuickActions = () => {
       icon: Upload,
       href: '/documents',
       variant: 'secondary' as const,
-      gradient: 'from-purple-600 to-purple-500',
+      gradient: 'from-secondary via-secondary to-purple-600',
     },
     {
       title: 'Add Account',
@@ -44,7 +45,7 @@ const QuickActions = () => {
       icon: CreditCard,
       href: '/accounts',
       variant: 'secondary' as const,
-      gradient: 'from-indigo-600 to-indigo-500',
+      gradient: 'from-accent via-accent to-cyan-600',
     },
     {
       title: 'Configure Alerts',
@@ -52,7 +53,7 @@ const QuickActions = () => {
       icon: Bell,
       href: '/settings',
       variant: 'secondary' as const,
-      gradient: 'from-orange-600 to-orange-500',
+      gradient: 'from-warning via-warning to-orange-600',
     },
     {
       title: 'Settings',
@@ -60,56 +61,65 @@ const QuickActions = () => {
       icon: Settings,
       href: '/settings',
       variant: 'secondary' as const,
-      gradient: 'from-slate-600 to-slate-500',
+      gradient: 'from-muted-foreground via-muted-foreground to-slate-600',
     },
   ];
 
   return (
-    <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-white text-xl flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/20">
-            <Timer className="w-5 h-5 text-emerald-400" />
+    <Card className="glass overflow-hidden border-border/50">
+      <div className="absolute inset-0 gradient-mesh opacity-5 animate-gradient-xy" />
+      
+      <CardHeader className="pb-4 relative z-10">
+        <CardTitle className="text-2xl font-display flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary/20 animate-pulse-subtle">
+            <Zap className="w-6 h-6 text-primary" />
           </div>
-          Quick Actions
+          <span className="gradient-text">Quick Actions</span>
         </CardTitle>
-        <p className="text-slate-400">Get things done quickly with these common tasks</p>
+        <p className="text-muted-foreground mt-2">Get things done quickly with these common tasks</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {actions.map((action) => {
+          {actions.map((action, index) => {
             const Icon = action.icon;
             return (
               <Link
                 key={action.title}
                 to={action.href}
-                className="group block"
+                className={`group block animate-fade-in-up`}
+                style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className={`h-full p-6 rounded-xl transition-all duration-300 border ${
-                  action.variant === 'primary' 
-                    ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border-emerald-500/30 hover:from-emerald-500/30 hover:to-emerald-600/30 shadow-lg shadow-emerald-500/10' 
-                    : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-700/50 hover:border-slate-600/50'
-                } group-hover:scale-105 group-hover:shadow-xl`}>
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${
-                      action.variant === 'primary'
-                        ? 'bg-emerald-500/20'
-                        : `bg-gradient-to-br ${action.gradient} opacity-80`
-                    }`}>
-                      <Icon className={`w-6 h-6 ${
-                        action.variant === 'primary' ? 'text-emerald-400' : 'text-white'
-                      }`} />
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors transform group-hover:translate-x-1" />
-                  </div>
+                <div className={`h-full p-6 rounded-2xl transition-all duration-500 border glass-strong
+                  ${action.variant === 'primary' 
+                    ? 'border-success/30 hover:border-success/50' 
+                    : 'border-border/30 hover:border-primary/50'
+                  } 
+                  hover-lift group-hover:shadow-2xl relative overflow-hidden`}
+                >
+                  {/* Gradient overlay on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
                   
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-white group-hover:text-white transition-colors">
-                      {action.title}
-                    </h3>
-                    <p className="text-sm text-slate-400 leading-relaxed">
-                      {action.description}
-                    </p>
+                  {/* Floating decoration */}
+                  <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br ${action.gradient} rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-700`} />
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} relative overflow-hidden
+                        ${action.variant === 'primary' ? 'shadow-lg shadow-success/30' : ''}`}
+                      >
+                        <Icon className="w-6 h-6 text-white relative z-10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-all duration-300 transform group-hover:translate-x-1" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="font-display font-semibold text-foreground group-hover:gradient-text transition-all duration-300">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {action.description}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </Link>

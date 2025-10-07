@@ -62,7 +62,12 @@ export const useAccounts = () => {
     if (!user) return;
     
     try {
-      const newAccount = await AccountsService.createAccount(user.id, formData);
+      // Add account_name using platform as the name
+      const accountData = {
+        ...formData,
+        account_name: formData.platform, // Database requires account_name (NOT NULL)
+      };
+      const newAccount = await AccountsService.createAccount(user.id, accountData);
       // Transform the returned data
       const transformedAccount: DigitalAccount = {
         id: newAccount.id,
@@ -94,7 +99,12 @@ export const useAccounts = () => {
 
   const updateAccount = async (accountId: string, formData: Omit<DigitalAccount, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const updatedAccount = await AccountsService.updateAccount(accountId, formData);
+      // Add account_name using platform as the name
+      const accountData = {
+        ...formData,
+        account_name: formData.platform, // Database requires account_name (NOT NULL)
+      };
+      const updatedAccount = await AccountsService.updateAccount(accountId, accountData);
       // Transform the returned data
       const transformedAccount: DigitalAccount = {
         id: updatedAccount.id,

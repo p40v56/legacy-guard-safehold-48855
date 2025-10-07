@@ -387,6 +387,24 @@ const Documents = () => {
                   </div>
                   
                   <div className="space-y-2">
+                    <Label className="text-slate-200 font-medium">Document Type *</Label>
+                    <Select value={formData.document_type} onValueChange={(value) => setFormData({...formData, document_type: value})}>
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="legal">Legal</SelectItem>
+                        <SelectItem value="financial">Financial</SelectItem>
+                        <SelectItem value="medical">Medical</SelectItem>
+                        <SelectItem value="personal">Personal</SelectItem>
+                        <SelectItem value="insurance">Insurance</SelectItem>
+                        <SelectItem value="property">Property</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 lg:col-span-2">
                     <Label className="text-slate-200 font-medium">Visibility</Label>
                     <div className="flex items-center justify-between p-4 rounded-lg bg-slate-700/30 border border-slate-600">
                       <div>

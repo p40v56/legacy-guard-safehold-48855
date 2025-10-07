@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
+import { useContacts } from '@/hooks/useContacts';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,13 +79,8 @@ const Settings = () => {
     deleteActivationRule,
   } = useSettings();
 
-  // Emergency contacts for activation rule selection - this would come from the contacts service
-  const [emergencyContacts] = useState<EmergencyContact[]>([
-    { id: '1', name: 'John Smith', email: 'john@example.com', relationship: 'Spouse', contact_type: 'immediate_family' },
-    { id: '2', name: 'Jane Doe', email: 'jane@example.com', relationship: 'Sister', contact_type: 'immediate_family' },
-    { id: '3', name: 'Bob Johnson', email: 'bob@example.com', relationship: 'Friend', contact_type: 'close_friends' },
-    { id: '4', name: 'Alice Wilson', email: 'alice@example.com', relationship: 'Lawyer', contact_type: 'legal' },
-  ]);
+  // Load actual contacts from the database
+  const { contacts: emergencyContacts, loading: contactsLoading } = useContacts();
 
   const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
     try {
@@ -133,7 +129,7 @@ const Settings = () => {
     }));
   };
 
-  if (loading) {
+  if (loading || contactsLoading) {
     return <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -385,23 +381,29 @@ const Settings = () => {
                     {rule.target_type === 'contacts' && (
                       <div>
                         <Label className="text-slate-200">Select Contacts</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
-                          {emergencyContacts.map(contact => (
-                            <div key={contact.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`contact-${rule.id}-${contact.id}`}
-                                checked={(rule.contact_ids || []).includes(contact.id)}
-                                onCheckedChange={() => toggleContactSelection(rule.id, contact.id)}
-                              />
-                              <label 
-                                htmlFor={`contact-${rule.id}-${contact.id}`}
-                                className="text-sm text-slate-300 cursor-pointer flex-1"
-                              >
-                                {contact.name} ({contact.relationship})
-                              </label>
-                            </div>
-                          ))}
-                        </div>
+                        {emergencyContacts.length === 0 ? (
+                          <p className="text-slate-400 text-sm mt-2">
+                            No contacts available. Please add contacts first.
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
+                            {emergencyContacts.map(contact => (
+                              <div key={contact.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`contact-${rule.id}-${contact.id}`}
+                                  checked={(rule.contact_ids || []).includes(contact.id)}
+                                  onCheckedChange={() => toggleContactSelection(rule.id, contact.id)}
+                                />
+                                <label 
+                                  htmlFor={`contact-${rule.id}-${contact.id}`}
+                                  className="text-sm text-slate-300 cursor-pointer flex-1"
+                                >
+                                  {contact.name} {contact.relationship && `(${contact.relationship})`}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {(rule.contact_ids || []).length === 0 && (
                           <p className="text-xs text-slate-400 mt-1">No contacts selected</p>
                         )}

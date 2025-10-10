@@ -134,8 +134,8 @@ const Settings = () => {
     return <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
-            <p className="text-slate-400">Loading settings...</p>
+            <LoadingSpinner size="lg" className="text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading settings...</p>
           </div>
         </div>
       </DashboardLayout>;
@@ -145,8 +145,8 @@ const Settings = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-slate-400">Manage your account and application preferences</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
+          <p className="text-muted-foreground">Manage your account and application preferences</p>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
@@ -185,20 +185,18 @@ const Settings = () => {
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-slate-200">First Name</Label>
+                    <Label className="text-foreground">First Name</Label>
                     <Input 
                       value={profile.first_name} 
                       onChange={e => setProfile({...profile, first_name: e.target.value})} 
-                      className="bg-slate-700 border-slate-600 text-white" 
                       placeholder="Enter your first name" 
                     />
                   </div>
                   <div>
-                    <Label className="text-slate-200">Last Name</Label>
+                    <Label className="text-foreground">Last Name</Label>
                     <Input 
                       value={profile.last_name} 
                       onChange={e => setProfile({...profile, last_name: e.target.value})} 
-                      className="bg-slate-700 border-slate-600 text-white" 
                       placeholder="Enter your last name" 
                     />
                   </div>
@@ -206,27 +204,25 @@ const Settings = () => {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-slate-200">Email</Label>
+                    <Label className="text-foreground">Email</Label>
                     <Input 
                       value={profile.email} 
                       disabled 
-                      className="bg-slate-600 border-slate-500 text-slate-300" 
                     />
-                    <p className="text-xs text-slate-400 mt-1">Email cannot be changed here</p>
+                    <p className="text-xs text-muted-foreground mt-1">Email cannot be changed here</p>
                   </div>
                   <div>
-                    <Label className="text-slate-200">Phone Number</Label>
+                    <Label className="text-foreground">Phone Number</Label>
                     <Input 
                       value={profile.phone} 
                       onChange={e => setProfile({...profile, phone: e.target.value})} 
-                      className="bg-slate-700 border-slate-600 text-white" 
                       placeholder="+1 (555) 123-4567" 
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-slate-200">Emergency Instructions</Label>
+                  <Label className="text-foreground">Emergency Instructions</Label>
                   <RichTextEditor
                     value={profile.emergency_instructions || ''}
                     onChange={(value) => setProfile({...profile, emergency_instructions: value})}
@@ -235,7 +231,7 @@ const Settings = () => {
                   />
                 </div>
 
-                <Button onClick={saveProfile} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500">
+                <Button onClick={saveProfile} disabled={saving} variant="default">
                   {saving ? (
                     <>
                       <LoadingSpinner size="sm" className="mr-2" />
@@ -252,24 +248,24 @@ const Settings = () => {
             </Card>
 
             {/* Account Status */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white">Account Status</CardTitle>
+                <CardTitle className="text-foreground">Account Status</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Account Type</span>
-                  <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30">
+                  <span className="text-muted-foreground">Account Type</span>
+                  <Badge className="bg-success/20 text-success border-success/30">
                     Free Plan
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Member Since</span>
-                  <span className="text-white">Today</span>
+                  <span className="text-muted-foreground">Member Since</span>
+                  <span className="text-foreground">Today</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Last Login</span>
-                  <span className="text-white">Just now</span>
+                  <span className="text-muted-foreground">Last Login</span>
+                  <span className="text-foreground">Just now</span>
                 </div>
               </CardContent>
             </Card>
@@ -281,40 +277,40 @@ const Settings = () => {
 
           <TabsContent value="activation" className="space-y-6 mt-6">
             {/* Dead Man's Switch Activation Rules */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white flex items-center justify-between">
+                <CardTitle className="text-foreground flex items-center justify-between">
                   <div className="flex items-center">
-                    <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
+                    <AlertTriangle className="w-5 h-5 mr-2 text-destructive" />
                     Dead Man's Switch Activation Rules
                   </div>
-                  <Button onClick={addActivationRule} size="sm" className="bg-emerald-600 hover:bg-emerald-500">
+                  <Button onClick={addActivationRule} size="sm" variant="default">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Rule
                   </Button>
                 </CardTitle>
-                <p className="text-slate-400 text-sm mt-2">
+                <p className="text-muted-foreground text-sm mt-2">
                   Configure what happens when your Dead Man's Switch is triggered. Rules are executed in order based on delay times.
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
                 {activationRules.map((rule, index) => (
-                  <div key={rule.id} className="border border-slate-600 rounded-lg p-4 space-y-4">
+                  <div key={rule.id} className="border border-border rounded-lg p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <Badge variant="outline" className="border-slate-500 text-slate-300">
+                        <Badge variant="outline">
                           Rule {index + 1}
                         </Badge>
                         <Switch 
                           checked={rule.enabled} 
                           onCheckedChange={checked => updateActivationRule(rule.id, { enabled: checked })} 
                         />
-                        <span className="text-slate-300 text-sm">
+                        <span className="text-foreground text-sm">
                           {rule.enabled ? 'Enabled' : 'Disabled'}
                         </span>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-2 text-slate-400">
+                        <div className="flex items-center space-x-2 text-muted-foreground">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm">
                             {rule.delay_hours === 0 ? 'Immediate' : `${rule.delay_hours}h delay`}
@@ -324,7 +320,7 @@ const Settings = () => {
                           variant="ghost" 
                           size="sm" 
                           onClick={() => deleteActivationRule(rule.id)} 
-                          className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -333,7 +329,7 @@ const Settings = () => {
 
                     <div className="grid md:grid-cols-3 gap-4">
                       <div>
-                        <Label className="text-slate-200">Target Type</Label>
+                        <Label className="text-foreground">Target Type</Label>
                         <Select 
                           value={rule.target_type} 
                           onValueChange={value => updateActivationRule(rule.id, { 
@@ -342,7 +338,7 @@ const Settings = () => {
                             contact_ids: value === 'contacts' ? [] : undefined
                           })}
                         >
-                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                          <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -354,12 +350,12 @@ const Settings = () => {
 
                       {rule.target_type === 'category' && (
                         <div>
-                          <Label className="text-slate-200">Contact Category</Label>
+                          <Label className="text-foreground">Contact Category</Label>
                           <Select 
                             value={rule.contact_category} 
                             onValueChange={value => updateActivationRule(rule.id, { contact_category: value as ContactCategory })}
                           >
-                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                            <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -375,23 +371,22 @@ const Settings = () => {
                       )}
 
                       <div>
-                        <Label className="text-slate-200">Delay (hours)</Label>
+                        <Label className="text-foreground">Delay (hours)</Label>
                         <Input 
                           type="number" 
                           min="0" 
                           max="8760" 
                           value={rule.delay_hours} 
                           onChange={e => updateActivationRule(rule.id, { delay_hours: parseInt(e.target.value) || 0 })} 
-                          className="bg-slate-700 border-slate-600 text-white" 
                         />
                       </div>
                     </div>
 
                     {rule.target_type === 'contacts' && (
                       <div>
-                        <Label className="text-slate-200">Select Contacts</Label>
+                        <Label className="text-foreground">Select Contacts</Label>
                         {emergencyContacts.length === 0 ? (
-                          <p className="text-slate-400 text-sm mt-2">
+                          <p className="text-muted-foreground text-sm mt-2">
                             No contacts available. Please add contacts first.
                           </p>
                         ) : (
@@ -405,7 +400,7 @@ const Settings = () => {
                                 />
                                 <label 
                                   htmlFor={`contact-${rule.id}-${contact.id}`}
-                                  className="text-sm text-slate-300 cursor-pointer flex-1"
+                                  className="text-sm text-foreground cursor-pointer flex-1"
                                 >
                                   {contact.name} {contact.relationship && `(${contact.relationship})`}
                                 </label>
@@ -414,13 +409,13 @@ const Settings = () => {
                           </div>
                         )}
                         {(rule.contact_ids || []).length === 0 && (
-                          <p className="text-xs text-slate-400 mt-1">No contacts selected</p>
+                          <p className="text-xs text-muted-foreground mt-1">No contacts selected</p>
                         )}
                       </div>
                     )}
 
                     <div>
-                      <Label className="text-slate-200">Custom Message</Label>
+                      <Label className="text-foreground">Custom Message</Label>
                       <RichTextEditor
                         value={rule.custom_message}
                         onChange={(value) => updateActivationRule(rule.id, { custom_message: value })}
@@ -431,19 +426,19 @@ const Settings = () => {
                   </div>
                 ))}
 
-                <div className="pt-4 border-t border-slate-700">
-                  <Button onClick={saveActivationRules} className="bg-red-600 hover:bg-red-500">
+                <div className="pt-4 border-t border-border">
+                  <Button onClick={saveActivationRules} variant="destructive">
                     <Save className="w-4 h-4 mr-2" />
                     Save Activation Rules
                   </Button>
                 </div>
 
-                <div className="bg-slate-700/30 rounded-lg p-4 space-y-2">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                   <div className="flex items-center space-x-2">
-                    <FileText className="w-4 h-4 text-blue-400" />
-                    <span className="text-slate-200 font-medium">How Activation Works</span>
+                    <FileText className="w-4 h-4 text-primary" />
+                    <span className="text-foreground font-medium">How Activation Works</span>
                   </div>
-                  <ul className="text-sm text-slate-300 space-y-1 list-disc list-inside ml-6">
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-6">
                     <li>When your check-in deadline is missed, activation begins</li>
                     <li>Rules execute based on their delay times (0 hours = immediate)</li>
                     <li>Each rule targets either a contact category or specific contacts</li>
@@ -464,20 +459,20 @@ const Settings = () => {
 
           <TabsContent value="notifications" className="space-y-6 mt-6">
             {/* Notification Settings */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Bell className="w-5 h-5 mr-2 text-blue-400" />
+                <CardTitle className="text-foreground flex items-center">
+                  <Bell className="w-5 h-5 mr-2 text-primary" />
                   Notification Preferences
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Mail className="w-5 h-5 text-slate-400" />
+                    <Mail className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <Label className="text-slate-200">Email Notifications</Label>
-                      <p className="text-sm text-slate-400">Receive updates via email</p>
+                      <Label className="text-foreground">Email Notifications</Label>
+                      <p className="text-sm text-muted-foreground">Receive updates via email</p>
                     </div>
                   </div>
                   <Switch 
@@ -486,14 +481,14 @@ const Settings = () => {
                   />
                 </div>
 
-                <Separator className="bg-slate-600" />
+                <Separator />
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Phone className="w-5 h-5 text-slate-400" />
+                    <Phone className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <Label className="text-slate-200">SMS Notifications</Label>
-                      <p className="text-sm text-slate-400">Receive updates via text message</p>
+                      <Label className="text-foreground">SMS Notifications</Label>
+                      <p className="text-sm text-muted-foreground">Receive updates via text message</p>
                     </div>
                   </div>
                   <Switch 
@@ -502,14 +497,14 @@ const Settings = () => {
                   />
                 </div>
 
-                <Separator className="bg-slate-600" />
+                <Separator />
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Shield className="w-5 h-5 text-slate-400" />
+                    <Shield className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <Label className="text-slate-200">Emergency Alerts</Label>
-                      <p className="text-sm text-slate-400">Critical notifications for emergency situations</p>
+                      <Label className="text-foreground">Emergency Alerts</Label>
+                      <p className="text-sm text-muted-foreground">Critical notifications for emergency situations</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

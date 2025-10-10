@@ -14,12 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2 } from 'lucide-react';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
 import { ContactTypePermissions as ContactTypePermissionsType } from '@/types/access-control';
 import RichTextEditor from '@/components/ui/rich-text-editor';
+import ThemeSelector from '@/components/settings/ThemeSelector';
 
 interface Profile {
   id: string;
@@ -149,20 +150,24 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800/50 border-slate-700">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400">
+          <TabsList className="grid w-full grid-cols-5 bg-card/50 border-border">
+            <TabsTrigger value="profile" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
               <User className="w-4 h-4 mr-2" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="activation" className="data-[state=active]:bg-red-600/20 data-[state=active]:text-red-400">
+            <TabsTrigger value="appearance" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+              <Palette className="w-4 h-4 mr-2" />
+              Appearance
+            </TabsTrigger>
+            <TabsTrigger value="activation" className="data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive">
               <AlertTriangle className="w-4 h-4 mr-2" />
               Activation Rules
             </TabsTrigger>
-            <TabsTrigger value="permissions" className="data-[state=active]:bg-purple-600/20 data-[state=active]:text-purple-400">
+            <TabsTrigger value="permissions" className="data-[state=active]:bg-accent/20 data-[state=active]:text-accent-foreground">
               <Shield className="w-4 h-4 mr-2" />
               Default Permissions
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600/20 data-[state=active]:text-blue-400">
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary-foreground">
               <Bell className="w-4 h-4 mr-2" />
               Notifications
             </TabsTrigger>
@@ -170,10 +175,10 @@ const Settings = () => {
 
           <TabsContent value="profile" className="space-y-6 mt-6">
             {/* Profile Settings */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <User className="w-5 h-5 mr-2 text-emerald-400" />
+                <CardTitle className="text-foreground flex items-center">
+                  <User className="w-5 h-5 mr-2 text-primary" />
                   Profile Information
                 </CardTitle>
               </CardHeader>
@@ -268,6 +273,10 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="appearance" className="space-y-6 mt-6">
+            <ThemeSelector />
           </TabsContent>
 
           <TabsContent value="activation" className="space-y-6 mt-6">

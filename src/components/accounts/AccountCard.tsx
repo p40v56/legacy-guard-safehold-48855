@@ -27,12 +27,12 @@ interface AccountCardProps {
 
 const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) => {
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card className="bg-card border-border">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-lg font-medium text-white">{account.account_name}</h3>
+              <h3 className="text-lg font-medium text-foreground">{account.account_name}</h3>
               <Badge variant="secondary" className="text-xs">
                 {account.account_type}
               </Badge>
@@ -40,32 +40,32 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) 
             
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-slate-400">Platform:</span>
-                <span className="text-white">{account.platform}</span>
+                <span className="text-muted-foreground">Platform:</span>
+                <span className="text-foreground">{account.platform}</span>
               </div>
               
               {account.email && (
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400">Email:</span>
-                  <span className="text-white">{account.email}</span>
+                  <span className="text-muted-foreground">Email:</span>
+                  <span className="text-foreground">{account.email}</span>
                 </div>
               )}
               
               {account.username && (
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400">Username:</span>
-                  <span className="text-white">{account.username}</span>
+                  <span className="text-muted-foreground">Username:</span>
+                  <span className="text-foreground">{account.username}</span>
                 </div>
               )}
               
               {account.website_url && (
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400">Website:</span>
+                  <span className="text-muted-foreground">Website:</span>
                   <a 
                     href={account.website_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-emerald-400 hover:text-emerald-300"
+                    className="text-primary hover:text-primary/80"
                   >
                     {account.website_url}
                   </a>
@@ -74,14 +74,14 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) 
               
               {account.notes && (
                 <div className="mt-3">
-                  <span className="text-slate-400">Notes:</span>
-                  <p className="text-white mt-1">{account.notes}</p>
+                  <span className="text-muted-foreground">Notes:</span>
+                  <p className="text-foreground mt-1">{account.notes}</p>
                 </div>
               )}
               
               <div className="flex items-center gap-2 mt-3">
-                <span className="text-slate-400">Created:</span>
-                <span className="text-slate-300">
+                <span className="text-muted-foreground">Created:</span>
+                <span className="text-muted-foreground">
                   {new Date(account.created_at).toLocaleDateString()}
                 </span>
               </div>
@@ -93,7 +93,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) 
               variant="ghost"
               size="sm"
               onClick={() => onEdit(account)}
-              className="text-slate-400 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               <Edit className="w-4 h-4" />
             </Button>
@@ -101,7 +101,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) 
               variant="ghost"
               size="sm"
               onClick={() => onDelete(account.id)}
-              className="text-slate-400 hover:text-red-400"
+              className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="w-4 h-4" />
             </Button>

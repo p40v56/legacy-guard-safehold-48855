@@ -298,14 +298,14 @@ const Accounts = () => {
         {/* Accounts List */}
         <div className="space-y-4">
           {filteredAccounts.length === 0 ? (
-            <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
+            <Card className="bg-card border-border backdrop-blur-sm">
               <CardContent className="p-12 text-center">
                 <div className="max-w-md mx-auto">
-                  <div className="p-4 rounded-2xl bg-slate-700/30 w-fit mx-auto mb-6">
-                    <CreditCard className="w-12 h-12 text-slate-400" />
+                  <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6">
+                    <CreditCard className="w-12 h-12 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">No accounts found</h3>
-                  <p className="text-slate-400 mb-6 leading-relaxed">
+                  <h3 className="text-xl font-semibold text-foreground mb-3">No accounts found</h3>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
                     {searchTerm || filterType !== 'all' 
                       ? 'No accounts match your search criteria. Try adjusting your filters or search terms.' 
                       : 'Start adding your digital accounts to create a comprehensive digital legacy plan.'}
@@ -313,7 +313,7 @@ const Accounts = () => {
                   {(!searchTerm && filterType === 'all') && (
                     <Button 
                       onClick={() => setShowForm(true)}
-                      className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg font-semibold"
+                      className="bg-primary hover:bg-primary/90 shadow-lg font-semibold"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Your First Account
@@ -325,35 +325,35 @@ const Accounts = () => {
           ) : (
             <div className="grid gap-6">
               {filteredAccounts.map((account) => (
-                <Card key={account.id} className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:bg-slate-800/60 transition-all duration-300 group">
+                <Card key={account.id} className="bg-card border-border backdrop-blur-sm hover:bg-card/80 transition-all duration-300 group">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-4 mb-4">
-                          <div className="p-2 rounded-lg bg-slate-700/50 group-hover:bg-emerald-500/20 transition-colors">
-                            <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 transition-colors" />
+                          <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/20 transition-colors">
+                            <CreditCard className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-white mb-1 truncate">{account.platform}</h3>
+                            <h3 className="text-lg font-semibold text-foreground mb-1 truncate">{account.platform}</h3>
                             <div className="flex items-center gap-3 flex-wrap">
                               <Badge 
                                 variant="secondary" 
-                                className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs font-medium"
+                                className="bg-primary/20 text-primary border-primary/30 text-xs font-medium"
                               >
                                 {account.account_type}
                               </Badge>
                               <Badge 
                                 variant="secondary" 
                                 className={`text-xs font-medium ${
-                                  account.importance === 'critical' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
-                                  account.importance === 'high' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
-                                  account.importance === 'medium' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                                  'bg-slate-500/20 text-slate-300 border-slate-500/30'
+                                  account.importance === 'critical' ? 'bg-destructive/20 text-destructive border-destructive/30' :
+                                  account.importance === 'high' ? 'bg-warning/20 text-warning border-warning/30' :
+                                  account.importance === 'medium' ? 'bg-warning/10 text-warning/80 border-warning/20' :
+                                  'bg-muted text-muted-foreground border-muted'
                                 }`}
                               >
                                 {account.importance}
                               </Badge>
-                              <span className="text-slate-400 text-sm">→ {account.closure_action}</span>
+                              <span className="text-muted-foreground text-sm">→ {account.closure_action}</span>
                             </div>
                           </div>
                         </div>
@@ -361,15 +361,15 @@ const Accounts = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           {account.email && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500 font-medium">Email:</span>
-                              <span className="text-slate-300">{account.email}</span>
+                              <span className="text-muted-foreground font-medium">Email:</span>
+                              <span className="text-foreground">{account.email}</span>
                             </div>
                           )}
                           
                           {account.username && (
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500 font-medium">Username:</span>
-                              <span className="text-slate-300">{account.username}</span>
+                              <span className="text-muted-foreground font-medium">Username:</span>
+                              <span className="text-foreground">{account.username}</span>
                             </div>
                           )}
                         </div>

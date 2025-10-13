@@ -4,14 +4,14 @@ import { Calendar } from 'lucide-react';
 
 const SwitchInfoCard = () => {
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
-          <Calendar className="w-5 h-5 mr-2 text-blue-400" />
+        <CardTitle className="text-foreground flex items-center">
+          <Calendar className="w-5 h-5 mr-2 text-primary" />
           How It Works
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-slate-300">
+      <CardContent className="space-y-3 text-muted-foreground">
         <p>
           Your Dead Man's Switch monitors your regular check-ins. You can choose between frequency-based 
           scheduling or set a specific deadline date and time.

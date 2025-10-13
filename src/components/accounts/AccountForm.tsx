@@ -36,10 +36,10 @@ const AccountForm: React.FC<AccountFormProps> = ({
   isEditing
 }) => {
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
-          <CreditCard className="w-5 h-5 mr-2 text-emerald-400" />
+        <CardTitle className="text-foreground flex items-center">
+          <CreditCard className="w-5 h-5 mr-2 text-primary" />
           {isEditing ? 'Edit Account' : 'Add New Account'}
         </CardTitle>
       </CardHeader>
@@ -47,21 +47,21 @@ const AccountForm: React.FC<AccountFormProps> = ({
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-slate-200">Account Name *</Label>
+              <Label className="text-foreground">Account Name *</Label>
               <Input
                 value={formData.account_name}
                 onChange={(e) => setFormData({...formData, account_name: e.target.value})}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-input text-foreground"
                 placeholder="My Gmail Account"
                 required
               />
             </div>
             <div>
-              <Label className="text-slate-200">Platform *</Label>
+              <Label className="text-foreground">Platform *</Label>
               <Input
                 value={formData.platform}
                 onChange={(e) => setFormData({...formData, platform: e.target.value})}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-input text-foreground"
                 placeholder="Gmail, Facebook, etc."
                 required
               />
@@ -70,12 +70,12 @@ const AccountForm: React.FC<AccountFormProps> = ({
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-slate-200">Account Type</Label>
+              <Label className="text-foreground">Account Type</Label>
               <Select 
                 value={formData.account_type} 
                 onValueChange={(value: AccountType) => setFormData({...formData, account_type: value})}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger className="bg-input border-input text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -89,11 +89,11 @@ const AccountForm: React.FC<AccountFormProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-slate-200">Website URL</Label>
+              <Label className="text-foreground">Website URL</Label>
               <Input
                 value={formData.website_url}
                 onChange={(e) => setFormData({...formData, website_url: e.target.value})}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-input text-foreground"
                 placeholder="https://example.com"
               />
             </div>
@@ -101,39 +101,39 @@ const AccountForm: React.FC<AccountFormProps> = ({
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-slate-200">Email</Label>
+              <Label className="text-foreground">Email</Label>
               <Input
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-input text-foreground"
                 placeholder="user@example.com"
                 type="email"
               />
             </div>
             <div>
-              <Label className="text-slate-200">Username</Label>
+              <Label className="text-foreground">Username</Label>
               <Input
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-input text-foreground"
                 placeholder="username"
               />
             </div>
           </div>
 
           <div>
-            <Label className="text-slate-200">Notes</Label>
+            <Label className="text-foreground">Notes</Label>
             <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-input border-input text-foreground"
               rows={3}
               placeholder="Additional notes about this account..."
             />
           </div>
 
           <div className="flex gap-2">
-            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500">
+            <Button type="submit" className="bg-primary hover:bg-primary/90">
               {isEditing ? 'Update Account' : 'Add Account'}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>

@@ -215,13 +215,13 @@ const Switch = () => {
         <SwitchHeader isActive={settings?.is_active || false} />
 
         {/* Main Control Panel */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <Shield className="w-5 h-5 mr-2 text-emerald-400" />
+            <CardTitle className="text-foreground flex items-center">
+              <Shield className="w-5 h-5 mr-2 text-primary" />
               System Control
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-muted-foreground">
               Monitor status and configure your safety settings
             </CardDescription>
           </CardHeader>
@@ -238,7 +238,7 @@ const Switch = () => {
               <Button 
                 onClick={performCheckIn}
                 size="lg"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 text-lg font-semibold"
+                className="bg-primary hover:bg-primary/90 px-8 py-3 text-lg font-semibold"
               >
                 <CheckCircle className="w-5 h-5 mr-2" />
                 Perform Check-in Now
@@ -255,7 +255,7 @@ const Switch = () => {
               />
             )}
 
-            <Separator className="bg-slate-700" />
+            <Separator className="bg-border" />
 
             {/* Configuration */}
             {settings && (
@@ -280,24 +280,24 @@ const Switch = () => {
 
       {/* Activation Dialog */}
       <AlertDialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700">
+        <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2 text-amber-400" />
+            <AlertDialogTitle className="text-foreground flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2 text-warning" />
               System Deactivated
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-300">
+            <AlertDialogDescription className="text-muted-foreground">
               Your Dead Man's Switch is currently deactivated. To perform a check-in, you need to activate the system first. 
               Would you like to activate it now and proceed with the check-in?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600">
+            <AlertDialogCancel className="bg-muted border-border hover:bg-muted/80">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleActivateAndCheckIn}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+              className="bg-primary hover:bg-primary/90"
             >
               Activate & Check-in
             </AlertDialogAction>

@@ -78,16 +78,16 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-800 border-slate-700 max-w-md">
+      <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white text-2xl text-center">
+          <DialogTitle className="text-foreground text-2xl text-center">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </DialogTitle>
         </DialogHeader>
         
         {mode === 'login' && (
-          <div className="bg-slate-700/50 p-3 rounded-lg mb-4">
-            <p className="text-xs text-slate-300 text-center">
+          <div className="bg-muted p-3 rounded-lg mb-4">
+            <p className="text-xs text-muted-foreground text-center">
               Test credentials: test@test.com / 123456789
             </p>
           </div>
@@ -97,22 +97,22 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
           {mode === 'register' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="firstName" className="text-slate-300">First Name</Label>
+                <Label htmlFor="firstName" className="text-foreground">First Name</Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
                   onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-input border-input text-foreground"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="lastName" className="text-slate-300">Last Name</Label>
+                <Label htmlFor="lastName" className="text-foreground">Last Name</Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
                   onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-input border-input text-foreground"
                   required
                 />
               </div>
@@ -120,25 +120,25 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
           )}
           
           <div>
-            <Label htmlFor="email" className="text-slate-300">Email</Label>
+            <Label htmlFor="email" className="text-foreground">Email</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-input border-input text-foreground"
               required
             />
           </div>
           
           <div>
-            <Label htmlFor="password" className="text-slate-300">Password</Label>
+            <Label htmlFor="password" className="text-foreground">Password</Label>
             <Input
               id="password"
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-input border-input text-foreground"
               required
             />
           </div>
@@ -146,7 +146,7 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500"
+            className="w-full bg-primary hover:bg-primary/90"
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {mode === 'login' ? 'Sign In' : 'Create Account'}
@@ -154,13 +154,13 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
         </form>
         
         <div className="text-center">
-          <span className="text-slate-400">
+          <span className="text-muted-foreground">
             {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
           </span>
           <button
             type="button"
             onClick={() => onModeChange(mode === 'login' ? 'register' : 'login')}
-            className="text-emerald-400 hover:text-emerald-300"
+            className="text-primary hover:text-primary/80"
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>

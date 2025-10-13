@@ -32,9 +32,9 @@ const FrequencyConfiguration = ({
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-2">
-        <Label className="text-slate-200">Check-in Frequency</Label>
+        <Label className="text-foreground">Check-in Frequency</Label>
         <Select value={frequency} onValueChange={onFrequencyChange}>
-          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+          <SelectTrigger className="bg-input border-input">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -48,16 +48,16 @@ const FrequencyConfiguration = ({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-slate-200">Grace Period (hours)</Label>
+        <Label className="text-foreground">Grace Period (hours)</Label>
         <Input
           type="number"
           min={GRACE_PERIOD_LIMITS.min}
           max={GRACE_PERIOD_LIMITS.max}
           value={gracePeriodHours}
           onChange={(e) => onGracePeriodChange(e.target.value)}
-          className="bg-slate-700 border-slate-600 text-white"
+          className="bg-input border-input"
         />
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Time buffer after missed check-in before alerts trigger ({GRACE_PERIOD_LIMITS.min}-{GRACE_PERIOD_LIMITS.max} hours)
         </p>
       </div>

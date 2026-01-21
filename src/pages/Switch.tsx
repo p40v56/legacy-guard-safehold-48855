@@ -196,8 +196,8 @@ const Switch = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <Clock className="w-8 h-8 animate-spin mx-auto mb-4 text-emerald-400" />
-            <p className="text-slate-400">Loading settings...</p>
+            <Clock className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading settings...</p>
           </div>
         </div>
       </DashboardLayout>

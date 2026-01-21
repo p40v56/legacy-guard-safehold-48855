@@ -42,41 +42,41 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-800 border-slate-700">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-white">
+          <DialogTitle className="text-foreground">
             {isEditing ? 'Edit Emergency Contact' : 'Add Emergency Contact'}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div>
-            <Label className="text-slate-200">Full Name</Label>
+            <Label className="text-foreground">Full Name</Label>
             <Input
               value={contactData.name || ''}
               onChange={(e) => handleInputChange(e, 'name')}
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-input border-border text-foreground"
               placeholder="Enter contact's full name"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-slate-200">Email Address</Label>
+              <Label className="text-foreground">Email Address</Label>
               <Input
                 type="email"
                 value={contactData.email || ''}
                 onChange={(e) => handleInputChange(e, 'email')}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-border text-foreground"
                 placeholder="Enter contact's email"
               />
             </div>
             <div>
-              <Label className="text-slate-200">Phone Number</Label>
+              <Label className="text-foreground">Phone Number</Label>
               <Input
                 type="tel"
                 value={contactData.phone || ''}
                 onChange={(e) => handleInputChange(e, 'phone')}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-border text-foreground"
                 placeholder="+1 (555) 123-4567"
               />
             </div>
@@ -84,21 +84,21 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-slate-200">Relationship</Label>
+              <Label className="text-foreground">Relationship</Label>
               <Input
                 value={contactData.relationship || ''}
                 onChange={(e) => handleInputChange(e, 'relationship')}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-border text-foreground"
                 placeholder="e.g., Spouse, Sibling, Friend"
               />
             </div>
             <div>
-              <Label className="text-slate-200">Contact Type</Label>
+              <Label className="text-foreground">Contact Type</Label>
               <Select 
                 value={contactData.contact_type || 'immediate_family'} 
                 onValueChange={(value) => handleSelectChange(value, 'contact_type')}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger className="bg-input border-border text-foreground">
                   <SelectValue placeholder="Select a contact type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,14 +114,14 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-slate-200">Priority Order</Label>
+              <Label className="text-foreground">Priority Order</Label>
               <Input
                 type="number"
                 min="1"
                 max="10"
                 value={contactData.priority_order || 1}
                 onChange={(e) => handleInputChange(e, 'priority_order')}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-border text-foreground"
               />
             </div>
             <div className="flex items-center space-x-2 mt-6">
@@ -130,7 +130,7 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
                 onCheckedChange={(checked) => handleSwitchChange(checked, 'can_receive_messages')}
                 id="can_receive_messages"
               />
-              <Label htmlFor="can_receive_messages" className="text-slate-200">
+              <Label htmlFor="can_receive_messages" className="text-foreground">
                 Can Receive Messages
               </Label>
             </div>
@@ -145,7 +145,7 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
             />
           </div>
 
-          <Button onClick={onSubmit} className="bg-emerald-600 hover:bg-emerald-500">
+          <Button onClick={onSubmit} className="bg-primary hover:bg-primary/90">
             {isEditing ? 'Update Contact' : 'Add Contact'}
           </Button>
         </div>

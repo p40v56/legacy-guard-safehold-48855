@@ -149,34 +149,34 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-emerald-500/20 backdrop-blur-sm">
-              <Shield className="w-8 h-8 text-emerald-400" />
+            <div className="p-3 rounded-xl bg-primary/20 backdrop-blur-sm">
+              <Shield className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-white">AfterLife</h1>
+            <h1 className="text-3xl font-bold text-foreground">AfterLife</h1>
           </div>
-          <p className="text-slate-300">
+          <p className="text-muted-foreground">
             Secure your digital legacy for future generations
           </p>
         </div>
 
-        <Card className="bg-slate-800/60 border-slate-700/50 backdrop-blur-sm shadow-2xl">
+        <Card className="bg-card/60 border-border/50 backdrop-blur-sm shadow-2xl">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-white text-xl">
+            <CardTitle className="text-foreground text-xl">
               Welcome to AfterLife
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-700/50">
-                <TabsTrigger value="signin" className="text-slate-300 data-[state=active]:text-white">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                <TabsTrigger value="signin" className="text-muted-foreground data-[state=active]:text-foreground">
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="text-slate-300 data-[state=active]:text-white">
+                <TabsTrigger value="signup" className="text-muted-foreground data-[state=active]:text-foreground">
                   Sign Up
                 </TabsTrigger>
               </TabsList>
@@ -184,13 +184,13 @@ const Auth = () => {
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                    <div className="space-y-2">
-                     <Label className="text-slate-200">Email</Label>
+                     <Label className="text-foreground">Email</Label>
                      <EnhancedInput
                        type="email"
                        name="email"
                        value={formData.email}
                        onChange={handleInputChange}
-                       className="bg-slate-700/50 border-slate-600 text-white"
+                       className="bg-input border-border text-foreground"
                        placeholder="Enter your email"
                        leftIcon={<Mail className="w-4 h-4" />}
                        error={errors.email}
@@ -199,13 +199,13 @@ const Auth = () => {
                      />
                    </div>
                    <div className="space-y-2">
-                     <Label className="text-slate-200">Password</Label>
+                     <Label className="text-foreground">Password</Label>
                      <EnhancedInput
                        type="password"
                        name="password"
                        value={formData.password}
                        onChange={handleInputChange}
-                       className="bg-slate-700/50 border-slate-600 text-white"
+                       className="bg-input border-border text-foreground"
                        placeholder="Enter your password"
                        leftIcon={<Lock className="w-4 h-4" />}
                        showPasswordToggle
@@ -217,7 +217,7 @@ const Auth = () => {
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold"
+                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
                   >
                     {loading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
                     Sign In
@@ -229,13 +229,13 @@ const Auth = () => {
                 <form onSubmit={handleSignUp} className="space-y-4">
                    <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-2">
-                       <Label className="text-slate-200">First Name</Label>
+                       <Label className="text-foreground">First Name</Label>
                        <EnhancedInput
                          type="text"
                          name="firstName"
                          value={formData.firstName}
                          onChange={handleInputChange}
-                         className="bg-slate-700/50 border-slate-600 text-white"
+                         className="bg-input border-border text-foreground"
                          placeholder="First name"
                          leftIcon={<User className="w-4 h-4" />}
                          error={errors.firstName}
@@ -244,13 +244,13 @@ const Auth = () => {
                        />
                      </div>
                      <div className="space-y-2">
-                       <Label className="text-slate-200">Last Name</Label>
+                       <Label className="text-foreground">Last Name</Label>
                        <EnhancedInput
                          type="text"
                          name="lastName"
                          value={formData.lastName}
                          onChange={handleInputChange}
-                         className="bg-slate-700/50 border-slate-600 text-white"
+                         className="bg-input border-border text-foreground"
                          placeholder="Last name"
                          error={errors.lastName}
                          success={formData.lastName.trim() && !errors.lastName}
@@ -259,13 +259,13 @@ const Auth = () => {
                      </div>
                    </div>
                    <div className="space-y-2">
-                     <Label className="text-slate-200">Email</Label>
+                     <Label className="text-foreground">Email</Label>
                      <EnhancedInput
                        type="email"
                        name="email"
                        value={formData.email}
                        onChange={handleInputChange}
-                       className="bg-slate-700/50 border-slate-600 text-white"
+                       className="bg-input border-border text-foreground"
                        placeholder="Enter your email"
                        leftIcon={<Mail className="w-4 h-4" />}
                        error={errors.email}
@@ -274,13 +274,13 @@ const Auth = () => {
                      />
                    </div>
                    <div className="space-y-2">
-                     <Label className="text-slate-200">Password</Label>
+                     <Label className="text-foreground">Password</Label>
                      <EnhancedInput
                        type="password"
                        name="password"
                        value={formData.password}
                        onChange={handleInputChange}
-                       className="bg-slate-700/50 border-slate-600 text-white"
+                       className="bg-input border-border text-foreground"
                        placeholder="Choose a strong password"
                        leftIcon={<Lock className="w-4 h-4" />}
                        showPasswordToggle
@@ -293,7 +293,7 @@ const Auth = () => {
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold"
+                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
                   >
                     {loading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
                     Create Account

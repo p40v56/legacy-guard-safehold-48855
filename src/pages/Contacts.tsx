@@ -128,8 +128,8 @@ const Contacts = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <LoadingSpinner size="lg" className="text-emerald-400 mx-auto mb-4" />
-            <p className="text-slate-400">Loading emergency contacts...</p>
+            <LoadingSpinner size="lg" className="text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading emergency contacts...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -141,14 +141,14 @@ const Contacts = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Emergency Contacts</h1>
-            <p className="text-slate-400">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Emergency Contacts</h1>
+            <p className="text-muted-foreground">
               Manage your trusted contacts who will be notified when your Dead Man's Switch is triggered
             </p>
           </div>
           <Button 
             onClick={() => setIsDialogOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-500"
+            className="bg-primary hover:bg-primary/90"
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Add Contact
@@ -166,15 +166,15 @@ const Contacts = () => {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
+            <Filter className="w-4 h-4 text-muted-foreground" />
             <Select value={filterCategory} onValueChange={(value: ContactType | 'all') => setFilterCategory(value)}>
-              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="w-48 bg-input border-border text-foreground">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
-                <SelectItem value="all" className="text-white hover:bg-slate-600">All Categories</SelectItem>
+              <SelectContent className="bg-card border-border">
+                <SelectItem value="all" className="text-foreground hover:bg-muted">All Categories</SelectItem>
                 {Object.entries(contactTypeLabels).map(([key, label]) => (
-                  <SelectItem key={key} value={key} className="text-white hover:bg-slate-600">
+                  <SelectItem key={key} value={key} className="text-foreground hover:bg-muted">
                     {label}
                   </SelectItem>
                 ))}
@@ -206,18 +206,18 @@ const Contacts = () => {
         {/* Contacts List */}
         <div className="grid gap-4">
           {filteredContacts.length === 0 ? (
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card/50 border-border">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Users className="w-12 h-12 text-slate-400 mb-4" />
+                <Users className="w-12 h-12 text-muted-foreground mb-4" />
                 {contacts.length === 0 ? (
                   <>
-                    <h3 className="text-lg font-semibold text-white mb-2">No Emergency Contacts</h3>
-                    <p className="text-slate-400 text-center mb-4">
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Emergency Contacts</h3>
+                    <p className="text-muted-foreground text-center mb-4">
                       Start by adding your first emergency contact who will be notified if something happens to you.
                     </p>
                     <Button 
                       onClick={() => setIsDialogOpen(true)}
-                      className="bg-emerald-600 hover:bg-emerald-500"
+                      className="bg-primary hover:bg-primary/90"
                     >
                       <UserPlus className="w-4 h-4 mr-2" />
                       Add Your First Contact
@@ -225,8 +225,8 @@ const Contacts = () => {
                   </>
                 ) : (
                   <>
-                    <h3 className="text-lg font-semibold text-white mb-2">No Contacts Found</h3>
-                    <p className="text-slate-400 text-center mb-4">
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Contacts Found</h3>
+                    <p className="text-muted-foreground text-center mb-4">
                       No contacts match your search criteria. Try adjusting your search or filter.
                     </p>
                     <Button 
@@ -235,7 +235,7 @@ const Contacts = () => {
                         setFilterCategory('all');
                       }}
                       variant="outline"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="border-border text-muted-foreground hover:bg-muted"
                     >
                       Clear Filters
                     </Button>

@@ -49,7 +49,7 @@ const SwitchConfiguration = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-white">Configuration</h3>
+      <h3 className="text-lg font-semibold text-foreground">Configuration</h3>
       
       <DeadlineModeSelector
         deadlineMode={settings.deadline_mode}
@@ -83,15 +83,15 @@ const SwitchConfiguration = ({
           variant={settings.is_active ? "destructive" : "default"}
           disabled={saving}
           className={settings.is_active 
-            ? "bg-red-600 hover:bg-red-500" 
-            : "bg-emerald-600 hover:bg-emerald-500"
+            ? "bg-destructive hover:bg-destructive/90" 
+            : "bg-primary hover:bg-primary/90"
           }
         >
           {settings.is_active ? 'Deactivate System' : 'Activate System'}
         </Button>
         
         {saving && (
-          <p className="text-slate-400 text-sm">Saving changes...</p>
+          <p className="text-muted-foreground text-sm">Saving changes...</p>
         )}
       </div>
     </div>

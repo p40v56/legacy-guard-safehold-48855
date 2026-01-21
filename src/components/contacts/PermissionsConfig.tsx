@@ -81,19 +81,19 @@ const PermissionsConfig = ({
   };
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card className="bg-card/50 border-border">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
-          <Shield className="w-5 h-5 mr-2 text-emerald-400" />
+        <CardTitle className="text-foreground flex items-center">
+          <Shield className="w-5 h-5 mr-2 text-primary" />
           Access Permissions
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Use Type Defaults Toggle */}
-        <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
           <div>
-            <Label className="text-slate-200">Use Contact Type Defaults</Label>
-            <p className="text-xs text-slate-400">Use default permissions for this contact type instead of custom settings</p>
+            <Label className="text-foreground">Use Contact Type Defaults</Label>
+            <p className="text-xs text-muted-foreground">Use default permissions for this contact type instead of custom settings</p>
           </div>
           <Switch
             checked={useTypeDefaults}
@@ -105,7 +105,7 @@ const PermissionsConfig = ({
         {!useTypeDefaults && (
           <>
             <Tabs defaultValue="digital" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 border-slate-700">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50 border-border">
                 <TabsTrigger value="digital">Digital Accounts</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="general">General</TabsTrigger>
@@ -114,7 +114,7 @@ const PermissionsConfig = ({
               <TabsContent value="digital" className="space-y-4 mt-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-slate-200">Access to All Digital Accounts</Label>
+                    <Label className="text-foreground">Access to All Digital Accounts</Label>
                     <Switch
                       checked={permissions.digital_accounts.all_accounts}
                       onCheckedChange={(checked) => updateDigitalAccounts({ all_accounts: checked })}
@@ -124,7 +124,7 @@ const PermissionsConfig = ({
 
                   {!permissions.digital_accounts.all_accounts && (
                     <div className="space-y-3">
-                      <Label className="text-slate-200">Access by Category</Label>
+                      <Label className="text-foreground">Access by Category</Label>
                       <div className="grid grid-cols-2 gap-3">
                         {digitalAccountCategories.map((category) => (
                           <div key={category.value} className="flex items-center space-x-2">
@@ -133,7 +133,7 @@ const PermissionsConfig = ({
                               onCheckedChange={() => toggleDigitalAccountCategory(category.value)}
                               disabled={disabled}
                             />
-                            <Label className="text-slate-300 text-sm">{category.label}</Label>
+                            <Label className="text-muted-foreground text-sm">{category.label}</Label>
                           </div>
                         ))}
                       </div>
@@ -145,7 +145,7 @@ const PermissionsConfig = ({
               <TabsContent value="documents" className="space-y-4 mt-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-slate-200">Access to All Documents</Label>
+                    <Label className="text-foreground">Access to All Documents</Label>
                     <Switch
                       checked={permissions.legacy_documents.all_documents}
                       onCheckedChange={(checked) => updateDocuments({ all_documents: checked })}
@@ -155,7 +155,7 @@ const PermissionsConfig = ({
 
                   {!permissions.legacy_documents.all_documents && (
                     <div className="space-y-3">
-                      <Label className="text-slate-200">Access by Category</Label>
+                      <Label className="text-foreground">Access by Category</Label>
                       <div className="grid grid-cols-2 gap-3">
                         {documentCategories.map((category) => (
                           <div key={category.value} className="flex items-center space-x-2">
@@ -164,7 +164,7 @@ const PermissionsConfig = ({
                               onCheckedChange={() => toggleDocumentCategory(category.value)}
                               disabled={disabled}
                             />
-                            <Label className="text-slate-300 text-sm">{category.label}</Label>
+                            <Label className="text-muted-foreground text-sm">{category.label}</Label>
                           </div>
                         ))}
                       </div>
@@ -177,8 +177,8 @@ const PermissionsConfig = ({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-slate-200">Contact Information</Label>
-                      <p className="text-xs text-slate-400">Access to other emergency contacts</p>
+                      <Label className="text-foreground">Contact Information</Label>
+                      <p className="text-xs text-muted-foreground">Access to other emergency contacts</p>
                     </div>
                     <Switch
                       checked={permissions.contact_information}
@@ -189,8 +189,8 @@ const PermissionsConfig = ({
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-slate-200">Emergency Instructions</Label>
-                      <p className="text-xs text-slate-400">Access to your emergency instructions and preferences</p>
+                      <Label className="text-foreground">Emergency Instructions</Label>
+                      <p className="text-xs text-muted-foreground">Access to your emergency instructions and preferences</p>
                     </div>
                     <Switch
                       checked={permissions.emergency_instructions}
@@ -201,8 +201,8 @@ const PermissionsConfig = ({
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-slate-200">Modify Information</Label>
-                      <p className="text-xs text-slate-400">Allow updates to accessible information</p>
+                      <Label className="text-foreground">Modify Information</Label>
+                      <p className="text-xs text-muted-foreground">Allow updates to accessible information</p>
                     </div>
                     <Switch
                       checked={permissions.can_modify_information}
@@ -217,8 +217,8 @@ const PermissionsConfig = ({
         )}
 
         {useTypeDefaults && (
-          <div className="p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg">
-            <p className="text-blue-300 text-sm">
+          <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg">
+            <p className="text-primary text-sm">
               This contact will use the default permissions configured for their contact type. 
               You can modify these defaults in the Settings page.
             </p>

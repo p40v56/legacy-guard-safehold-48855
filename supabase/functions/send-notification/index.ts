@@ -1,0 +1,188 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface Document {
+  id: string;
+  title: string;
+  content: string | null;
+  document_type: string;
+  description: string | null;
+}
+
+interface NotificationRequest {
+  contactId: string;
+  contactName: string;
+  contactEmail: string;
+  contactType: string;
+  userName: string;
+  emergencyInstructions: string | null;
+  documents: Document[];
+  permissions: Record<string, boolean>;
+}
+
+function formatDocumentType(type: string): string {
+  return type
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function generateEmailHtml(data: NotificationRequest): string {
+  const { contactName, userName, emergencyInstructions, documents, permissions } = data;
+  
+  let sectionsHtml = "";
+  
+  // Emergency Instructions Section
+  if (emergencyInstructions && permissions.emergency_instructions) {
+    sectionsHtml += `
+      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
+        <h3 style="color: #92400e; margin: 0 0 12px 0; font-size: 16px;">⚠️ Emergency Instructions</h3>
+        <div style="color: #78350f; font-size: 14px; line-height: 1.6;">${emergencyInstructions}</div>
+      </div>
+    `;
+  }
+  
+  // Group documents by type
+  const documentsByType: Record<string, Document[]> = {};
+  for (const doc of documents) {
+    if (!documentsByType[doc.document_type]) {
+      documentsByType[doc.document_type] = [];
+    }
+    documentsByType[doc.document_type].push(doc);
+  }
+  
+  // Documents Sections
+  for (const [docType, docs] of Object.entries(documentsByType)) {
+    sectionsHtml += `
+      <div style="margin: 24px 0;">
+        <h3 style="color: #374151; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px;">
+          📄 ${formatDocumentType(docType)}
+        </h3>
+    `;
+    
+    for (const doc of docs) {
+      sectionsHtml += `
+        <div style="background-color: #f9fafb; padding: 16px; margin: 12px 0; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <h4 style="color: #111827; margin: 0 0 8px 0; font-size: 15px;">${doc.title}</h4>
+          ${doc.description ? `<p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0;">${doc.description}</p>` : ""}
+          ${doc.content ? `<div style="color: #374151; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${doc.content}</div>` : ""}
+        </div>
+      `;
+    }
+    
+    sectionsHtml += `</div>`;
+  }
+  
+  // If no content was added
+  if (!sectionsHtml) {
+    sectionsHtml = `
+      <div style="background-color: #f3f4f6; padding: 24px; text-align: center; border-radius: 8px; margin: 20px 0;">
+        <p style="color: #6b7280; margin: 0;">No additional information was specified for you at this time.</p>
+      </div>
+    `;
+  }
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">🚨 Important Notification</h1>
+        <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Dead Man's Switch Activated</p>
+      </div>
+      
+      <div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px; margin: 0 0 20px 0;">
+          Dear <strong>${contactName}</strong>,
+        </p>
+        
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
+          This is an automated message from <strong>${userName}</strong>'s Dead Man's Switch system. 
+          The system has been activated because they have not checked in within their specified timeframe.
+        </p>
+        
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
+          ${userName} has designated you as a trusted contact and has authorized the following information to be shared with you:
+        </p>
+        
+        ${sectionsHtml}
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+        
+        <p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">
+          This is an automated message from the Dead Man's Switch system.<br>
+          Please keep this information confidential and use it responsibly.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const data: NotificationRequest = await req.json();
+    
+    console.log(`Sending notification to ${data.contactName} (${data.contactEmail})`);
+    
+    const emailHtml = generateEmailHtml(data);
+    
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Dead Man's Switch <onboarding@resend.dev>",
+        to: [data.contactEmail],
+        subject: `🚨 Important: Message from ${data.userName}'s Dead Man's Switch`,
+        html: emailHtml,
+      }),
+    });
+
+    const emailResponse = await res.json();
+    
+    if (!res.ok) {
+      console.error("Resend API error:", emailResponse);
+      throw new Error(emailResponse.message || "Failed to send email");
+    }
+    
+    console.log("Email sent successfully:", emailResponse);
+    
+    return new Response(
+      JSON.stringify({ success: true, emailId: emailResponse.id }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error in send-notification:", errorMessage);
+    return new Response(
+      JSON.stringify({ success: false, error: errorMessage }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+};
+
+serve(handler);

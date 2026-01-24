@@ -349,11 +349,15 @@ export type Database = {
           created_at: string
           custom_deadline: string | null
           deadline_mode: string
+          grace_period_active: boolean
+          grace_period_end: string | null
           grace_period_hours: number
           id: string
           is_active: boolean
           last_check_in: string | null
           next_check_in_due: string | null
+          switch_triggered: boolean
+          switch_triggered_at: string | null
           updated_at: string
           user_id: string
         }
@@ -362,11 +366,15 @@ export type Database = {
           created_at?: string
           custom_deadline?: string | null
           deadline_mode?: string
+          grace_period_active?: boolean
+          grace_period_end?: string | null
           grace_period_hours?: number
           id?: string
           is_active?: boolean
           last_check_in?: string | null
           next_check_in_due?: string | null
+          switch_triggered?: boolean
+          switch_triggered_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -375,11 +383,15 @@ export type Database = {
           created_at?: string
           custom_deadline?: string | null
           deadline_mode?: string
+          grace_period_active?: boolean
+          grace_period_end?: string | null
           grace_period_hours?: number
           id?: string
           is_active?: boolean
           last_check_in?: string | null
           next_check_in_due?: string | null
+          switch_triggered?: boolean
+          switch_triggered_at?: string | null
           updated_at?: string
           user_id?: string
         }

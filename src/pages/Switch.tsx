@@ -231,6 +231,9 @@ const Switch = () => {
               isActive={settings?.is_active || false}
               currentDeadline={currentDeadline}
               deadlineMode={settings?.deadline_mode || 'frequency'}
+              gracePeriodActive={settings?.grace_period_active || false}
+              gracePeriodEnd={settings?.grace_period_end}
+              switchTriggered={settings?.switch_triggered || false}
             />
 
             {/* Check-in Button */}

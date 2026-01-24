@@ -87,6 +87,10 @@ export class SettingsService {
       next_check_in_due: processedData.next_check_in_due,
       deadline_mode: processedData.deadline_mode as DeadlineMode,
       custom_deadline: processedData.custom_deadline,
+      grace_period_active: processedData.grace_period_active ?? false,
+      grace_period_end: processedData.grace_period_end,
+      switch_triggered: processedData.switch_triggered ?? false,
+      switch_triggered_at: processedData.switch_triggered_at,
     };
   }
 
@@ -121,6 +125,10 @@ export class SettingsService {
       next_check_in_due: null,
       deadline_mode: 'frequency' as DeadlineMode,
       custom_deadline: null,
+      grace_period_active: false,
+      grace_period_end: null,
+      switch_triggered: false,
+      switch_triggered_at: null,
     };
 
     const { data, error } = await supabase
@@ -139,6 +147,10 @@ export class SettingsService {
       next_check_in_due: data.next_check_in_due,
       deadline_mode: data.deadline_mode as DeadlineMode,
       custom_deadline: data.custom_deadline,
+      grace_period_active: data.grace_period_active ?? false,
+      grace_period_end: data.grace_period_end,
+      switch_triggered: data.switch_triggered ?? false,
+      switch_triggered_at: data.switch_triggered_at,
     };
   }
 

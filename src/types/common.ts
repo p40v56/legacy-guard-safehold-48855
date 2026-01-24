@@ -35,7 +35,13 @@ export interface UserSettings {
   next_check_in_due: string | null;
   deadline_mode: DeadlineMode;
   custom_deadline: string | null;
+  // Grace period lifecycle
+  grace_period_active: boolean;
+  grace_period_end: string | null;
+  switch_triggered: boolean;
+  switch_triggered_at: string | null;
 }
 
 export type CheckInFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 export type DeadlineMode = 'frequency' | 'custom';
+export type SwitchStatus = 'inactive' | 'active' | 'grace_period' | 'triggered';

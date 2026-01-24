@@ -15,7 +15,19 @@ interface Document {
   description: string | null;
 }
 
-interface NotificationRequest {
+// Grace period warning request (sent to the user themselves)
+interface GracePeriodWarningRequest {
+  notificationType: "grace_period_warning";
+  recipientEmail: string;
+  recipientName: string;
+  userName: string;
+  gracePeriodHours: number;
+  graceEndDate: string;
+}
+
+// Switch triggered request (sent to contacts)
+interface SwitchTriggeredRequest {
+  notificationType: "switch_triggered";
   contactId: string;
   contactName: string;
   contactEmail: string;
@@ -26,6 +38,20 @@ interface NotificationRequest {
   permissions: Record<string, boolean>;
 }
 
+// Legacy format for backwards compatibility
+interface LegacyNotificationRequest {
+  contactId: string;
+  contactName: string;
+  contactEmail: string;
+  contactType: string;
+  userName: string;
+  emergencyInstructions: string | null;
+  documents: Document[];
+  permissions: Record<string, boolean>;
+}
+
+type NotificationRequest = GracePeriodWarningRequest | SwitchTriggeredRequest | LegacyNotificationRequest;
+
 function formatDocumentType(type: string): string {
   return type
     .split("_")
@@ -33,8 +59,90 @@ function formatDocumentType(type: string): string {
     .join(" ");
 }
 
-function generateEmailHtml(data: NotificationRequest): string {
-  const { contactName, userName, emergencyInstructions, documents, permissions } = data;
+function formatDateTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
+function generateGracePeriodWarningHtml(data: GracePeriodWarningRequest): string {
+  const { recipientName, gracePeriodHours, graceEndDate } = data;
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">⚠️ Grace Period Started</h1>
+        <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Dead Man's Switch Warning</p>
+      </div>
+      
+      <div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px; margin: 0 0 20px 0;">
+          Hello <strong>${recipientName}</strong>,
+        </p>
+        
+        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
+          <p style="color: #92400e; margin: 0; font-size: 15px; font-weight: 600;">
+            You missed your scheduled check-in!
+          </p>
+        </div>
+        
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
+          Your Dead Man's Switch has detected that you did not check in by your scheduled deadline. 
+          A <strong>${gracePeriodHours}-hour grace period</strong> has now started.
+        </p>
+        
+        <div style="background-color: #fee2e2; border: 2px solid #ef4444; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
+          <p style="color: #991b1b; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">
+            ⏰ GRACE PERIOD ENDS:
+          </p>
+          <p style="color: #dc2626; margin: 0; font-size: 18px; font-weight: 700;">
+            ${formatDateTime(graceEndDate)}
+          </p>
+        </div>
+        
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
+          <strong>What happens next?</strong><br>
+          If you do not perform a check-in before the grace period ends, your emergency contacts 
+          will be automatically notified with the information you have configured.
+        </p>
+        
+        <div style="text-align: center; margin: 32px 0;">
+          <p style="font-size: 16px; color: #059669; font-weight: 600; margin: 0;">
+            ✅ Log in to your account and perform a check-in to cancel this alert.
+          </p>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+        
+        <p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">
+          This is an automated message from your Dead Man's Switch system.<br>
+          If you did not set up this system, please ignore this email.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotificationRequest): string {
+  const contactName = "contactName" in data ? data.contactName : "";
+  const userName = data.userName;
+  const emergencyInstructions = data.emergencyInstructions;
+  const documents = data.documents;
+  const permissions = data.permissions;
   
   let sectionsHtml = "";
   
@@ -108,7 +216,8 @@ function generateEmailHtml(data: NotificationRequest): string {
         
         <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
           This is an automated message from <strong>${userName}</strong>'s Dead Man's Switch system. 
-          The system has been activated because they have not checked in within their specified timeframe.
+          The system has been activated because they have not checked in within their specified timeframe, 
+          and the grace period has now expired.
         </p>
         
         <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
@@ -138,9 +247,30 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const data: NotificationRequest = await req.json();
     
-    console.log(`Sending notification to ${data.contactName} (${data.contactEmail})`);
+    // Determine notification type
+    const notificationType = "notificationType" in data ? data.notificationType : "switch_triggered";
     
-    const emailHtml = generateEmailHtml(data);
+    let emailHtml: string;
+    let recipientEmail: string;
+    let recipientName: string;
+    let subject: string;
+    
+    if (notificationType === "grace_period_warning") {
+      const warningData = data as GracePeriodWarningRequest;
+      emailHtml = generateGracePeriodWarningHtml(warningData);
+      recipientEmail = warningData.recipientEmail;
+      recipientName = warningData.recipientName;
+      subject = "⚠️ Grace Period Started - Check In Required";
+      console.log(`Sending grace period warning to ${recipientName} (${recipientEmail})`);
+    } else {
+      // switch_triggered or legacy format
+      const triggerData = data as SwitchTriggeredRequest | LegacyNotificationRequest;
+      emailHtml = generateSwitchTriggeredHtml(triggerData);
+      recipientEmail = triggerData.contactEmail;
+      recipientName = triggerData.contactName;
+      subject = `🚨 Important: Message from ${triggerData.userName}'s Dead Man's Switch`;
+      console.log(`Sending switch triggered notification to ${recipientName} (${recipientEmail})`);
+    }
     
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -150,8 +280,8 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Dead Man's Switch <onboarding@resend.dev>",
-        to: [data.contactEmail],
-        subject: `🚨 Important: Message from ${data.userName}'s Dead Man's Switch`,
+        to: [recipientEmail],
+        subject: subject,
         html: emailHtml,
       }),
     });

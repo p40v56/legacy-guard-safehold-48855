@@ -177,7 +177,8 @@ export const useSettings = () => {
           contact_ids: rule.contact_ids,
           delay_hours: rule.delay_hours,
           custom_message: rule.custom_message,
-          enabled: rule.enabled
+          enabled: rule.enabled,
+          action_type: 'send_message' // Required field
         })
       ));
 

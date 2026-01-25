@@ -70,10 +70,12 @@ const SwitchConfiguration = ({
           customDate={customDate}
           customTime={customTime}
           customDeadline={settings.custom_deadline}
+          gracePeriodHours={settings.grace_period_hours}
           saving={saving}
           onCustomDateChange={onCustomDateChange}
           onCustomTimeChange={onCustomTimeChange}
           onCustomDateTimeUpdate={onCustomDateTimeUpdate}
+          onGracePeriodChange={handleGracePeriodChange}
         />
       )}
 

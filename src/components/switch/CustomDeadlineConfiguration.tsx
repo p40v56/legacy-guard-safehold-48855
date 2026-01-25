@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,25 +11,47 @@ interface CustomDeadlineConfigurationProps {
   customDate: Date | undefined;
   customTime: string;
   customDeadline: string | null;
+  gracePeriodHours: number;
   saving: boolean;
   onCustomDateChange: (date: Date | undefined) => void;
   onCustomTimeChange: (time: string) => void;
   onCustomDateTimeUpdate: () => void;
+  onGracePeriodChange: (value: string) => void;
 }
+
+const GRACE_PERIOD_LIMITS = {
+  min: 1,
+  max: 168
+} as const;
 
 const CustomDeadlineConfiguration = ({
   customDate,
   customTime,
   customDeadline,
+  gracePeriodHours,
   saving,
   onCustomDateChange,
   onCustomTimeChange,
-  onCustomDateTimeUpdate
+  onCustomDateTimeUpdate,
+  onGracePeriodChange
 }: CustomDeadlineConfigurationProps) => {
-  const isCustomDateValid = customDate && customDate > new Date();
+  // Check if the selected datetime is in the future
+  const isCustomDateTimeValid = () => {
+    if (!customDate || !customTime) return false;
+    
+    const [hours, minutes] = customTime.split(':').map(Number);
+    const selectedDateTime = new Date(customDate);
+    selectedDateTime.setHours(hours, minutes, 0, 0);
+    
+    return selectedDateTime > new Date();
+  };
+
+  // Get start of today for calendar validation (allow today)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label className="text-foreground">Select Date</Label>
@@ -52,8 +73,9 @@ const CustomDeadlineConfiguration = ({
                 mode="single"
                 selected={customDate}
                 onSelect={onCustomDateChange}
-                disabled={(date) => date < new Date()}
+                disabled={(date) => date < today}
                 initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
@@ -67,12 +89,32 @@ const CustomDeadlineConfiguration = ({
             onChange={(e) => onCustomTimeChange(e.target.value)}
             className="bg-input border-input"
           />
+          {customDate && customTime && !isCustomDateTimeValid() && (
+            <p className="text-xs text-destructive">
+              Please select a time in the future
+            </p>
+          )}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-foreground">Grace Period (hours)</Label>
+        <Input
+          type="number"
+          min={GRACE_PERIOD_LIMITS.min}
+          max={GRACE_PERIOD_LIMITS.max}
+          value={gracePeriodHours}
+          onChange={(e) => onGracePeriodChange(e.target.value)}
+          className="bg-input border-input max-w-xs"
+        />
+        <p className="text-xs text-muted-foreground">
+          Time buffer after deadline before alerts trigger ({GRACE_PERIOD_LIMITS.min}-{GRACE_PERIOD_LIMITS.max} hours)
+        </p>
       </div>
 
       <Button
         onClick={onCustomDateTimeUpdate}
-        disabled={!isCustomDateValid || saving}
+        disabled={!isCustomDateTimeValid() || saving}
         className="bg-primary hover:bg-primary/90 disabled:opacity-50"
       >
         <CalendarIcon className="w-4 h-4 mr-2" />

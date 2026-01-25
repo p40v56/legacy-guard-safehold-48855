@@ -20,7 +20,7 @@ interface CustomDeadlineConfigurationProps {
 }
 
 const GRACE_PERIOD_LIMITS = {
-  min: 1,
+  min: 0,
   max: 168
 } as const;
 
@@ -105,10 +105,16 @@ const CustomDeadlineConfiguration = ({
           max={GRACE_PERIOD_LIMITS.max}
           value={gracePeriodHours}
           onChange={(e) => onGracePeriodChange(e.target.value)}
+          onKeyDown={(e) => {
+            // Allow manual typing
+            if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Tab' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+              return;
+            }
+          }}
           className="bg-input border-input max-w-xs"
         />
         <p className="text-xs text-muted-foreground">
-          Time buffer after deadline before alerts trigger ({GRACE_PERIOD_LIMITS.min}-{GRACE_PERIOD_LIMITS.max} hours)
+          Time buffer after deadline before alerts trigger (0 = immediate, max {GRACE_PERIOD_LIMITS.max} hours)
         </p>
       </div>
 

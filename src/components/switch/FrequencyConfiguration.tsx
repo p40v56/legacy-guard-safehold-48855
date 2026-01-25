@@ -19,7 +19,7 @@ const FREQUENCY_OPTIONS = [
 ] as const;
 
 const GRACE_PERIOD_LIMITS = {
-  min: 1,
+  min: 0,
   max: 168
 } as const;
 
@@ -58,7 +58,7 @@ const FrequencyConfiguration = ({
           className="bg-input border-input"
         />
         <p className="text-xs text-muted-foreground">
-          Time buffer after missed check-in before alerts trigger ({GRACE_PERIOD_LIMITS.min}-{GRACE_PERIOD_LIMITS.max} hours)
+          Time buffer after missed check-in before alerts trigger (0 = immediate, max {GRACE_PERIOD_LIMITS.max} hours)
         </p>
       </div>
     </div>

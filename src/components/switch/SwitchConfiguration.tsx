@@ -34,8 +34,10 @@ const SwitchConfiguration = ({
 
   const handleGracePeriodChange = (value: string) => {
     const hours = parseInt(value, 10);
-    if (!isNaN(hours) && hours >= 1 && hours <= 168) {
+    if (!isNaN(hours) && hours >= 0 && hours <= 168) {
       onUpdateSettings({ grace_period_hours: hours });
+    } else if (value === '' || value === '0') {
+      onUpdateSettings({ grace_period_hours: 0 });
     }
   };
 

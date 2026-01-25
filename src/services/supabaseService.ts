@@ -190,11 +190,16 @@ export class SettingsService {
       nextCheckInDue = this.calculateNextCheckIn(currentSettings.check_in_frequency, new Date(now));
     }
     
+    // Reset grace period and switch triggered states on check-in
     const { data, error } = await supabase
       .from('user_settings')
       .update({ 
         last_check_in: now,
-        next_check_in_due: nextCheckInDue
+        next_check_in_due: nextCheckInDue,
+        grace_period_active: false,
+        grace_period_end: null,
+        switch_triggered: false,
+        switch_triggered_at: null,
       })
       .eq('user_id', userId)
       .select()

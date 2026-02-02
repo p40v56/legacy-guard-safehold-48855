@@ -1,9 +1,7 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { 
   Shield, 
   LayoutDashboard, 
@@ -15,7 +13,7 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  MessageCircle
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -26,7 +24,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -34,156 +32,144 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const navigationItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, description: 'Overview & stats' },
-    { name: 'Dead Man\'s Switch', href: '/switch', icon: Timer, description: 'Automated triggers' },
-    { name: 'Digital Accounts', href: '/accounts', icon: CreditCard, description: 'Account management' },
-    { name: 'Emergency Contacts', href: '/contacts', icon: Users, description: 'Trusted contacts' },
-    { name: 'Legacy Documents', href: '/documents', icon: FileText, description: 'Important files' },
-    { name: 'Settings', href: '/settings', icon: Settings, description: 'Preferences' },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Switch', href: '/switch', icon: Timer },
+    { name: 'Accounts', href: '/accounts', icon: CreditCard },
+    { name: 'Contacts', href: '/contacts', icon: Users },
+    { name: 'Documents', href: '/documents', icon: FileText },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Background Elements */}
-      <div className="fixed inset-0 bg-gradient-to-br from-background via-muted/30 to-background"></div>
-      <div className="fixed inset-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
-      </div>
-      
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-sidebar-background backdrop-blur-xl border-r border-sidebar-border transform ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl`}>
-        <div className="flex h-full flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
-                <Shield className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <span className="text-xl font-bold text-sidebar-foreground">LegacyVault</span>
-                <p className="text-xs text-muted-foreground">Digital Legacy Platform</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
+    <div className="min-h-screen bg-gradient-hero">
+      {/* Top Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 lg:px-6 lg:py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
+            <span className="text-lg lg:text-xl font-semibold text-white">LegacyVault</span>
+          </div>
+          
+          {/* Desktop user info */}
+          <div className="hidden lg:flex items-center gap-4">
+            <span className="text-white/80 text-sm">{user?.email}</span>
+            <Button 
+              variant="ghost" 
               size="sm"
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-white/80 hover:text-white hover:bg-white/10"
+              onClick={handleSignOut}
             >
-              <X className="w-5 h-5" />
+              <LogOut className="w-4 h-4 mr-2" />
+              Log out
             </Button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.href;
-              
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${
-                    isActive
-                      ? 'bg-sidebar-accent text-sidebar-primary border border-sidebar-primary/30 shadow-lg'
-                      : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-2 rounded-lg transition-colors ${
-                      isActive 
-                        ? 'bg-sidebar-primary/20' 
-                        : 'bg-sidebar-accent/50 group-hover:bg-sidebar-accent'
-                    }`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-xs text-muted-foreground group-hover:text-sidebar-foreground/80">
-                        {item.description}
-                      </div>
-                    </div>
-                  </div>
-                  {isActive && (
-                    <ChevronRight className="w-4 h-4 text-sidebar-primary" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User section */}
-          <div className="p-4 border-t border-sidebar-border">
-            <Card className="bg-sidebar-accent border-sidebar-border backdrop-blur-sm">
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary-foreground">
-                        {user?.email?.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-sidebar-foreground truncate">
-                        {user?.email}
-                      </p>
-                      <p className="text-xs text-success">Active User</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSignOut}
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-72">
-        {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-between p-4 bg-sidebar-background backdrop-blur-xl border-b border-sidebar-border relative z-30">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(true)}
-            className="text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          {/* Mobile menu button */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="lg:hidden text-white hover:bg-white/10"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <Menu className="w-5 h-5" />
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </Button>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-sidebar-foreground">LegacyVault</span>
-          </div>
-          <div className="w-10"></div>
         </div>
+      </header>
 
-        {/* Page content */}
-        <main className="relative z-10 p-6 lg:p-8 min-h-screen">
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="absolute top-16 left-4 right-4 bg-white rounded-2xl shadow-xl p-4">
+            <div className="space-y-2">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                      isActive 
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-card-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium">{item.name}</span>
+                  </Link>
+                );
+              })}
+              <div className="border-t pt-2 mt-2">
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 w-full"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Log out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="pt-20 pb-28 px-4 lg:px-8 min-h-screen">
+        <div className="max-w-7xl mx-auto">
           {children}
-        </main>
+        </div>
+      </main>
+
+      {/* Bottom Floating Navigation */}
+      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="floating-nav px-2 py-2 flex items-center gap-1">
+          {navigationItems.slice(0, 5).map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:text-card-foreground hover:bg-muted'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden lg:inline text-sm font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
+          <Link
+            to="/settings"
+            className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-200 ${
+              location.pathname === '/settings' 
+                ? 'bg-primary/10 text-primary' 
+                : 'text-muted-foreground hover:text-card-foreground hover:bg-muted'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden lg:inline text-sm font-medium">Settings</span>
+          </Link>
+        </div>
+      </nav>
+
+      {/* Support Button */}
+      <div className="fixed bottom-6 right-4 lg:right-6 z-50">
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="rounded-full bg-white/95 border-none shadow-lg hover:shadow-xl text-card-foreground"
+        >
+          <MessageCircle className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Support</span>
+        </Button>
       </div>
     </div>
   );

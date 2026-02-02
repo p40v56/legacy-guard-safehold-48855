@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Clock, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Clock, Shield, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SwitchCountdown from '@/components/switch/SwitchCountdown';
-import SwitchHeader from '@/components/switch/SwitchHeader';
 import SwitchQuickStats from '@/components/switch/SwitchQuickStats';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
 import SwitchInfoCard from '@/components/switch/SwitchInfoCard';
@@ -77,7 +75,6 @@ const Switch = () => {
     try {
       await SettingsService.updateSettings(user.id, updates);
       
-      // Fetch fresh settings to ensure synchronization
       const freshSettings = await SettingsService.getUserSettings(user.id);
       setSettings(freshSettings);
       
@@ -104,7 +101,6 @@ const Switch = () => {
     const deadline = new Date(customDate);
     deadline.setHours(hours, minutes, 0, 0);
 
-    // Check if the deadline is in the past
     if (deadline <= new Date()) {
       toast({
         title: "Invalid Deadline",
@@ -132,7 +128,6 @@ const Switch = () => {
   const performCheckIn = async () => {
     if (!user) return;
     
-    // Check if system is deactivated
     if (!settings?.is_active) {
       setShowActivationDialog(true);
       return;
@@ -141,7 +136,6 @@ const Switch = () => {
     try {
       await SettingsService.checkIn(user.id);
       
-      // Fetch fresh settings to ensure synchronization
       const freshSettings = await SettingsService.getUserSettings(user.id);
       setSettings(freshSettings);
 
@@ -165,13 +159,9 @@ const Switch = () => {
     if (!user) return;
     
     try {
-      // First activate the system
       await SettingsService.updateSettings(user.id, { is_active: true });
-      
-      // Then perform the check-in
       await SettingsService.checkIn(user.id);
       
-      // Fetch fresh settings to ensure synchronization
       const freshSettings = await SettingsService.getUserSettings(user.id);
       setSettings(freshSettings);
       
@@ -195,9 +185,8 @@ const Switch = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Clock className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading settings...</p>
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-pulse">
+            <Shield className="w-6 h-6 text-white" />
           </div>
         </div>
       </DashboardLayout>
@@ -212,70 +201,96 @@ const Switch = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <SwitchHeader isActive={settings?.is_active || false} />
+        <div className="text-center lg:text-left">
+          <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">
+            Dead Man's Switch
+          </h1>
+          <p className="text-white/70">
+            {settings?.is_active ? 'Your system is active and protected' : 'Activate your safety system'}
+          </p>
+        </div>
 
         {/* Main Control Panel */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground flex items-center">
-              <Shield className="w-5 h-5 mr-2 text-primary" />
-              System Control
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Monitor status and configure your safety settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Live Countdown Display */}
-            <SwitchCountdown
-              isActive={settings?.is_active || false}
-              currentDeadline={currentDeadline}
-              deadlineMode={settings?.deadline_mode || 'frequency'}
-              gracePeriodActive={settings?.grace_period_active || false}
-              gracePeriodEnd={settings?.grace_period_end}
-              switchTriggered={settings?.switch_triggered || false}
-            />
-
-            {/* Check-in Button */}
-            <div className="flex justify-center">
-              <Button 
-                onClick={performCheckIn}
-                size="lg"
-                className="bg-primary hover:bg-primary/90 px-8 py-3 text-lg font-semibold"
-              >
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Perform Check-in Now
-              </Button>
+        <div className="glass-strong rounded-3xl p-6 lg:p-8 space-y-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+              settings?.is_active 
+                ? 'bg-success/20' 
+                : 'bg-warning/20'
+            }`}>
+              <Shield className={`w-7 h-7 ${
+                settings?.is_active 
+                  ? 'text-success' 
+                  : 'text-warning'
+              }`} />
             </div>
+            <div>
+              <h2 className="text-xl font-medium text-card-foreground">System Control</h2>
+              <p className="text-sm text-muted-foreground">
+                Monitor status and configure your safety settings
+              </p>
+            </div>
+          </div>
 
-            {/* Quick Stats */}
-            {settings && (
-              <SwitchQuickStats
-                checkInFrequency={settings.check_in_frequency}
-                deadlineMode={settings.deadline_mode}
-                gracePeriodHours={settings.grace_period_hours}
-                lastCheckIn={settings.last_check_in}
-              />
-            )}
+          {/* Live Countdown Display */}
+          <SwitchCountdown
+            isActive={settings?.is_active || false}
+            currentDeadline={currentDeadline}
+            deadlineMode={settings?.deadline_mode || 'frequency'}
+            gracePeriodActive={settings?.grace_period_active || false}
+            gracePeriodEnd={settings?.grace_period_end}
+            switchTriggered={settings?.switch_triggered || false}
+          />
 
-            <Separator className="bg-border" />
+          {/* Check-in Button */}
+          <div className="flex justify-center">
+            <Button 
+              onClick={performCheckIn}
+              size="lg"
+              className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium shadow-lg"
+            >
+              <CheckCircle className="w-5 h-5 mr-2" />
+              Perform Check-in Now
+            </Button>
+          </div>
 
-            {/* Configuration */}
-            {settings && (
-              <SwitchConfiguration
-                settings={settings}
-                customDate={customDate}
-                customTime={customTime}
-                saving={saving}
-                onUpdateSettings={updateSettings}
-                onSwitchToFrequencyMode={switchToFrequencyMode}
-                onCustomDateTimeUpdate={handleCustomDateTimeUpdate}
-                onCustomDateChange={setCustomDate}
-                onCustomTimeChange={setCustomTime}
-              />
-            )}
-          </CardContent>
-        </Card>
+          {/* Quick Stats */}
+          {settings && (
+            <SwitchQuickStats
+              checkInFrequency={settings.check_in_frequency}
+              deadlineMode={settings.deadline_mode}
+              gracePeriodHours={settings.grace_period_hours}
+              lastCheckIn={settings.last_check_in}
+            />
+          )}
+        </div>
+
+        {/* Configuration */}
+        <div className="glass rounded-3xl p-6 lg:p-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Settings className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-card-foreground">Configuration</h3>
+              <p className="text-sm text-muted-foreground">Customize your switch settings</p>
+            </div>
+          </div>
+
+          {settings && (
+            <SwitchConfiguration
+              settings={settings}
+              customDate={customDate}
+              customTime={customTime}
+              saving={saving}
+              onUpdateSettings={updateSettings}
+              onSwitchToFrequencyMode={switchToFrequencyMode}
+              onCustomDateTimeUpdate={handleCustomDateTimeUpdate}
+              onCustomDateChange={setCustomDate}
+              onCustomTimeChange={setCustomTime}
+            />
+          )}
+        </div>
 
         {/* Information Card */}
         <SwitchInfoCard />
@@ -283,9 +298,9 @@ const Switch = () => {
 
       {/* Activation Dialog */}
       <AlertDialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
-        <AlertDialogContent className="bg-card border-border">
+        <AlertDialogContent className="glass-strong border-none rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground flex items-center">
+            <AlertDialogTitle className="text-card-foreground flex items-center">
               <AlertTriangle className="w-5 h-5 mr-2 text-warning" />
               System Deactivated
             </AlertDialogTitle>
@@ -295,12 +310,12 @@ const Switch = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-muted border-border hover:bg-muted/80">
+            <AlertDialogCancel className="rounded-xl">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleActivateAndCheckIn}
-              className="bg-primary hover:bg-primary/90"
+              className="bg-primary hover:bg-primary/90 rounded-xl"
             >
               Activate & Check-in
             </AlertDialogAction>

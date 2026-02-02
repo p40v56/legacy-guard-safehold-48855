@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
-import { EnhancedInput } from '@/components/ui/enhanced-input';
-import { Shield, Mail, Lock, User } from 'lucide-react';
+import { Shield, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -37,7 +35,6 @@ const Auth = () => {
     setLoading(true);
     setErrors({});
 
-    // Validation
     const newErrors: Record<string, string> = {};
     if (!validateEmail(formData.email)) {
       newErrors.email = "Please enter a valid email address";
@@ -81,7 +78,6 @@ const Auth = () => {
     setLoading(true);
     setErrors({});
 
-    // Validation
     const newErrors: Record<string, string> = {};
     if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";
@@ -139,7 +135,6 @@ const Auth = () => {
       [name]: value,
     });
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -149,160 +144,194 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-primary/20 backdrop-blur-sm">
-              <Shield className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-3xl font-bold text-foreground">AfterLife</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Secure your digital legacy for future generations
-          </p>
+    <div className="min-h-screen bg-gradient-hero flex flex-col">
+      {/* Header */}
+      <header className="px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <Shield className="w-8 h-8 text-white" />
+            <span className="text-xl font-semibold text-white">LegacyVault</span>
+          </Link>
+          <Link to="/">
+            <Button variant="ghost" className="text-white hover:bg-white/10">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+          </Link>
         </div>
+      </header>
 
-        <Card className="bg-card/60 border-border/50 backdrop-blur-sm shadow-2xl">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-foreground text-xl">
-              Welcome to AfterLife
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          {/* Auth Card */}
+          <div className="glass-strong rounded-3xl p-8">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-medium text-card-foreground mb-2">
+                Welcome to LegacyVault
+              </h1>
+              <p className="text-muted-foreground">
+                Secure your digital legacy
+              </p>
+            </div>
+
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-                <TabsTrigger value="signin" className="text-muted-foreground data-[state=active]:text-foreground">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-xl p-1 mb-6">
+                <TabsTrigger 
+                  value="signin" 
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground text-muted-foreground"
+                >
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="text-muted-foreground data-[state=active]:text-foreground">
+                <TabsTrigger 
+                  value="signup" 
+                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground text-muted-foreground"
+                >
                   Sign Up
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="signin">
+              <TabsContent value="signin" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
-                   <div className="space-y-2">
-                     <Label className="text-foreground">Email</Label>
-                     <EnhancedInput
-                       type="email"
-                       name="email"
-                       value={formData.email}
-                       onChange={handleInputChange}
-                       className="bg-input border-border text-foreground"
-                       placeholder="Enter your email"
-                       leftIcon={<Mail className="w-4 h-4" />}
-                       error={errors.email}
-                       success={formData.email && validateEmail(formData.email) && !errors.email}
-                       required
-                     />
-                   </div>
-                   <div className="space-y-2">
-                     <Label className="text-foreground">Password</Label>
-                     <EnhancedInput
-                       type="password"
-                       name="password"
-                       value={formData.password}
-                       onChange={handleInputChange}
-                       className="bg-input border-border text-foreground"
-                       placeholder="Enter your password"
-                       leftIcon={<Lock className="w-4 h-4" />}
-                       showPasswordToggle
-                       error={errors.password}
-                       success={formData.password && validatePassword(formData.password) && !errors.password}
-                       required
-                     />
-                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-card-foreground">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        placeholder="Enter your email"
+                        required
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-card-foreground">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        placeholder="Enter your password"
+                        required
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="text-sm text-destructive">{errors.password}</p>
+                    )}
+                  </div>
+
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
+                    className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium"
                   >
-                    {loading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                    {loading && <LoadingSpinner size="sm" className="mr-2" />}
                     Sign In
                   </Button>
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup">
+              <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                       <Label className="text-foreground">First Name</Label>
-                       <EnhancedInput
-                         type="text"
-                         name="firstName"
-                         value={formData.firstName}
-                         onChange={handleInputChange}
-                         className="bg-input border-border text-foreground"
-                         placeholder="First name"
-                         leftIcon={<User className="w-4 h-4" />}
-                         error={errors.firstName}
-                         success={formData.firstName.trim() && !errors.firstName}
-                         required
-                       />
-                     </div>
-                     <div className="space-y-2">
-                       <Label className="text-foreground">Last Name</Label>
-                       <EnhancedInput
-                         type="text"
-                         name="lastName"
-                         value={formData.lastName}
-                         onChange={handleInputChange}
-                         className="bg-input border-border text-foreground"
-                         placeholder="Last name"
-                         error={errors.lastName}
-                         success={formData.lastName.trim() && !errors.lastName}
-                         required
-                       />
-                     </div>
-                   </div>
-                   <div className="space-y-2">
-                     <Label className="text-foreground">Email</Label>
-                     <EnhancedInput
-                       type="email"
-                       name="email"
-                       value={formData.email}
-                       onChange={handleInputChange}
-                       className="bg-input border-border text-foreground"
-                       placeholder="Enter your email"
-                       leftIcon={<Mail className="w-4 h-4" />}
-                       error={errors.email}
-                       success={formData.email && validateEmail(formData.email) && !errors.email}
-                       required
-                     />
-                   </div>
-                   <div className="space-y-2">
-                     <Label className="text-foreground">Password</Label>
-                     <EnhancedInput
-                       type="password"
-                       name="password"
-                       value={formData.password}
-                       onChange={handleInputChange}
-                       className="bg-input border-border text-foreground"
-                       placeholder="Choose a strong password"
-                       leftIcon={<Lock className="w-4 h-4" />}
-                       showPasswordToggle
-                       error={errors.password}
-                       success={formData.password && validatePassword(formData.password) && !errors.password}
-                       required
-                       minLength={6}
-                     />
-                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-card-foreground">First Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                          className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                          placeholder="First"
+                          required
+                        />
+                      </div>
+                      {errors.firstName && (
+                        <p className="text-sm text-destructive">{errors.firstName}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-card-foreground">Last Name</Label>
+                      <Input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="h-12 rounded-xl bg-muted/50 border-border"
+                        placeholder="Last"
+                        required
+                      />
+                      {errors.lastName && (
+                        <p className="text-sm text-destructive">{errors.lastName}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-card-foreground">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        placeholder="Enter your email"
+                        required
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-card-foreground">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        placeholder="Choose a password"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="text-sm text-destructive">{errors.password}</p>
+                    )}
+                  </div>
+
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold"
+                    className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium"
                   >
-                    {loading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                    {loading && <LoadingSpinner size="sm" className="mr-2" />}
                     Create Account
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

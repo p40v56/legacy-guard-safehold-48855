@@ -106,7 +106,9 @@ const Accounts = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <LoadingSpinner size="lg" className="text-emerald-400" />
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-pulse">
+            <CreditCard className="w-6 h-6 text-white" />
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -114,50 +116,39 @@ const Accounts = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-white/10 backdrop-blur-sm">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
-          <div className="relative p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-xl bg-emerald-500/20 backdrop-blur-sm">
-                    <CreditCard className="w-6 h-6 text-emerald-400" />
-                  </div>
-                  <h1 className="text-4xl font-bold text-white">Digital Accounts</h1>
-                </div>
-                <p className="text-lg text-slate-300 max-w-2xl">
-                  Manage your digital accounts and specify how they should be handled in your digital legacy plan.
-                </p>
-              </div>
-              <Button 
-                onClick={() => setShowForm(true)}
-                size="lg"
-                className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-500/25 border-0 text-white font-semibold px-8"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Add Account
-              </Button>
-            </div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">Digital Accounts</h1>
+            <p className="text-white/70">
+              Manage your digital accounts for your legacy plan
+            </p>
           </div>
+          <Button 
+            onClick={() => setShowForm(true)}
+            className="bg-white text-primary hover:bg-white/90 rounded-full px-6 shadow-lg"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add Account
+          </Button>
         </div>
 
         {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search accounts by platform, email, or username..."
-              className="h-12 text-base"
+              placeholder="Search accounts..."
+              className="bg-muted/50 border-none"
             />
           </div>
           <Select value={filterType} onValueChange={(value) => setFilterType(value as AccountType | 'all')}>
-            <SelectTrigger className="w-full sm:w-56 h-12 bg-slate-800/50 border-slate-600 text-white backdrop-blur-sm">
+            <SelectTrigger className="w-full sm:w-48 bg-muted/50 border-none">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-600">
+            <SelectContent className="bg-card border-border">
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="social">Social</SelectItem>
               <SelectItem value="financial">Financial</SelectItem>
@@ -171,128 +162,126 @@ const Accounts = () => {
 
         {/* Add/Edit Form */}
         {showForm && (
-          <Card className="bg-slate-800/60 border-slate-700/50 backdrop-blur-sm shadow-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-white flex items-center text-xl">
-                <div className="p-2 rounded-lg bg-emerald-500/20 mr-3">
-                  <CreditCard className="w-5 h-5 text-emerald-400" />
-                </div>
+          <div className="glass rounded-3xl p-6 lg:p-8">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-medium text-card-foreground">
                 {editingAccount ? 'Edit Account' : 'Add New Account'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label className="text-slate-200 font-medium">Platform/Service *</Label>
-                    <Input
-                      value={formData.platform}
-                      onChange={(e) => setFormData({...formData, platform: e.target.value})}
-                      className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm"
-                      placeholder="e.g., Gmail, Facebook, Bank of America"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-slate-200 font-medium">Account Type</Label>
-                    <Select value={formData.account_type} onValueChange={(value) => setFormData({...formData, account_type: value as AccountType})}>
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
-                        <SelectItem value="social">Social Media</SelectItem>
-                        <SelectItem value="financial">Financial</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="cloud">Cloud Storage</SelectItem>
-                        <SelectItem value="subscription">Subscription</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-200 font-medium">Email</Label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm"
-                      placeholder="account@example.com"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-200 font-medium">Username</Label>
-                    <Input
-                      value={formData.username}
-                      onChange={(e) => setFormData({...formData, username: e.target.value})}
-                      className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm"
-                      placeholder="username"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-200 font-medium">Importance</Label>
-                    <Select value={formData.importance} onValueChange={(value) => setFormData({...formData, importance: value as ImportanceLevel})}>
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-200 font-medium">Closure Action</Label>
-                    <Select value={formData.closure_action} onValueChange={(value) => setFormData({...formData, closure_action: value as ClosureAction})}>
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-12 backdrop-blur-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
-                        <SelectItem value="memorialize">Memorialize</SelectItem>
-                        <SelectItem value="delete">Delete</SelectItem>
-                        <SelectItem value="transfer">Transfer</SelectItem>
-                        <SelectItem value="download">Download</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              </h3>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-card-foreground">Platform/Service *</Label>
+                  <Input
+                    value={formData.platform}
+                    onChange={(e) => setFormData({...formData, platform: e.target.value})}
+                    className="h-12 bg-muted/50 border-border rounded-xl"
+                    placeholder="e.g., Gmail, Facebook"
+                    required
+                  />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-card-foreground">Account Type</Label>
+                  <Select value={formData.account_type} onValueChange={(value) => setFormData({...formData, account_type: value as AccountType})}>
+                    <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="social">Social Media</SelectItem>
+                      <SelectItem value="financial">Financial</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="cloud">Cloud Storage</SelectItem>
+                      <SelectItem value="subscription">Subscription</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-200 font-medium">Notes</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    className="bg-slate-700/50 border-slate-600 text-white backdrop-blur-sm"
-                    rows={4}
-                    placeholder="Additional notes about this account..."
+                  <Label className="text-card-foreground">Email</Label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="h-12 bg-muted/50 border-border rounded-xl"
+                    placeholder="account@example.com"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    type="submit" 
-                    className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg font-semibold"
-                  >
-                    {editingAccount ? 'Update Account' : 'Add Account'}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={resetForm}
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700/50"
-                  >
-                    Cancel
-                  </Button>
+                <div className="space-y-2">
+                  <Label className="text-card-foreground">Username</Label>
+                  <Input
+                    value={formData.username}
+                    onChange={(e) => setFormData({...formData, username: e.target.value})}
+                    className="h-12 bg-muted/50 border-border rounded-xl"
+                    placeholder="username"
+                  />
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+
+                <div className="space-y-2">
+                  <Label className="text-card-foreground">Importance</Label>
+                  <Select value={formData.importance} onValueChange={(value) => setFormData({...formData, importance: value as ImportanceLevel})}>
+                    <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-card-foreground">Closure Action</Label>
+                  <Select value={formData.closure_action} onValueChange={(value) => setFormData({...formData, closure_action: value as ClosureAction})}>
+                    <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="memorialize">Memorialize</SelectItem>
+                      <SelectItem value="delete">Delete</SelectItem>
+                      <SelectItem value="transfer">Transfer</SelectItem>
+                      <SelectItem value="download">Download</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-card-foreground">Notes</Label>
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  className="bg-muted/50 border-border rounded-xl"
+                  rows={4}
+                  placeholder="Additional notes..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  type="submit" 
+                  className="bg-primary hover:bg-primary/90 rounded-full px-6"
+                >
+                  {editingAccount ? 'Update Account' : 'Add Account'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={resetForm}
+                  className="rounded-full"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
         )}
 
         {/* Accounts List */}

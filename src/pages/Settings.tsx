@@ -131,47 +131,50 @@ const Settings = () => {
   };
 
   if (loading || contactsLoading) {
-    return <DashboardLayout>
+    return (
+      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <LoadingSpinner size="lg" className="text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading settings...</p>
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-pulse">
+            <Shield className="w-6 h-6 text-white" />
           </div>
         </div>
-      </DashboardLayout>;
+      </DashboardLayout>
+    );
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
-          <p className="text-muted-foreground">Manage your account and application preferences</p>
+          <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">Settings</h1>
+          <p className="text-white/70">Manage your account and preferences</p>
         </div>
 
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-card/50 border-border">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
-              <User className="w-4 h-4 mr-2" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
-              <Palette className="w-4 h-4 mr-2" />
-              Appearance
-            </TabsTrigger>
-            <TabsTrigger value="activation" className="data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Activation Rules
-            </TabsTrigger>
-            <TabsTrigger value="permissions" className="data-[state=active]:bg-accent/20 data-[state=active]:text-accent-foreground">
-              <Shield className="w-4 h-4 mr-2" />
-              Default Permissions
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary-foreground">
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
-            </TabsTrigger>
-          </TabsList>
+        <div className="glass rounded-3xl p-6">
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-5 bg-muted/50 rounded-xl p-1 mb-6">
+              <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="appearance" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
+                <Palette className="w-4 h-4 mr-2" />
+                Theme
+              </TabsTrigger>
+              <TabsTrigger value="activation" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Rules
+              </TabsTrigger>
+              <TabsTrigger value="permissions" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
+                <Shield className="w-4 h-4 mr-2" />
+                Permissions
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
+                <Bell className="w-4 h-4 mr-2" />
+                Alerts
+              </TabsTrigger>
+            </TabsList>
 
           <TabsContent value="profile" className="space-y-6 mt-6">
             {/* Profile Settings */}
@@ -518,7 +521,8 @@ const Settings = () => {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
     </DashboardLayout>
   );

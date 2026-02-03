@@ -176,33 +176,33 @@ const Auth = () => {
             </div>
 
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-xl p-1 mb-6">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/30 rounded-2xl p-1.5 mb-8">
                 <TabsTrigger 
                   value="signin" 
-                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground text-muted-foreground"
+                  className="rounded-xl h-11 data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all"
                 >
                   Sign In
                 </TabsTrigger>
                 <TabsTrigger 
                   value="signup" 
-                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground text-muted-foreground"
+                  className="rounded-xl h-11 data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all"
                 >
                   Sign Up
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="signin" className="space-y-4">
-                <form onSubmit={handleSignIn} className="space-y-4">
+              <TabsContent value="signin" className="space-y-5">
+                <form onSubmit={handleSignIn} className="space-y-5">
                   <div className="space-y-2">
-                    <Label className="text-card-foreground">Email</Label>
+                    <Label className="text-card-foreground font-medium">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
                         placeholder="Enter your email"
                         required
                       />
@@ -213,15 +213,15 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-card-foreground">Password</Label>
+                    <Label className="text-card-foreground font-medium">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         type="password"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
                         placeholder="Enter your password"
                         required
                       />
@@ -234,7 +234,7 @@ const Auth = () => {
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium"
+                    className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
                   >
                     {loading && <LoadingSpinner size="sm" className="mr-2" />}
                     Sign In
@@ -242,19 +242,19 @@ const Auth = () => {
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignUp} className="space-y-4">
+              <TabsContent value="signup" className="space-y-5">
+                <form onSubmit={handleSignUp} className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-card-foreground">First Name</Label>
+                      <Label className="text-card-foreground font-medium">First Name</Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                         <Input
                           type="text"
                           name="firstName"
                           value={formData.firstName}
                           onChange={handleInputChange}
-                          className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                          className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
                           placeholder="First"
                           required
                         />
@@ -264,13 +264,13 @@ const Auth = () => {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-card-foreground">Last Name</Label>
+                      <Label className="text-card-foreground font-medium">Last Name</Label>
                       <Input
                         type="text"
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        className="h-12 rounded-xl bg-muted/50 border-border"
+                        className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
                         placeholder="Last"
                         required
                       />
@@ -281,15 +281,15 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-card-foreground">Email</Label>
+                    <Label className="text-card-foreground font-medium">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
                         placeholder="Enter your email"
                         required
                       />
@@ -300,15 +300,15 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-card-foreground">Password</Label>
+                    <Label className="text-card-foreground font-medium">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         type="password"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="pl-10 h-12 rounded-xl bg-muted/50 border-border"
+                        className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
                         placeholder="Choose a password"
                         required
                         minLength={6}
@@ -322,7 +322,7 @@ const Auth = () => {
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium"
+                    className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
                   >
                     {loading && <LoadingSpinner size="sm" className="mr-2" />}
                     Create Account

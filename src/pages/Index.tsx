@@ -191,34 +191,34 @@ const Index = () => {
       </section>
 
       {/* App Preview */}
-      <section className="py-32 px-6 bg-white">
+      <section className="py-32 px-6 bg-background">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div>
-            <h2 className="text-4xl md:text-5xl font-semibold text-gray-900 mb-6">All your digital legacy, <span className="text-sky-500">in one place.</span></h2>
-            <p className="text-gray-600 text-lg mb-8">Join thousands who trust LegacyVault to protect their digital assets.</p>
+            <h2 className="text-4xl md:text-5xl font-semibold text-foreground mb-6">All your digital legacy, <span className="text-primary">in one place.</span></h2>
+            <p className="text-muted-foreground text-lg mb-8">Join thousands who trust LegacyVault to protect their digital assets.</p>
             <div className="space-y-4">
               {['Bank-grade encryption', 'Customizable check-ins', 'Multi-tier contacts', 'Secure sharing'].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center"><Check className="w-4 h-4 text-sky-600" /></div>
-                  <span className="text-gray-700">{item}</span>
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center"><Check className="w-4 h-4 text-primary" /></div>
+                  <span className="text-foreground">{item}</span>
                 </div>
               ))}
             </div>
-            <Button size="lg" onClick={handleGetStarted} className="mt-8 bg-sky-500 hover:bg-sky-600 text-white rounded-full px-8">
+            <Button size="lg" onClick={handleGetStarted} className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8">
               Start protecting now <Sparkles className="ml-2 w-5 h-5" />
             </Button>
           </div>
           <div className="relative">
-            <div className="bg-gradient-to-br from-sky-50 to-blue-100 rounded-3xl p-8">
-              <div className="bg-white rounded-2xl shadow-xl p-6 space-y-4">
-                <div className="flex items-center gap-3 pb-4 border-b">
-                  <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-sky-600" /></div>
-                  <div><div className="font-semibold text-gray-900">Check-in Required</div><div className="text-sm text-gray-500">Due in 3 days</div></div>
+            <div className="glass rounded-3xl p-8">
+              <div className="bg-card rounded-2xl shadow-xl p-6 space-y-4 border border-border">
+                <div className="flex items-center gap-3 pb-4 border-b border-border">
+                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-primary" /></div>
+                  <div><div className="font-semibold text-card-foreground">Check-in Required</div><div className="text-sm text-muted-foreground">Due in 3 days</div></div>
                 </div>
                 {[{ icon: Users, label: 'Trusted Contacts', value: '3 active' }, { icon: FileText, label: 'Documents', value: '12 secured' }, { icon: Lock, label: 'Vault Status', value: 'Protected', green: true }].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <div className="flex items-center gap-3"><item.icon className="w-5 h-5 text-gray-400" /><span className="text-gray-700">{item.label}</span></div>
-                    <span className={item.green ? 'text-green-600 font-medium' : 'text-sky-600 font-medium'}>{item.value}</span>
+                  <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+                    <div className="flex items-center gap-3"><item.icon className="w-5 h-5 text-muted-foreground" /><span className="text-card-foreground">{item.label}</span></div>
+                    <span className={item.green ? 'text-success font-medium' : 'text-primary font-medium'}>{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -256,52 +256,42 @@ const Index = () => {
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <h2 className="text-4xl md:text-5xl font-semibold text-white mb-6">1 million users,<br /><span className="text-white/80">plus you.</span></h2>
           <p className="text-white/70 text-lg mb-10">It only takes a few seconds to get started.</p>
-          <Button size="lg" onClick={handleGetStarted} className="group bg-white text-sky-700 hover:bg-white/95 rounded-full px-10 py-7 text-lg font-semibold shadow-xl">
+          <Button size="lg" onClick={handleGetStarted} className="group bg-white text-primary hover:bg-white/95 rounded-full px-10 py-7 text-lg font-semibold shadow-xl">
             Get Started <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
-          <div className="flex gap-4 justify-center mt-8">
-            <a href="#"><AppStoreBadge className="h-10" /></a>
-            <a href="#"><GooglePlayBadge className="h-10" /></a>
-          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 py-16 px-6">
+      <footer className="bg-background border-t border-border py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div>
-              <div className="flex items-center gap-3 mb-4"><Shield className="w-8 h-8 text-sky-400" /><span className="text-xl font-semibold text-white">LegacyVault</span></div>
-              <p className="text-white/40 text-sm">Secure your digital legacy and protect your loved ones.</p>
+              <div className="flex items-center gap-3 mb-4"><Shield className="w-8 h-8 text-primary" /><span className="text-xl font-semibold text-foreground">LegacyVault</span></div>
+              <p className="text-muted-foreground text-sm">Secure your digital legacy and protect your loved ones.</p>
             </div>
             {[{ title: 'Get Started', links: ['Sign up', 'Login', 'Pricing'] }, { title: 'Product', links: ['Features', 'Security', 'FAQ'] }, { title: 'Company', links: ['About', 'Contact', 'Privacy'] }].map((s, i) => (
-              <div key={i}><h4 className="text-white font-medium mb-4">{s.title}</h4><ul className="space-y-2">{s.links.map((l, j) => <li key={j}><a href="#" className="text-white/40 hover:text-white/70 text-sm">{l}</a></li>)}</ul></div>
+              <div key={i}><h4 className="text-foreground font-medium mb-4">{s.title}</h4><ul className="space-y-2">{s.links.map((l, j) => <li key={j}><a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">{l}</a></li>)}</ul></div>
             ))}
           </div>
-          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-white/30 text-sm">© 2024 LegacyVault. All rights reserved.</p>
-            <div className="flex gap-6">{['Terms', 'Privacy', 'Cookies'].map((l, i) => <a key={i} href="#" className="text-white/30 hover:text-white/60 text-sm">{l}</a>)}</div>
+          <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-muted-foreground text-sm">© 2024 LegacyVault. All rights reserved.</p>
+            <div className="flex gap-6">{['Terms', 'Privacy', 'Cookies'].map((l, i) => <a key={i} href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">{l}</a>)}</div>
           </div>
         </div>
       </footer>
 
       {/* Floating Bottom Nav - Jeton Style */}
       <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <div className="bg-white/95 backdrop-blur-xl rounded-full px-2 py-2 shadow-lg shadow-black/10 flex items-center gap-1">
-          <a href="#" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-sky-100 text-sky-700 font-medium text-sm">
+        <div className="floating-nav px-2 py-2 flex items-center gap-1">
+          <a href="#" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 text-primary font-medium text-sm">
             <Home className="w-4 h-4" />Home
           </a>
-          <a href="#features" className="px-5 py-2.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 font-medium text-sm transition-colors">Features</a>
-          <a href="#how-it-works" className="px-5 py-2.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 font-medium text-sm transition-colors">Process</a>
-          <a href="#testimonials" className="px-5 py-2.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 font-medium text-sm transition-colors">About</a>
+          <a href="#features" className="px-5 py-2.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted font-medium text-sm transition-colors">Features</a>
+          <a href="#how-it-works" className="px-5 py-2.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted font-medium text-sm transition-colors">Process</a>
+          <a href="#testimonials" className="px-5 py-2.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted font-medium text-sm transition-colors">About</a>
         </div>
       </nav>
-
-      {/* App Store Buttons - Bottom Right */}
-      <div className="fixed bottom-6 right-6 z-50 flex gap-2">
-        <a href="#" className="hover:scale-105 transition-transform"><AppStoreBadge className="h-10" /></a>
-        <a href="#" className="hover:scale-105 transition-transform"><GooglePlayBadge className="h-10" /></a>
-      </div>
     </div>
   );
 };

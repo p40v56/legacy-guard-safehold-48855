@@ -83,11 +83,11 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Welcome Header */}
-        <div className="text-center lg:text-left">
-          <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">
+        <div className="page-header">
+          <h1 className="text-3xl lg:text-4xl font-medium mb-2">
             {getTimeOfDay()}!
           </h1>
-          <p className="text-white/70 text-lg">
+          <p>
             Welcome to your digital legacy dashboard
           </p>
         </div>
@@ -119,7 +119,7 @@ const Dashboard = () => {
           </div>
 
           {stats.userSettings?.is_active && stats.userSettings?.next_check_in_due && (
-            <div className="bg-muted/50 rounded-2xl p-4">
+            <div className="bg-muted rounded-2xl p-4">
               <p className="text-sm text-muted-foreground mb-1">Next check-in due</p>
               <p className="text-lg font-medium text-card-foreground">
                 {new Date(
@@ -153,7 +153,7 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="space-y-4">
-          <h3 className="text-xl font-medium text-white">Quick Actions</h3>
+          <h3 className="text-xl font-medium text-card-foreground">Quick Actions</h3>
           <div className="grid md:grid-cols-2 gap-4">
             {quickActions.map((action, index) => (
               <Link 

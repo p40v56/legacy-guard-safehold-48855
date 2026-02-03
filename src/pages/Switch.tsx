@@ -201,11 +201,11 @@ const Switch = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="text-center lg:text-left">
-          <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">
+        <div className="page-header">
+          <h1 className="text-3xl lg:text-4xl font-medium mb-2">
             Dead Man's Switch
           </h1>
-          <p className="text-white/70">
+          <p>
             {settings?.is_active ? 'Your system is active and protected' : 'Activate your safety system'}
           </p>
         </div>

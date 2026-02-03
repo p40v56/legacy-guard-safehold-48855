@@ -118,10 +118,10 @@ const Accounts = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="page-header flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">Digital Accounts</h1>
-            <p className="text-white/70">
+            <h1 className="text-3xl lg:text-4xl font-medium mb-2">Digital Accounts</h1>
+            <p>
               Manage your digital accounts for your legacy plan
             </p>
           </div>
@@ -364,7 +364,7 @@ const Accounts = () => {
                         </div>
 
                         {account.notes && (
-                          <p className="text-slate-300 mt-4 leading-relaxed">{account.notes}</p>
+                          <p className="text-muted-foreground mt-4 leading-relaxed">{account.notes}</p>
                         )}
                       </div>
                       
@@ -373,7 +373,7 @@ const Accounts = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(account)}
-                          className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 h-10 w-10 p-0"
+                          className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-10 w-10 p-0"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -381,7 +381,7 @@ const Accounts = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteAccount(account.id)}
-                          className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-10 w-10 p-0"
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

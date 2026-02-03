@@ -41,9 +41,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-background">
       {/* Top Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 lg:px-6 lg:py-4">
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 lg:px-6 lg:py-4 bg-gradient-hero">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
@@ -83,7 +83,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="absolute top-16 left-4 right-4 bg-white rounded-2xl shadow-xl p-4">
+          <div className="absolute top-16 left-4 right-4 glass-strong rounded-2xl p-4">
             <div className="space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
@@ -104,7 +104,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </Link>
                 );
               })}
-              <div className="border-t pt-2 mt-2">
+              <div className="border-t border-border pt-2 mt-2">
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 w-full"

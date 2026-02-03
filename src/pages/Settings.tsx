@@ -146,9 +146,9 @@ const Settings = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">Settings</h1>
-          <p className="text-white/70">Manage your account and preferences</p>
+        <div className="page-header">
+          <h1 className="text-3xl lg:text-4xl font-medium mb-2">Settings</h1>
+          <p>Manage your account and preferences</p>
         </div>
 
         <div className="glass rounded-3xl p-6">

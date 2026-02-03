@@ -137,10 +137,10 @@ const Contacts = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="page-header flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-medium text-white mb-2">Emergency Contacts</h1>
-            <p className="text-white/70">
+            <h1 className="text-3xl lg:text-4xl font-medium mb-2">Emergency Contacts</h1>
+            <p>
               Manage your trusted contacts for notifications
             </p>
           </div>

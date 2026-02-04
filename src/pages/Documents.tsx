@@ -300,16 +300,16 @@ const Documents = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="page-header flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-medium mb-2">Legacy Documents</h1>
-            <p>
+            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Legacy Documents</h1>
+            <p className="text-muted-foreground">
               Securely store and manage important documents for your digital legacy
             </p>
           </div>
           <Button 
             onClick={() => setShowAddForm(true)}
-            className="bg-white text-primary hover:bg-white/90 rounded-full px-6 shadow-lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20"
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Document
@@ -317,30 +317,30 @@ const Documents = () => {
         </div>
 
         {/* Search and Filter */}
-        <div className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+        <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder="Search documents..."
-              className="bg-muted/50 border-none"
+              className="bg-card/50 border-border"
             />
           </div>
           <Select value={filterVisibility} onValueChange={setFilterVisibility}>
-            <SelectTrigger className="w-full sm:w-48 bg-muted/50 border-none">
+            <SelectTrigger className="w-full sm:w-48 bg-card/50 border-border rounded-xl">
               <SelectValue placeholder="Filter by visibility" />
             </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="all">All Documents</SelectItem>
-              <SelectItem value="private">Private Only</SelectItem>
-              <SelectItem value="public">Public Only</SelectItem>
+            <SelectContent className="bg-card border-border rounded-xl">
+              <SelectItem value="all" className="rounded-lg">All Documents</SelectItem>
+              <SelectItem value="private" className="rounded-lg">Private Only</SelectItem>
+              <SelectItem value="public" className="rounded-lg">Public Only</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Add/Edit Form */}
         {showAddForm && (
-          <div className="glass rounded-3xl p-6 lg:p-8">
+          <div className="bg-muted/30 rounded-2xl p-6">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                 <FileText className="w-6 h-6 text-primary" />
@@ -440,7 +440,7 @@ const Documents = () => {
         {/* Documents List */}
         <div className="space-y-4">
           {filteredDocuments.length === 0 ? (
-            <div className="glass rounded-3xl p-12 text-center">
+            <div className="bg-muted/30 rounded-2xl p-12 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <FileText className="w-8 h-8 text-primary" />
               </div>
@@ -463,7 +463,7 @@ const Documents = () => {
           ) : (
             <div className="grid gap-4">
               {filteredDocuments.map((document) => (
-                <Card key={document.id} className="glass border-border hover:shadow-lg transition-all duration-300 group">
+                <Card key={document.id} className="bg-muted/30 border-none rounded-2xl hover:bg-muted/50 transition-all duration-300 group">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">

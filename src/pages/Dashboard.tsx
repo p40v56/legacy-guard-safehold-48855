@@ -83,17 +83,17 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Welcome Header */}
-        <div className="page-header">
-          <h1 className="text-3xl lg:text-4xl font-medium mb-2">
+        <div className="mb-8">
+          <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">
             {getTimeOfDay()}!
           </h1>
-          <p>
+          <p className="text-muted-foreground">
             Welcome to your digital legacy dashboard
           </p>
         </div>
 
         {/* Status Card */}
-        <div className="glass-strong rounded-3xl p-6 lg:p-8">
+        <div className="bg-muted/30 rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-6">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
               stats.userSettings?.is_active 
@@ -142,7 +142,7 @@ const Dashboard = () => {
           ].map((stat, index) => (
             <div 
               key={index}
-              className="glass rounded-2xl p-5 text-center interactive-card"
+              className="bg-muted/30 rounded-2xl p-5 text-center hover:bg-muted/50 transition-all"
             >
               <stat.icon className="w-6 h-6 text-primary mx-auto mb-3" />
               <p className="text-2xl font-semibold text-card-foreground mb-1">{stat.value}</p>
@@ -159,7 +159,7 @@ const Dashboard = () => {
               <Link 
                 key={index}
                 to={action.href}
-                className="glass rounded-2xl p-5 flex items-center gap-4 group interactive-card"
+                className="bg-muted/30 rounded-2xl p-5 flex items-center gap-4 group hover:bg-muted/50 transition-all"
               >
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <action.icon className="w-6 h-6 text-primary" />
@@ -177,7 +177,7 @@ const Dashboard = () => {
         </div>
 
         {/* Security Checklist */}
-        <div className="glass rounded-3xl p-6 lg:p-8">
+        <div className="bg-muted/30 rounded-2xl p-6">
           <h3 className="text-xl font-medium text-card-foreground mb-6">Security Checklist</h3>
           <div className="space-y-4">
             {[

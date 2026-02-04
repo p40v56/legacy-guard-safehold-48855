@@ -118,16 +118,16 @@ const Accounts = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="page-header flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-medium mb-2">Digital Accounts</h1>
-            <p>
+            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Digital Accounts</h1>
+            <p className="text-muted-foreground">
               Manage your digital accounts for your legacy plan
             </p>
           </div>
           <Button 
             onClick={() => setShowForm(true)}
-            className="bg-white text-primary hover:bg-white/90 rounded-full px-6 shadow-lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20"
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Account
@@ -135,34 +135,34 @@ const Accounts = () => {
         </div>
 
         {/* Search and Filter */}
-        <div className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+        <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder="Search accounts..."
-              className="bg-muted/50 border-none"
+              className="bg-card/50 border-border"
             />
           </div>
           <Select value={filterType} onValueChange={(value) => setFilterType(value as AccountType | 'all')}>
-            <SelectTrigger className="w-full sm:w-48 bg-muted/50 border-none">
+            <SelectTrigger className="w-full sm:w-48 bg-card/50 border-border rounded-xl">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="social">Social</SelectItem>
-              <SelectItem value="financial">Financial</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="cloud">Cloud Storage</SelectItem>
-              <SelectItem value="subscription">Subscription</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+            <SelectContent className="bg-card border-border rounded-xl">
+              <SelectItem value="all" className="rounded-lg">All Types</SelectItem>
+              <SelectItem value="social" className="rounded-lg">Social</SelectItem>
+              <SelectItem value="financial" className="rounded-lg">Financial</SelectItem>
+              <SelectItem value="email" className="rounded-lg">Email</SelectItem>
+              <SelectItem value="cloud" className="rounded-lg">Cloud Storage</SelectItem>
+              <SelectItem value="subscription" className="rounded-lg">Subscription</SelectItem>
+              <SelectItem value="other" className="rounded-lg">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Add/Edit Form */}
         {showForm && (
-          <div className="glass rounded-3xl p-6 lg:p-8">
+          <div className="bg-muted/30 rounded-2xl p-6">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                 <CreditCard className="w-6 h-6 text-primary" />

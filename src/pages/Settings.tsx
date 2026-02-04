@@ -146,39 +146,38 @@ const Settings = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="page-header">
-          <h1 className="text-3xl lg:text-4xl font-medium mb-2">Settings</h1>
-          <p>Manage your account and preferences</p>
+        <div className="mb-8">
+          <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Settings</h1>
+          <p className="text-muted-foreground">Manage your account and preferences</p>
         </div>
 
-        <div className="glass rounded-3xl p-6">
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-muted/50 rounded-xl p-1 mb-6">
-              <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
-                <User className="w-4 h-4 mr-2" />
-                Profile
-              </TabsTrigger>
-              <TabsTrigger value="appearance" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
-                <Palette className="w-4 h-4 mr-2" />
-                Theme
-              </TabsTrigger>
-              <TabsTrigger value="activation" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Rules
-              </TabsTrigger>
-              <TabsTrigger value="permissions" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
-                <Shield className="w-4 h-4 mr-2" />
-                Permissions
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-card-foreground">
-                <Bell className="w-4 h-4 mr-2" />
-                Alerts
-              </TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 bg-muted/30 rounded-2xl p-1.5 mb-6">
+            <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
+              <Palette className="w-4 h-4 mr-2" />
+              Theme
+            </TabsTrigger>
+            <TabsTrigger value="activation" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Rules
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
+              <Shield className="w-4 h-4 mr-2" />
+              Permissions
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
+              <Bell className="w-4 h-4 mr-2" />
+              Alerts
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="profile" className="space-y-6 mt-6">
             {/* Profile Settings */}
-            <Card className="bg-card border-border">
+            <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center">
                   <User className="w-5 h-5 mr-2 text-primary" />
@@ -251,7 +250,7 @@ const Settings = () => {
             </Card>
 
             {/* Account Status */}
-            <Card className="bg-card border-border">
+            <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground">Account Status</CardTitle>
               </CardHeader>
@@ -280,7 +279,7 @@ const Settings = () => {
 
           <TabsContent value="activation" className="space-y-6 mt-6">
             {/* Dead Man's Switch Activation Rules */}
-            <Card className="bg-card border-border">
+            <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center justify-between">
                   <div className="flex items-center">
@@ -462,7 +461,7 @@ const Settings = () => {
 
           <TabsContent value="notifications" className="space-y-6 mt-6">
             {/* Notification Settings */}
-            <Card className="bg-card border-border">
+            <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center">
                   <Bell className="w-5 h-5 mr-2 text-primary" />
@@ -521,8 +520,7 @@ const Settings = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          </Tabs>
-        </div>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

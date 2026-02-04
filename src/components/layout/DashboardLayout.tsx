@@ -41,9 +41,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-hero">
       {/* Top Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 lg:px-6 lg:py-4 bg-gradient-hero">
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 lg:px-6 lg:py-4 bg-black/10 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
@@ -121,7 +121,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main Content */}
       <main className="pt-20 pb-28 px-4 lg:px-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          {children}
+          <div className="glass-strong rounded-3xl p-6 lg:p-8">
+            {children}
+          </div>
         </div>
       </main>
 

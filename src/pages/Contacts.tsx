@@ -137,16 +137,16 @@ const Contacts = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="page-header flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-medium mb-2">Emergency Contacts</h1>
-            <p>
+            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Emergency Contacts</h1>
+            <p className="text-muted-foreground">
               Manage your trusted contacts for notifications
             </p>
           </div>
           <Button 
             onClick={() => setIsDialogOpen(true)}
-            className="bg-white text-primary hover:bg-white/90 rounded-full px-6 shadow-lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20"
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Add Contact
@@ -154,25 +154,25 @@ const Contacts = () => {
         </div>
 
         {/* Search and Filter */}
-        <div className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+        <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Search contacts..."
-              className="bg-muted/50 border-none"
+              className="bg-card/50 border-border"
             />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-muted-foreground" />
             <Select value={filterCategory} onValueChange={(value: ContactType | 'all') => setFilterCategory(value)}>
-              <SelectTrigger className="w-48 bg-muted/50 border-none">
+              <SelectTrigger className="w-48 bg-card/50 border-border rounded-xl">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="all">All Categories</SelectItem>
+              <SelectContent className="bg-card border-border rounded-xl">
+                <SelectItem value="all" className="rounded-lg">All Categories</SelectItem>
                 {Object.entries(contactTypeLabels).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
+                  <SelectItem key={key} value={key} className="rounded-lg">
                     {label}
                   </SelectItem>
                 ))}
@@ -204,7 +204,7 @@ const Contacts = () => {
         {/* Contacts List */}
         <div className="grid gap-4">
           {filteredContacts.length === 0 ? (
-            <div className="glass rounded-3xl p-12 text-center">
+            <div className="bg-muted/30 rounded-2xl p-12 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-primary" />
               </div>

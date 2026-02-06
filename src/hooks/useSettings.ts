@@ -9,6 +9,7 @@ import {
 } from '@/services/supabaseService';
 import { useToast } from '@/hooks/use-toast';
 import { ContactType } from '@/types/access-control';
+import { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
 
 interface Profile {
   id: string;
@@ -36,6 +37,16 @@ interface ActivationRule {
   enabled: boolean;
 }
 
+const defaultEmailTemplate: EmailTemplateData = {
+  email_subject: "🚨 Important: Message from {userName}'s Dead Man's Switch",
+  email_header_title: '🚨 Important Notification',
+  email_header_subtitle: "Dead Man's Switch Activated",
+  email_intro_message: "This is an automated message from {userName}'s Dead Man's Switch system. The system has been activated because they have not checked in within their specified timeframe, and the grace period has now expired.",
+  email_footer_message: "This is an automated message from the Dead Man's Switch system. Please keep this information confidential and use it responsibly.",
+  email_grace_subject: '⚠️ Grace Period Started - Check In Required',
+  email_grace_intro: "Your Dead Man's Switch has detected that you did not check in by your scheduled deadline.",
+};
+
 export const useSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -60,6 +71,7 @@ export const useSettings = () => {
 
   const [activationRules, setActivationRules] = useState<ActivationRule[]>([]);
   const [typePermissions, setTypePermissions] = useState<any[]>([]);
+  const [emailTemplate, setEmailTemplate] = useState<EmailTemplateData>(defaultEmailTemplate);
 
   const fetchSettings = async () => {
     if (!user) return;
@@ -80,6 +92,17 @@ export const useSettings = () => {
         phone: profileData.phone || '',
         bio: profileData.bio || '',
         emergency_instructions: profileData.emergency_instructions || ''
+      });
+
+      // Load email template from profile data
+      setEmailTemplate({
+        email_subject: (profileData as any).email_subject || defaultEmailTemplate.email_subject,
+        email_header_title: (profileData as any).email_header_title || defaultEmailTemplate.email_header_title,
+        email_header_subtitle: (profileData as any).email_header_subtitle || defaultEmailTemplate.email_header_subtitle,
+        email_intro_message: (profileData as any).email_intro_message || defaultEmailTemplate.email_intro_message,
+        email_footer_message: (profileData as any).email_footer_message || defaultEmailTemplate.email_footer_message,
+        email_grace_subject: (profileData as any).email_grace_subject || defaultEmailTemplate.email_grace_subject,
+        email_grace_intro: (profileData as any).email_grace_intro || defaultEmailTemplate.email_grace_intro,
       });
 
       setNotifications({
@@ -141,6 +164,37 @@ export const useSettings = () => {
     }
   };
 
+  const saveEmailTemplate = async () => {
+    if (!user) return;
+    
+    setSaving(true);
+    try {
+      await ProfileService.updateProfile(user.id, {
+        email_subject: emailTemplate.email_subject,
+        email_header_title: emailTemplate.email_header_title,
+        email_header_subtitle: emailTemplate.email_header_subtitle,
+        email_intro_message: emailTemplate.email_intro_message,
+        email_footer_message: emailTemplate.email_footer_message,
+        email_grace_subject: emailTemplate.email_grace_subject,
+        email_grace_intro: emailTemplate.email_grace_intro,
+      });
+      
+      toast({
+        title: "Success",
+        description: "Email templates updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating email templates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update email templates",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const saveNotifications = async () => {
     if (!user) return;
     
@@ -164,12 +218,9 @@ export const useSettings = () => {
     if (!user) return;
     
     try {
-      // Delete existing rules and recreate them
-      // This is a simple approach - in production you might want to do differential updates
       const existingRules = await ActivationRulesService.getActivationRules(user.id);
       await Promise.all(existingRules.map(rule => ActivationRulesService.deleteActivationRule(rule.id)));
       
-      // Create new rules
       await Promise.all(activationRules.map(rule => 
         ActivationRulesService.createActivationRule(user.id, {
           target_type: rule.target_type,
@@ -178,7 +229,7 @@ export const useSettings = () => {
           delay_hours: rule.delay_hours,
           custom_message: rule.custom_message,
           enabled: rule.enabled,
-          action_type: 'send_message' // Required field
+          action_type: 'send_message'
         })
       ));
 
@@ -233,11 +284,14 @@ export const useSettings = () => {
     setActivationRules,
     typePermissions,
     setTypePermissions,
+    emailTemplate,
+    setEmailTemplate,
     loading,
     saving,
     saveProfile,
     saveNotifications,
     saveActivationRules,
+    saveEmailTemplate,
     addActivationRule,
     updateActivationRule,
     deleteActivationRule,

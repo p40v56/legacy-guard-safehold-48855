@@ -142,6 +142,42 @@
   .section-card {
     @apply glass rounded-3xl p-6 lg:p-8;
   }
+
+  /* Landing page sky gradient - matches dashboard bg-gradient-hero */
+  .hero-gradient-sky {
+    background: linear-gradient(135deg, hsl(199 89% 35%) 0%, hsl(199 80% 45%) 50%, hsl(210 70% 50%) 100%);
+  }
+
+  /* Dark sections for landing page */
+  .dark-section-sky {
+    background: linear-gradient(135deg, hsl(210 40% 12%) 0%, hsl(210 35% 18%) 50%, hsl(199 30% 20%) 100%);
+  }
+
+  /* Feature cards for landing page */
+  .feature-card-sky {
+    background: hsl(210 30% 15% / 0.8);
+    border: 1px solid hsl(199 50% 30% / 0.3);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    transition: all 0.3s ease;
+  }
+  .feature-card-sky:hover {
+    border-color: hsl(199 89% 48% / 0.5);
+    box-shadow: 0 8px 30px hsl(199 89% 48% / 0.1);
+    transform: translateY(-2px);
+  }
+
+  /* Testimonial cards for landing page */
+  .testimonial-card-sky {
+    background: hsl(210 30% 15% / 0.6);
+    border: 1px solid hsl(199 50% 30% / 0.2);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    transition: all 0.3s ease;
+  }
+  .testimonial-card-sky:hover {
+    border-color: hsl(199 89% 48% / 0.4);
+  }
 }
 
 @layer utilities {

@@ -15,6 +15,16 @@ interface Document {
   description: string | null;
 }
 
+interface EmailTemplate {
+  email_subject?: string;
+  email_header_title?: string;
+  email_header_subtitle?: string;
+  email_intro_message?: string;
+  email_footer_message?: string;
+  email_grace_subject?: string;
+  email_grace_intro?: string;
+}
+
 // Grace period warning request (sent to the user themselves)
 interface GracePeriodWarningRequest {
   notificationType: "grace_period_warning";
@@ -23,6 +33,7 @@ interface GracePeriodWarningRequest {
   userName: string;
   gracePeriodHours: number;
   graceEndDate: string;
+  emailTemplate?: EmailTemplate;
 }
 
 // Switch triggered request (sent to contacts)
@@ -36,6 +47,7 @@ interface SwitchTriggeredRequest {
   emergencyInstructions: string | null;
   documents: Document[];
   permissions: Record<string, boolean>;
+  emailTemplate?: EmailTemplate;
 }
 
 // Legacy format for backwards compatibility
@@ -72,8 +84,21 @@ function formatDateTime(isoString: string): string {
   });
 }
 
+function resolveTemplate(text: string, vars: Record<string, string>): string {
+  let result = text;
+  for (const [key, value] of Object.entries(vars)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, "g"), value);
+  }
+  return result;
+}
+
 function generateGracePeriodWarningHtml(data: GracePeriodWarningRequest): string {
-  const { recipientName, gracePeriodHours, graceEndDate } = data;
+  const { recipientName, gracePeriodHours, graceEndDate, userName, emailTemplate } = data;
+  
+  const graceIntro = resolveTemplate(
+    emailTemplate?.email_grace_intro || "Your Dead Man's Switch has detected that you did not check in by your scheduled deadline.",
+    { userName }
+  );
   
   return `
     <!DOCTYPE html>
@@ -100,7 +125,7 @@ function generateGracePeriodWarningHtml(data: GracePeriodWarningRequest): string
         </div>
         
         <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
-          Your Dead Man's Switch has detected that you did not check in by your scheduled deadline. 
+          ${graceIntro}
           A <strong>${gracePeriodHours}-hour grace period</strong> has now started.
         </p>
         
@@ -143,6 +168,17 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   const emergencyInstructions = data.emergencyInstructions;
   const documents = data.documents;
   const permissions = data.permissions;
+  const emailTemplate: EmailTemplate = ("emailTemplate" in data && data.emailTemplate) ? data.emailTemplate : {};
+
+  const headerTitle = emailTemplate.email_header_title || "🚨 Important Notification";
+  const headerSubtitle = emailTemplate.email_header_subtitle || "Dead Man's Switch Activated";
+  const introMessage = resolveTemplate(
+    emailTemplate.email_intro_message || 
+    "This is an automated message from {userName}'s Dead Man's Switch system. The system has been activated because they have not checked in within their specified timeframe, and the grace period has now expired.",
+    { userName }
+  );
+  const footerMessage = emailTemplate.email_footer_message || 
+    "This is an automated message from the Dead Man's Switch system. Please keep this information confidential and use it responsibly.";
   
   let sectionsHtml = "";
   
@@ -205,8 +241,8 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
-        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">🚨 Important Notification</h1>
-        <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Dead Man's Switch Activated</p>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">${headerTitle}</h1>
+        <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">${headerSubtitle}</p>
       </div>
       
       <div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
@@ -215,9 +251,7 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
         </p>
         
         <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
-          This is an automated message from <strong>${userName}</strong>'s Dead Man's Switch system. 
-          The system has been activated because they have not checked in within their specified timeframe, 
-          and the grace period has now expired.
+          ${introMessage}
         </p>
         
         <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">
@@ -229,8 +263,7 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
         
         <p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">
-          This is an automated message from the Dead Man's Switch system.<br>
-          Please keep this information confidential and use it responsibly.
+          ${footerMessage}
         </p>
       </div>
     </body>
@@ -260,7 +293,7 @@ const handler = async (req: Request): Promise<Response> => {
       emailHtml = generateGracePeriodWarningHtml(warningData);
       recipientEmail = warningData.recipientEmail;
       recipientName = warningData.recipientName;
-      subject = "⚠️ Grace Period Started - Check In Required";
+      subject = warningData.emailTemplate?.email_grace_subject || "⚠️ Grace Period Started - Check In Required";
       console.log(`Sending grace period warning to ${recipientName} (${recipientEmail})`);
     } else {
       // switch_triggered or legacy format
@@ -268,7 +301,11 @@ const handler = async (req: Request): Promise<Response> => {
       emailHtml = generateSwitchTriggeredHtml(triggerData);
       recipientEmail = triggerData.contactEmail;
       recipientName = triggerData.contactName;
-      subject = `🚨 Important: Message from ${triggerData.userName}'s Dead Man's Switch`;
+      const emailTemplate: EmailTemplate = ("emailTemplate" in triggerData && triggerData.emailTemplate) ? triggerData.emailTemplate : {};
+      subject = resolveTemplate(
+        emailTemplate.email_subject || `🚨 Important: Message from {userName}'s Dead Man's Switch`,
+        { userName: triggerData.userName }
+      );
       console.log(`Sending switch triggered notification to ${recipientName} (${recipientEmail})`);
     }
     

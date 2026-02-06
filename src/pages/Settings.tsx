@@ -14,13 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Palette } from 'lucide-react';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
 import { ContactTypePermissions as ContactTypePermissionsType } from '@/types/access-control';
 import RichTextEditor from '@/components/ui/rich-text-editor';
-import ThemeSelector from '@/components/settings/ThemeSelector';
+import EmailTemplateEditor, { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
 
 interface Profile {
   id: string;
@@ -39,14 +39,6 @@ interface NotificationSettings {
 }
 
 type ContactCategory = 'immediate_family' | 'extended_family' | 'close_friends' | 'professional' | 'legal' | 'financial';
-
-interface EmergencyContact {
-  id: string;
-  name: string;
-  email: string;
-  relationship?: string;
-  contact_type: ContactCategory;
-}
 
 interface ActivationRule {
   id: string;
@@ -78,15 +70,16 @@ const Settings = () => {
     addActivationRule,
     updateActivationRule,
     deleteActivationRule,
+    emailTemplate,
+    setEmailTemplate,
+    saveEmailTemplate,
   } = useSettings();
 
-  // Load actual contacts from the database
   const { contacts: emergencyContacts, loading: contactsLoading } = useContacts();
 
   const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
     try {
       setTypePermissions(updatedPermissions);
-      // This would typically save to the database using ContactTypePermissionsService
       toast({
         title: "Success",
         description: "Default permissions updated successfully"
@@ -118,7 +111,6 @@ const Settings = () => {
       if (rule.id === ruleId) {
         const currentContacts = rule.contact_ids || [];
         const isSelected = currentContacts.includes(contactId);
-        
         return {
           ...rule,
           contact_ids: isSelected 
@@ -157,9 +149,9 @@ const Settings = () => {
               <User className="w-4 h-4 mr-2" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
-              <Palette className="w-4 h-4 mr-2" />
-              Theme
+            <TabsTrigger value="email" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
+              <Mail className="w-4 h-4 mr-2" />
+              Email
             </TabsTrigger>
             <TabsTrigger value="activation" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
               <AlertTriangle className="w-4 h-4 mr-2" />
@@ -207,10 +199,7 @@ const Settings = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-foreground">Email</Label>
-                    <Input 
-                      value={profile.email} 
-                      disabled 
-                    />
+                    <Input value={profile.email} disabled />
                     <p className="text-xs text-muted-foreground mt-1">Email cannot be changed here</p>
                   </div>
                   <div>
@@ -257,9 +246,7 @@ const Settings = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Account Type</span>
-                  <Badge className="bg-success/20 text-success border-success/30">
-                    Free Plan
-                  </Badge>
+                  <Badge className="bg-success/20 text-success border-success/30">Free Plan</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Member Since</span>
@@ -273,12 +260,17 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="appearance" className="space-y-6 mt-6">
-            <ThemeSelector />
+          <TabsContent value="email" className="space-y-6 mt-6">
+            <EmailTemplateEditor
+              template={emailTemplate}
+              onChange={setEmailTemplate}
+              onSave={saveEmailTemplate}
+              saving={saving}
+              userName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'}
+            />
           </TabsContent>
 
           <TabsContent value="activation" className="space-y-6 mt-6">
-            {/* Dead Man's Switch Activation Rules */}
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center justify-between">
@@ -300,27 +292,20 @@ const Settings = () => {
                   <div key={rule.id} className="border border-border rounded-lg p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <Badge variant="outline">
-                          Rule {index + 1}
-                        </Badge>
+                        <Badge variant="outline">Rule {index + 1}</Badge>
                         <Switch 
                           checked={rule.enabled} 
                           onCheckedChange={checked => updateActivationRule(rule.id, { enabled: checked })} 
                         />
-                        <span className="text-foreground text-sm">
-                          {rule.enabled ? 'Enabled' : 'Disabled'}
-                        </span>
+                        <span className="text-foreground text-sm">{rule.enabled ? 'Enabled' : 'Disabled'}</span>
                       </div>
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center space-x-2 text-muted-foreground">
                           <Clock className="w-4 h-4" />
-                          <span className="text-sm">
-                            {rule.delay_hours === 0 ? 'Immediate' : `${rule.delay_hours}h delay`}
-                          </span>
+                          <span className="text-sm">{rule.delay_hours === 0 ? 'Immediate' : `${rule.delay_hours}h delay`}</span>
                         </div>
                         <Button 
-                          variant="ghost" 
-                          size="sm" 
+                          variant="ghost" size="sm" 
                           onClick={() => deleteActivationRule(rule.id)} 
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
@@ -340,9 +325,7 @@ const Settings = () => {
                             contact_ids: value === 'contacts' ? [] : undefined
                           })}
                         >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="category">Contact Category</SelectItem>
                             <SelectItem value="contacts">Specific Contacts</SelectItem>
@@ -357,9 +340,7 @@ const Settings = () => {
                             value={rule.contact_category} 
                             onValueChange={value => updateActivationRule(rule.id, { contact_category: value as ContactCategory })}
                           >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="immediate_family">Immediate Family</SelectItem>
                               <SelectItem value="extended_family">Extended Family</SelectItem>
@@ -375,9 +356,7 @@ const Settings = () => {
                       <div>
                         <Label className="text-foreground">Delay (hours)</Label>
                         <Input 
-                          type="number" 
-                          min="0" 
-                          max="8760" 
+                          type="number" min="0" max="8760" 
                           value={rule.delay_hours} 
                           onChange={e => updateActivationRule(rule.id, { delay_hours: parseInt(e.target.value) || 0 })} 
                         />
@@ -388,9 +367,7 @@ const Settings = () => {
                       <div>
                         <Label className="text-foreground">Select Contacts</Label>
                         {emergencyContacts.length === 0 ? (
-                          <p className="text-muted-foreground text-sm mt-2">
-                            No contacts available. Please add contacts first.
-                          </p>
+                          <p className="text-muted-foreground text-sm mt-2">No contacts available. Please add contacts first.</p>
                         ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
                             {emergencyContacts.map(contact => (
@@ -400,10 +377,7 @@ const Settings = () => {
                                   checked={(rule.contact_ids || []).includes(contact.id)}
                                   onCheckedChange={() => toggleContactSelection(rule.id, contact.id)}
                                 />
-                                <label 
-                                  htmlFor={`contact-${rule.id}-${contact.id}`}
-                                  className="text-sm text-foreground cursor-pointer flex-1"
-                                >
+                                <label htmlFor={`contact-${rule.id}-${contact.id}`} className="text-sm text-foreground cursor-pointer flex-1">
                                   {contact.name} {contact.relationship && `(${contact.relationship})`}
                                 </label>
                               </div>
@@ -460,7 +434,6 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6 mt-6">
-            {/* Notification Settings */}
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center">
@@ -482,9 +455,7 @@ const Settings = () => {
                     onCheckedChange={checked => setNotifications({...notifications, email_notifications: checked})} 
                   />
                 </div>
-
                 <Separator />
-
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Phone className="w-5 h-5 text-muted-foreground" />
@@ -498,9 +469,7 @@ const Settings = () => {
                     onCheckedChange={checked => setNotifications({...notifications, sms_notifications: checked})} 
                   />
                 </div>
-
                 <Separator />
-
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Shield className="w-5 h-5 text-muted-foreground" />

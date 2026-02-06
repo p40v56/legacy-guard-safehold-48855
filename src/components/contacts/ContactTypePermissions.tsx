@@ -64,21 +64,21 @@ const ContactTypePermissions = ({ typePermissions, onUpdate }: ContactTypePermis
 
   return (
     <div className="space-y-6">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-primary/5 border-primary/20 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-white flex items-center">
-            <Users className="w-5 h-5 mr-2 text-emerald-400" />
+          <CardTitle className="text-foreground flex items-center">
+            <Users className="w-5 h-5 mr-2 text-primary" />
             Default Permissions by Contact Type
           </CardTitle>
-          <p className="text-slate-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             Configure default access permissions for each contact type. Individual contacts can override these defaults.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-slate-200">Select Contact Type</Label>
+            <Label className="text-foreground">Select Contact Type</Label>
             <Select value={selectedType} onValueChange={(value: ContactType) => setSelectedType(value)}>
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -91,9 +91,9 @@ const ContactTypePermissions = ({ typePermissions, onUpdate }: ContactTypePermis
             </Select>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-            <span className="text-slate-200">Configuring permissions for:</span>
-            <Badge variant="outline" className="border-emerald-600 text-emerald-400">
+          <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <span className="text-foreground">Configuring permissions for:</span>
+            <Badge variant="outline" className="border-primary/50 text-primary">
               {contactTypeLabels[selectedType]}
             </Badge>
           </div>

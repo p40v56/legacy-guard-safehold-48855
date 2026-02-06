@@ -270,6 +270,13 @@ export type Database = {
         Row: {
           bio: string | null
           created_at: string
+          email_footer_message: string | null
+          email_grace_intro: string | null
+          email_grace_subject: string | null
+          email_header_subtitle: string | null
+          email_header_title: string | null
+          email_intro_message: string | null
+          email_subject: string | null
           emergency_instructions: string | null
           first_name: string | null
           id: string
@@ -281,6 +288,13 @@ export type Database = {
         Insert: {
           bio?: string | null
           created_at?: string
+          email_footer_message?: string | null
+          email_grace_intro?: string | null
+          email_grace_subject?: string | null
+          email_header_subtitle?: string | null
+          email_header_title?: string | null
+          email_intro_message?: string | null
+          email_subject?: string | null
           emergency_instructions?: string | null
           first_name?: string | null
           id?: string
@@ -292,6 +306,13 @@ export type Database = {
         Update: {
           bio?: string | null
           created_at?: string
+          email_footer_message?: string | null
+          email_grace_intro?: string | null
+          email_grace_subject?: string | null
+          email_header_subtitle?: string | null
+          email_header_title?: string | null
+          email_intro_message?: string | null
+          email_subject?: string | null
           emergency_instructions?: string | null
           first_name?: string | null
           id?: string

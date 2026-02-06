@@ -34,6 +34,13 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   emergency_instructions: string | null;
+  email_subject: string | null;
+  email_header_title: string | null;
+  email_header_subtitle: string | null;
+  email_intro_message: string | null;
+  email_footer_message: string | null;
+  email_grace_subject: string | null;
+  email_grace_intro: string | null;
 }
 
 interface Document {
@@ -97,6 +104,11 @@ async function startGracePeriod(
   
   const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
   
+  const emailTemplate = profile ? {
+    email_grace_subject: profile.email_grace_subject,
+    email_grace_intro: profile.email_grace_intro,
+  } : {};
+  
   // Send warning email to the user
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
@@ -112,6 +124,7 @@ async function startGracePeriod(
         userName: userName,
         gracePeriodHours: userSettings.grace_period_hours,
         graceEndDate: graceEndDate.toISOString(),
+        emailTemplate,
       }),
     });
     
@@ -204,6 +217,14 @@ async function triggerSwitch(
     
     const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
     
+    const emailTemplate = profile ? {
+      email_subject: profile.email_subject,
+      email_header_title: profile.email_header_title,
+      email_header_subtitle: profile.email_header_subtitle,
+      email_intro_message: profile.email_intro_message,
+      email_footer_message: profile.email_footer_message,
+    } : {};
+    
     // Call send-notification edge function
     const notificationPayload = {
       notificationType: "switch_triggered",
@@ -215,6 +236,7 @@ async function triggerSwitch(
       emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
       documents: allowedDocuments,
       permissions,
+      emailTemplate,
     };
     
     try {

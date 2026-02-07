@@ -33,25 +33,25 @@ const SwitchQuickStats = ({
 }: SwitchQuickStatsProps) => {
   return (
     <>
-      <Separator className="bg-slate-700" />
+      <Separator className="bg-border/50" />
       <div className="grid md:grid-cols-3 gap-4">
-        <div className="text-center p-4 bg-slate-700/30 rounded-lg">
-          <div className="text-2xl font-bold text-emerald-400">
+        <div className="text-center p-4 bg-primary/10 border border-primary/20 rounded-2xl">
+          <div className="text-2xl font-bold text-primary">
             {deadlineMode === 'custom' ? 'Custom' : getFrequencyLabel(checkInFrequency)}
           </div>
-          <div className="text-slate-400 text-sm">Deadline Mode</div>
+          <div className="text-muted-foreground text-sm">Deadline Mode</div>
         </div>
-        <div className="text-center p-4 bg-slate-700/30 rounded-lg">
-          <div className="text-2xl font-bold text-blue-400">
+        <div className="text-center p-4 bg-primary/10 border border-primary/20 rounded-2xl">
+          <div className="text-2xl font-bold text-primary">
             {gracePeriodHours}h
           </div>
-          <div className="text-slate-400 text-sm">Grace Period</div>
+          <div className="text-muted-foreground text-sm">Grace Period</div>
         </div>
-        <div className="text-center p-4 bg-slate-700/30 rounded-lg">
-          <div className="text-2xl font-bold text-amber-400">
+        <div className="text-center p-4 bg-primary/10 border border-primary/20 rounded-2xl">
+          <div className="text-2xl font-bold text-primary">
             {formatLastCheckIn(lastCheckIn)}
           </div>
-          <div className="text-slate-400 text-sm">Last Check-in</div>
+          <div className="text-muted-foreground text-sm">Last Check-in</div>
         </div>
       </div>
     </>

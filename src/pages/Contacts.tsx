@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactCard from '@/components/contacts/ContactCard';
 import ContactDialog from '@/components/contacts/ContactDialog';
 import ContactPermissionsDialog from '@/components/contacts/ContactPermissionsDialog';
@@ -24,6 +23,7 @@ const Contacts = () => {
   
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<ContactType | 'all'>('all');
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
@@ -109,6 +109,30 @@ const Contacts = () => {
     setIsDialogOpen(false);
   };
 
+  const handleEditContact = (contact: EmergencyContact) => {
+    setEditingContact(contact);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateContact = async () => {
+    if (!editingContact || !editingContact.name || !editingContact.email) return;
+    
+    await updateContact(editingContact.id, {
+      name: editingContact.name,
+      email: editingContact.email,
+      phone: editingContact.phone,
+      relationship: editingContact.relationship,
+      contact_type: editingContact.contact_type,
+      priority_order: editingContact.priority_order,
+      can_receive_messages: editingContact.can_receive_messages,
+      use_type_defaults: editingContact.use_type_defaults,
+      permissions: editingContact.permissions,
+    });
+    
+    setEditingContact(null);
+    setIsEditDialogOpen(false);
+  };
+
   const handleEditPermissions = (contact: EmergencyContact) => {
     setSelectedContactForPermissions(contact);
     setShowPermissionsDialog(true);
@@ -181,6 +205,7 @@ const Contacts = () => {
           </div>
         </div>
 
+        {/* Create Contact Dialog */}
         <ContactDialog
           isOpen={isDialogOpen}
           onOpenChange={setIsDialogOpen}
@@ -190,6 +215,22 @@ const Contacts = () => {
           contactTypeLabels={contactTypeLabels}
           isEditing={false}
         />
+
+        {/* Edit Contact Dialog */}
+        {editingContact && (
+          <ContactDialog
+            isOpen={isEditDialogOpen}
+            onOpenChange={(open) => {
+              setIsEditDialogOpen(open);
+              if (!open) setEditingContact(null);
+            }}
+            contactData={editingContact}
+            setContactData={(data) => setEditingContact({ ...editingContact, ...data } as EmergencyContact)}
+            onSubmit={handleUpdateContact}
+            contactTypeLabels={contactTypeLabels}
+            isEditing={true}
+          />
+        )}
 
         {showPermissionsDialog && selectedContactForPermissions && (
           <ContactPermissionsDialog
@@ -247,7 +288,7 @@ const Contacts = () => {
                 key={contact.id}
                 contact={contact}
                 contactTypeLabels={contactTypeLabels}
-                onEdit={setEditingContact}
+                onEdit={handleEditContact}
                 onDelete={deleteContact}
                 onPermissionsChange={updateContactPermissions}
                 onUseTypeDefaultsChange={updateUseTypeDefaults}

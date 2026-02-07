@@ -1,5 +1,4 @@
 
-import { Button } from '@/components/ui/button';
 import { UserSettings } from '@/types/common';
 import DeadlineModeSelector from './DeadlineModeSelector';
 import FrequencyConfiguration from './FrequencyConfiguration';
@@ -51,8 +50,6 @@ const SwitchConfiguration = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-foreground">Configuration</h3>
-      
       <DeadlineModeSelector
         deadlineMode={settings.deadline_mode}
         onModeChange={handleDeadlineModeChange}
@@ -81,23 +78,9 @@ const SwitchConfiguration = ({
         />
       )}
 
-      <div className="flex items-center justify-between pt-4">
-        <Button
-          onClick={() => onUpdateSettings({ is_active: !settings.is_active })}
-          variant={settings.is_active ? "destructive" : "default"}
-          disabled={saving}
-          className={settings.is_active 
-            ? "bg-destructive hover:bg-destructive/90" 
-            : "bg-primary hover:bg-primary/90"
-          }
-        >
-          {settings.is_active ? 'Deactivate System' : 'Activate System'}
-        </Button>
-        
-        {saving && (
-          <p className="text-muted-foreground text-sm">Saving changes...</p>
-        )}
-      </div>
+      {saving && (
+        <p className="text-muted-foreground text-sm">Saving changes...</p>
+      )}
     </div>
   );
 };

@@ -14,6 +14,7 @@ import Accounts from "./pages/Accounts";
 import Contacts from "./pages/Contacts";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
+import Portal from "./pages/Portal";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -78,6 +79,7 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route path="/portal/:token" element={<Portal />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

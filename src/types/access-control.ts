@@ -40,6 +40,7 @@ export interface EmergencyContact {
   priority_order: number;
   can_receive_messages: boolean;
   permissions: ContactPermissions;
-  use_type_defaults: boolean; // If true, uses contact type defaults, if false uses custom permissions
+  use_type_defaults: boolean;
+  custom_message?: string | null;
   created_at: string;
 }

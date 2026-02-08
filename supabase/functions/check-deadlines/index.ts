@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface UserSettings {
@@ -27,6 +27,7 @@ interface Contact {
   permissions: Record<string, boolean>;
   can_receive_messages: boolean;
   use_type_defaults: boolean;
+  custom_message: string | null;
 }
 
 interface Profile {
@@ -51,6 +52,18 @@ interface Document {
   description: string | null;
 }
 
+interface ActivationRule {
+  id: string;
+  user_id: string;
+  target_type: string | null;
+  contact_category: string | null;
+  contact_ids: string[] | null;
+  delay_hours: number;
+  custom_message: string | null;
+  enabled: boolean | null;
+  action_type: string;
+}
+
 interface ContactTypePermission {
   contact_type: string;
   default_permissions: Record<string, boolean>;
@@ -64,6 +77,34 @@ async function getUserEmail(supabase: any, userId: string): Promise<string | nul
     return null;
   }
   return data?.user?.email || null;
+}
+
+// Find the custom_message for a contact from activation rules
+function getCustomMessageForContact(
+  contact: Contact,
+  activationRules: ActivationRule[]
+): string | null {
+  // First check contact-level custom_message
+  if (contact.custom_message) {
+    return contact.custom_message;
+  }
+
+  // Then check activation rules
+  for (const rule of activationRules) {
+    if (!rule.enabled) continue;
+
+    // Check if the rule targets this specific contact
+    if (rule.target_type === 'contacts' && rule.contact_ids?.includes(contact.id)) {
+      if (rule.custom_message) return rule.custom_message;
+    }
+
+    // Check if the rule targets this contact's category
+    if (rule.target_type === 'category' && rule.contact_category === contact.contact_type) {
+      if (rule.custom_message) return rule.custom_message;
+    }
+  }
+
+  return null;
 }
 
 // Phase 1: Start grace period and notify the user
@@ -80,7 +121,6 @@ async function startGracePeriod(
   
   console.log(`Starting grace period for user ${userId}, ends at ${graceEndDate.toISOString()}`);
   
-  // Update user settings to mark grace period as active
   const { error: updateError } = await supabase
     .from("user_settings")
     .update({
@@ -94,7 +134,6 @@ async function startGracePeriod(
     return { success: false, error: updateError.message };
   }
   
-  // Get user's email to send warning
   const userEmail = await getUserEmail(supabase, userId);
   
   if (!userEmail) {
@@ -109,7 +148,6 @@ async function startGracePeriod(
     email_grace_intro: profile.email_grace_intro,
   } : {};
   
-  // Send warning email to the user
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
       method: "POST",
@@ -129,7 +167,6 @@ async function startGracePeriod(
     });
     
     const result = await response.json();
-    
     console.log(`Grace period warning email to ${userEmail}: ${result.success ? "sent" : "failed"}`);
     return { success: result.success, error: result.error };
   } catch (err: unknown) {
@@ -137,6 +174,38 @@ async function startGracePeriod(
     console.error(`Error sending grace period warning:`, errMessage);
     return { success: false, error: errMessage };
   }
+}
+
+// Generate portal access token for a contact
+async function generatePortalToken(supabase: any, userId: string, contactId: string): Promise<string | null> {
+  // Generate a secure random token
+  const tokenArray = new Uint8Array(32);
+  crypto.getRandomValues(tokenArray);
+  const token = Array.from(tokenArray).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  // Deactivate any existing tokens for this contact
+  await supabase
+    .from("contact_access_tokens")
+    .update({ is_active: false })
+    .eq("contact_id", contactId)
+    .eq("user_id", userId);
+  
+  // Create new token (no expiry - active until explicitly deactivated)
+  const { error } = await supabase
+    .from("contact_access_tokens")
+    .insert({
+      contact_id: contactId,
+      user_id: userId,
+      token: token,
+      is_active: true,
+    });
+  
+  if (error) {
+    console.error("Error creating portal token:", error);
+    return null;
+  }
+  
+  return token;
 }
 
 // Phase 2: Trigger the switch and notify all contacts
@@ -152,13 +221,12 @@ async function triggerSwitch(
   
   console.log(`TRIGGERING SWITCH for user ${userId}`);
   
-  // Mark switch as triggered
   const { error: updateError } = await supabase
     .from("user_settings")
     .update({
       switch_triggered: true,
       switch_triggered_at: now.toISOString(),
-      is_active: false, // Deactivate the system
+      is_active: false,
     })
     .eq("user_id", userId);
   
@@ -167,31 +235,24 @@ async function triggerSwitch(
     return { success: false, results: [] };
   }
   
-  // Get user's contacts
-  const { data: contacts } = await supabase
-    .from("contacts")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("can_receive_messages", true);
+  // Get user's contacts, documents, activation rules, and type permissions
+  const [contactsRes, documentsRes, typePermissionsRes, activationRulesRes] = await Promise.all([
+    supabase.from("contacts").select("*").eq("user_id", userId).eq("can_receive_messages", true),
+    supabase.from("legacy_documents").select("*").eq("user_id", userId),
+    supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
+    supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
+  ]);
   
-  // Get user's documents
-  const { data: documents } = await supabase
-    .from("legacy_documents")
-    .select("*")
-    .eq("user_id", userId);
+  const contacts = (contactsRes.data || []) as Contact[];
+  const documents = (documentsRes.data || []) as Document[];
+  const typePermissions = (typePermissionsRes.data || []) as ContactTypePermission[];
+  const activationRules = (activationRulesRes.data || []) as ActivationRule[];
   
-  // Get user's contact type permissions
-  const { data: typePermissions } = await supabase
-    .from("contact_type_permissions")
-    .select("*")
-    .eq("user_id", userId);
-  
-  console.log(`Processing ${contacts?.length || 0} contacts for switch trigger`);
+  console.log(`Processing ${contacts.length} contacts, ${activationRules.length} activation rules for switch trigger`);
   
   const results: any[] = [];
-  const contactList = (contacts || []) as Contact[];
   
-  for (const contact of contactList) {
+  for (const contact of contacts) {
     if (!contact.email) {
       console.log(`Skipping contact ${contact.name} - no email`);
       continue;
@@ -201,8 +262,8 @@ async function triggerSwitch(
     let permissions = contact.permissions || {};
     
     if (contact.use_type_defaults) {
-      const typeDefault = (typePermissions || []).find(
-        (tp: ContactTypePermission) => tp.contact_type === contact.contact_type
+      const typeDefault = typePermissions.find(
+        (tp) => tp.contact_type === contact.contact_type
       );
       if (typeDefault) {
         permissions = { ...typeDefault.default_permissions, ...permissions };
@@ -210,10 +271,13 @@ async function triggerSwitch(
     }
     
     // Filter documents based on permissions
-    const allowedDocuments = ((documents || []) as Document[]).filter((doc: Document) => {
+    const allowedDocuments = documents.filter((doc) => {
       const docTypeKey = `documents_${doc.document_type}`;
       return permissions[docTypeKey] === true;
     });
+    
+    // Get custom_message for this contact from activation rules
+    const customMessage = getCustomMessageForContact(contact, activationRules);
     
     const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
     
@@ -225,7 +289,9 @@ async function triggerSwitch(
       email_footer_message: profile.email_footer_message,
     } : {};
     
-    // Call send-notification edge function
+    // Generate portal access token for this contact
+    const portalToken = await generatePortalToken(supabase, userId, contact.id);
+    
     const notificationPayload = {
       notificationType: "switch_triggered",
       contactId: contact.id,
@@ -234,10 +300,15 @@ async function triggerSwitch(
       contactType: contact.contact_type,
       userName: userName,
       emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
+      customMessage: customMessage,
       documents: allowedDocuments,
       permissions,
       emailTemplate,
+      portalToken,
+      portalBaseUrl: supabaseUrl.replace('.supabase.co', '.supabase.co').replace('//', '//'),
     };
+    
+    console.log(`Sending to ${contact.name}: customMessage="${customMessage}", docs=${allowedDocuments.length}, portalToken=${portalToken ? 'generated' : 'none'}`);
     
     try {
       const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
@@ -251,7 +322,6 @@ async function triggerSwitch(
       
       const sendResult = await sendResponse.json();
       
-      // Record the notification
       await supabase
         .from("sent_notifications")
         .insert({
@@ -286,7 +356,6 @@ async function triggerSwitch(
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -301,7 +370,6 @@ const handler = async (req: Request): Promise<Response> => {
     
     const now = new Date();
     
-    // Get all active user settings
     const { data: activeSettings, error: settingsError } = await supabase
       .from("user_settings")
       .select("*")
@@ -324,7 +392,6 @@ const handler = async (req: Request): Promise<Response> => {
     for (const settings of settingsList) {
       const userId = settings.user_id;
       
-      // Get user's profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
@@ -343,7 +410,7 @@ const handler = async (req: Request): Promise<Response> => {
             ...triggerResult,
           });
         }
-        continue; // Skip deadline check if already in grace period
+        continue;
       }
       
       // Case 2: Check if deadline has passed (start grace period)

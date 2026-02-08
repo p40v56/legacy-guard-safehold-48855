@@ -4,7 +4,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface Document {
@@ -25,7 +25,6 @@ interface EmailTemplate {
   email_grace_intro?: string;
 }
 
-// Grace period warning request (sent to the user themselves)
 interface GracePeriodWarningRequest {
   notificationType: "grace_period_warning";
   recipientEmail: string;
@@ -36,7 +35,6 @@ interface GracePeriodWarningRequest {
   emailTemplate?: EmailTemplate;
 }
 
-// Switch triggered request (sent to contacts)
 interface SwitchTriggeredRequest {
   notificationType: "switch_triggered";
   contactId: string;
@@ -45,12 +43,14 @@ interface SwitchTriggeredRequest {
   contactType: string;
   userName: string;
   emergencyInstructions: string | null;
+  customMessage: string | null;
   documents: Document[];
   permissions: Record<string, boolean>;
   emailTemplate?: EmailTemplate;
+  portalToken?: string | null;
+  portalBaseUrl?: string;
 }
 
-// Legacy format for backwards compatibility
 interface LegacyNotificationRequest {
   contactId: string;
   contactName: string;
@@ -58,6 +58,7 @@ interface LegacyNotificationRequest {
   contactType: string;
   userName: string;
   emergencyInstructions: string | null;
+  customMessage?: string | null;
   documents: Document[];
   permissions: Record<string, boolean>;
 }
@@ -166,9 +167,12 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   const contactName = "contactName" in data ? data.contactName : "";
   const userName = data.userName;
   const emergencyInstructions = data.emergencyInstructions;
+  const customMessage = data.customMessage || null;
   const documents = data.documents;
   const permissions = data.permissions;
   const emailTemplate: EmailTemplate = ("emailTemplate" in data && data.emailTemplate) ? data.emailTemplate : {};
+  const portalToken = ("portalToken" in data) ? data.portalToken : null;
+  const portalBaseUrl = ("portalBaseUrl" in data) ? data.portalBaseUrl : null;
 
   const headerTitle = emailTemplate.email_header_title || "🚨 Important Notification";
   const headerSubtitle = emailTemplate.email_header_subtitle || "Dead Man's Switch Activated";
@@ -181,6 +185,16 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
     "This is an automated message from the Dead Man's Switch system. Please keep this information confidential and use it responsibly.";
   
   let sectionsHtml = "";
+  
+  // Custom Message Section (from activation rules or per-contact)
+  if (customMessage) {
+    sectionsHtml += `
+      <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 4px;">
+        <h3 style="color: #1e40af; margin: 0 0 12px 0; font-size: 16px;">💬 Personal Message from ${userName}</h3>
+        <div style="color: #1e3a5f; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${customMessage}</div>
+      </div>
+    `;
+  }
   
   // Emergency Instructions Section
   if (emergencyInstructions && permissions.emergency_instructions) {
@@ -223,7 +237,29 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
     sectionsHtml += `</div>`;
   }
   
-  // If no content was added
+  // Portal access link
+  let portalHtml = "";
+  if (portalToken) {
+    // Build the portal URL using the preview/published app URL pattern
+    const portalUrl = `${portalBaseUrl || ''}/portal/${portalToken}`;
+    portalHtml = `
+      <div style="background-color: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
+        <h3 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px;">🔐 Access Your Document Portal</h3>
+        <p style="color: #047857; margin: 0 0 16px 0; font-size: 14px;">
+          You can also view your authorized documents online at any time using the secure link below:
+        </p>
+        <a href="${portalUrl}" 
+           style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          Open Document Portal →
+        </a>
+        <p style="color: #6b7280; margin: 12px 0 0 0; font-size: 12px;">
+          This link is private and unique to you. Do not share it with others.
+        </p>
+      </div>
+    `;
+  }
+  
+  // If no content was added (no custom message, no instructions, no documents)
   if (!sectionsHtml) {
     sectionsHtml = `
       <div style="background-color: #f3f4f6; padding: 24px; text-align: center; border-radius: 8px; margin: 20px 0;">
@@ -260,6 +296,8 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
         
         ${sectionsHtml}
         
+        ${portalHtml}
+        
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
         
         <p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">
@@ -272,7 +310,6 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -280,7 +317,6 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const data: NotificationRequest = await req.json();
     
-    // Determine notification type
     const notificationType = "notificationType" in data ? data.notificationType : "switch_triggered";
     
     let emailHtml: string;
@@ -296,7 +332,6 @@ const handler = async (req: Request): Promise<Response> => {
       subject = warningData.emailTemplate?.email_grace_subject || "⚠️ Grace Period Started - Check In Required";
       console.log(`Sending grace period warning to ${recipientName} (${recipientEmail})`);
     } else {
-      // switch_triggered or legacy format
       const triggerData = data as SwitchTriggeredRequest | LegacyNotificationRequest;
       emailHtml = generateSwitchTriggeredHtml(triggerData);
       recipientEmail = triggerData.contactEmail;
@@ -306,7 +341,7 @@ const handler = async (req: Request): Promise<Response> => {
         emailTemplate.email_subject || `🚨 Important: Message from {userName}'s Dead Man's Switch`,
         { userName: triggerData.userName }
       );
-      console.log(`Sending switch triggered notification to ${recipientName} (${recipientEmail})`);
+      console.log(`Sending switch triggered notification to ${recipientName} (${recipientEmail}), customMessage: ${triggerData.customMessage || 'none'}`);
     }
     
     const res = await fetch("https://api.resend.com/emails", {

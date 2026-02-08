@@ -113,6 +113,47 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_access_tokens: {
+        Row: {
+          contact_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          last_accessed_at: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_access_tokens_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_type_permissions: {
         Row: {
           contact_type: string
@@ -145,6 +186,7 @@ export type Database = {
           can_receive_messages: boolean | null
           contact_type: string
           created_at: string
+          custom_message: string | null
           email: string | null
           id: string
           name: string
@@ -161,6 +203,7 @@ export type Database = {
           can_receive_messages?: boolean | null
           contact_type: string
           created_at?: string
+          custom_message?: string | null
           email?: string | null
           id?: string
           name: string
@@ -177,6 +220,7 @@ export type Database = {
           can_receive_messages?: boolean | null
           contact_type?: string
           created_at?: string
+          custom_message?: string | null
           email?: string | null
           id?: string
           name?: string

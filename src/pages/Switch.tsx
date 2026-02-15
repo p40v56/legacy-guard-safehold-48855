@@ -242,6 +242,7 @@ const Switch = () => {
               onCustomDateTimeUpdate={handleCustomDateTimeUpdate}
               onCustomDateChange={setCustomDate}
               onCustomTimeChange={setCustomTime}
+              isFree={plan === 'free'}
             />
           )}
         </div>

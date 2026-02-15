@@ -322,10 +322,13 @@ const Documents = () => {
           )}
         </div>
 
-        {isFreeBlocked && documents.length === 0 && (
-          <UpgradePrompt message="Upgrade to store and share documents with your contacts securely." />
+        {isFreeBlocked && (
+          <>
+            <UpgradePrompt message="Upgrade to store and share documents with your contacts securely." />
+          </>
         )}
 
+        {!isFreeBlocked && (<>
         {/* Search and Filter */}
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -567,6 +570,7 @@ const Documents = () => {
             </div>
           )}
         </div>
+        </>)}
       </div>
     </DashboardLayout>
   );

@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.contact-portal]
 verify_jwt = false
+
+[functions.send-test-email]
+verify_jwt = false
+
+[functions.check-in-via-token]
+verify_jwt = false

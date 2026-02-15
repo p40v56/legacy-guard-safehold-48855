@@ -1,8 +1,6 @@
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { CheckInFrequency } from '@/types/common';
+import GracePeriodPresets from './GracePeriodPresets';
 
 interface FrequencyConfigurationProps {
   frequency: CheckInFrequency;
@@ -18,10 +16,7 @@ const FREQUENCY_OPTIONS = [
   { value: 'monthly' as const, label: 'Every Month' },
 ] as const;
 
-const GRACE_PERIOD_LIMITS = {
-  min: 0,
-  max: 168
-} as const;
+import { Label } from '@/components/ui/label';
 
 const FrequencyConfiguration = ({
   frequency,
@@ -30,37 +25,25 @@ const FrequencyConfiguration = ({
   onGracePeriodChange
 }: FrequencyConfigurationProps) => {
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <Label className="text-foreground">Check-in Frequency</Label>
         <Select value={frequency} onValueChange={onFrequencyChange}>
-          <SelectTrigger className="bg-input border-input">
+          <SelectTrigger className="bg-input border-input max-w-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {FREQUENCY_OPTIONS.map(({ value, label }) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
+              <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-foreground">Grace Period (hours)</Label>
-        <Input
-          type="number"
-          min={GRACE_PERIOD_LIMITS.min}
-          max={GRACE_PERIOD_LIMITS.max}
-          value={gracePeriodHours}
-          onChange={(e) => onGracePeriodChange(e.target.value)}
-          className="bg-input border-input"
-        />
-        <p className="text-xs text-muted-foreground">
-          Time buffer after missed check-in before alerts trigger (0 = immediate, max {GRACE_PERIOD_LIMITS.max} hours)
-        </p>
-      </div>
+      <GracePeriodPresets
+        gracePeriodHours={gracePeriodHours}
+        onGracePeriodChange={onGracePeriodChange}
+      />
     </div>
   );
 };

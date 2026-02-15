@@ -15,7 +15,6 @@ export const useContacts = () => {
     
     try {
       const data = await ContactsService.getContacts(user.id);
-      // Transform the data to match our interface
       const transformedData: EmergencyContact[] = data.map(contact => ({
         id: contact.id,
         name: contact.name,
@@ -24,9 +23,16 @@ export const useContacts = () => {
         relationship: contact.relationship || undefined,
         contact_type: contact.contact_type as ContactType,
         priority_order: contact.priority_order,
-        can_receive_messages: contact.can_receive_messages,
-        permissions: contact.permissions as unknown as ContactPermissions,
-        use_type_defaults: contact.use_type_defaults,
+        can_receive_messages: contact.can_receive_messages ?? true,
+        permissions: (contact.permissions || {
+          digital_accounts: { all_accounts: false, by_category: [], specific_accounts: [] },
+          legacy_documents: { all_documents: false, by_category: [], specific_documents: [] },
+          contact_information: false,
+          emergency_instructions: false,
+          can_modify_information: false,
+        }) as unknown as ContactPermissions,
+        use_type_defaults: contact.use_type_defaults ?? true,
+        custom_message: contact.custom_message || null,
         created_at: contact.created_at,
       }));
       setContacts(transformedData);
@@ -47,7 +53,6 @@ export const useContacts = () => {
     
     try {
       const newContact = await ContactsService.createContact(user.id, formData);
-      // Transform the returned data
       const transformedContact: EmergencyContact = {
         id: newContact.id,
         name: newContact.name,
@@ -56,9 +61,10 @@ export const useContacts = () => {
         relationship: newContact.relationship || undefined,
         contact_type: newContact.contact_type as ContactType,
         priority_order: newContact.priority_order,
-        can_receive_messages: newContact.can_receive_messages,
-        permissions: newContact.permissions as unknown as ContactPermissions,
-        use_type_defaults: newContact.use_type_defaults,
+        can_receive_messages: newContact.can_receive_messages ?? true,
+        permissions: (newContact.permissions || {}) as unknown as ContactPermissions,
+        use_type_defaults: newContact.use_type_defaults ?? true,
+        custom_message: newContact.custom_message || null,
         created_at: newContact.created_at,
       };
       setContacts(prev => [...prev, transformedContact]);
@@ -80,7 +86,6 @@ export const useContacts = () => {
   const updateContact = async (contactId: string, formData: Omit<EmergencyContact, 'id' | 'created_at'>) => {
     try {
       const updatedContact = await ContactsService.updateContact(contactId, formData);
-      // Transform the returned data
       const transformedContact: EmergencyContact = {
         id: updatedContact.id,
         name: updatedContact.name,
@@ -89,9 +94,10 @@ export const useContacts = () => {
         relationship: updatedContact.relationship || undefined,
         contact_type: updatedContact.contact_type as ContactType,
         priority_order: updatedContact.priority_order,
-        can_receive_messages: updatedContact.can_receive_messages,
-        permissions: updatedContact.permissions as unknown as ContactPermissions,
-        use_type_defaults: updatedContact.use_type_defaults,
+        can_receive_messages: updatedContact.can_receive_messages ?? true,
+        permissions: (updatedContact.permissions || {}) as unknown as ContactPermissions,
+        use_type_defaults: updatedContact.use_type_defaults ?? true,
+        custom_message: updatedContact.custom_message || null,
         created_at: updatedContact.created_at,
       };
       setContacts(prev => prev.map(contact => 
@@ -139,6 +145,10 @@ export const useContacts = () => {
       setContacts(prev => prev.map(contact => 
         contact.id === contactId ? { ...contact, permissions } : contact
       ));
+      toast({
+        title: "Saved",
+        description: "Permissions updated successfully",
+      });
     } catch (error) {
       console.error('Error updating contact permissions:', error);
       toast({

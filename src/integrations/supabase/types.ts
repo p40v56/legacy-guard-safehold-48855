@@ -367,6 +367,50 @@ export type Database = {
         }
         Relationships: []
       }
+      security_questions: {
+        Row: {
+          answer_hash: string
+          created_at: string
+          id: string
+          question: string
+          target_contact_id: string | null
+          target_contact_type: string | null
+          target_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answer_hash: string
+          created_at?: string
+          id?: string
+          question: string
+          target_contact_id?: string | null
+          target_contact_type?: string | null
+          target_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answer_hash?: string
+          created_at?: string
+          id?: string
+          question?: string
+          target_contact_id?: string | null
+          target_contact_type?: string | null
+          target_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_questions_target_contact_id_fkey"
+            columns: ["target_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sent_notifications: {
         Row: {
           contact_id: string

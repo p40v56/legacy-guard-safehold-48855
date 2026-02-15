@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import ContactCard from '@/components/contacts/ContactCard';
 import ContactDialog from '@/components/contacts/ContactDialog';
 import ContactPermissionsDialog from '@/components/contacts/ContactPermissionsDialog';
+import SecurityQuestionsManager from '@/components/contacts/SecurityQuestionsManager';
 import SearchInput from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, UserPlus, Filter, Shield } from 'lucide-react';
@@ -296,6 +297,12 @@ const Contacts = () => {
             ))
           )}
         </div>
+
+        {/* Security Questions */}
+        <SecurityQuestionsManager 
+          contacts={contacts} 
+          contactTypeLabels={contactTypeLabels} 
+        />
       </div>
     </DashboardLayout>
   );

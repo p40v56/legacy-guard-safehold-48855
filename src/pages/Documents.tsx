@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlan } from '@/hooks/usePlan';
+import UpgradePrompt from '@/components/UpgradePrompt';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +32,8 @@ interface LegacyDocument {
 
 const Documents = () => {
   const { user } = useAuth();
+  const { plan } = usePlan();
+  const isFreeBlocked = plan === 'free';
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [documents, setDocuments] = useState<LegacyDocument[]>([]);
@@ -307,14 +311,20 @@ const Documents = () => {
               Securely store and manage important documents for your digital legacy
             </p>
           </div>
-          <Button 
-            onClick={() => setShowAddForm(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Document
-          </Button>
+          {!isFreeBlocked && (
+            <Button 
+              onClick={() => setShowAddForm(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Document
+            </Button>
+          )}
         </div>
+
+        {isFreeBlocked && documents.length === 0 && (
+          <UpgradePrompt message="Upgrade to store and share documents with your contacts securely." />
+        )}
 
         {/* Search and Filter */}
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">

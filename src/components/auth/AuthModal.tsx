@@ -21,8 +21,6 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    firstName: '',
-    lastName: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,41 +28,20 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
     setLoading(true);
 
     try {
-      if (mode === 'register') {
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: {
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-            }
-          }
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: "Account created successfully",
-          description: "Please check your email to verify your account.",
-        });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (error) throw error;
-
-        toast({
-          title: "Welcome back!",
-          description: "You have been signed in successfully.",
-        });
-      }
+      toast({
+        title: "Welcome back!",
+        description: "You have been signed in successfully.",
+      });
 
       onClose();
-      setFormData({ email: '', password: '', firstName: '', lastName: '' });
+      setFormData({ email: '', password: '' });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -81,44 +58,11 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
       <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
           <DialogTitle className="text-foreground text-2xl text-center">
-            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+            Sign In
           </DialogTitle>
         </DialogHeader>
         
-        {mode === 'login' && (
-          <div className="bg-muted p-3 rounded-lg mb-4">
-            <p className="text-xs text-muted-foreground text-center">
-              Test credentials: test@test.com / 123456789
-            </p>
-          </div>
-        )}
-        
         <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === 'register' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName" className="text-foreground">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                  className="bg-input border-input text-foreground"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName" className="text-foreground">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                  className="bg-input border-input text-foreground"
-                  required
-                />
-              </div>
-            </div>
-          )}
-          
           <div>
             <Label htmlFor="email" className="text-foreground">Email</Label>
             <Input
@@ -149,21 +93,14 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
             className="w-full bg-primary hover:bg-primary/90"
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
+            Sign In
           </Button>
         </form>
         
         <div className="text-center">
-          <span className="text-muted-foreground">
-            {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
-          </span>
-          <button
-            type="button"
-            onClick={() => onModeChange(mode === 'login' ? 'register' : 'login')}
-            className="text-primary hover:text-primary/80"
-          >
-            {mode === 'login' ? 'Sign up' : 'Sign in'}
-          </button>
+          <p className="text-sm text-muted-foreground">
+            LegacyVault is currently invite-only. Contact us to request access.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

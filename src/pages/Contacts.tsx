@@ -5,16 +5,19 @@ import ContactCard from '@/components/contacts/ContactCard';
 import ContactDialog from '@/components/contacts/ContactDialog';
 import ContactPermissionsDialog from '@/components/contacts/ContactPermissionsDialog';
 import SearchInput from '@/components/ui/search-input';
+import UpgradePrompt from '@/components/UpgradePrompt';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, UserPlus, Filter, Shield } from 'lucide-react';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { useContacts } from '@/hooks/useContacts';
+import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
 
 const Contacts = () => {
   const {
     contacts, loading, createContact, updateContact, deleteContact,
     updateContactPermissions, updateUseTypeDefaults,
   } = useContacts();
+  const { plan } = usePlan();
   
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -57,6 +60,8 @@ const Contacts = () => {
       return matchesSearch && matchesCategory;
     });
   }, [contacts, searchQuery, filterCategory]);
+
+  const isAtContactLimit = plan === 'free' && contacts.length >= FREE_PLAN_LIMITS.maxContacts;
 
   const handleCreateContact = async () => {
     if (!newContact.name || !newContact.email) return;
@@ -118,10 +123,16 @@ const Contacts = () => {
             <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Emergency Contacts</h1>
             <p className="text-muted-foreground">Manage your trusted contacts for notifications</p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
-            <UserPlus className="w-4 h-4 mr-2" />Add Contact
-          </Button>
+          {!isAtContactLimit ? (
+            <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
+              <UserPlus className="w-4 h-4 mr-2" />Add Contact
+            </Button>
+          ) : null}
         </div>
+
+        {isAtContactLimit && (
+          <UpgradePrompt message="Free plan is limited to 1 contact. Upgrade to add unlimited contacts across all categories." />
+        )}
 
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">

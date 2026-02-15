@@ -5,9 +5,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Eye, EyeOff, Save, Info } from 'lucide-react';
+import { Mail, Eye, EyeOff, Save, Info, Send } from 'lucide-react';
 import { useState } from 'react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface EmailTemplateData {
   email_subject: string;
@@ -27,15 +29,59 @@ interface EmailTemplateEditorProps {
   userName?: string;
 }
 
+const VARIABLES_HELP = [
+  { name: '{userName}', description: "Your full name" },
+  { name: '{contactName}', description: "Recipient contact's name" },
+  { name: '{triggerDate}', description: 'Date the switch was triggered' },
+  { name: '{gracePeriodHours}', description: 'Duration of the grace period' },
+];
+
+const VariablesInset = () => (
+  <div className="mt-2 p-2 bg-muted/50 rounded-lg">
+    <p className="text-xs text-muted-foreground font-medium mb-1">Available variables:</p>
+    <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+      {VARIABLES_HELP.map(v => (
+        <span key={v.name} className="text-xs text-muted-foreground">
+          <code className="bg-muted px-1 rounded text-foreground">{v.name}</code>{' '}
+          <em>{v.description}</em>
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
 const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'John' }: EmailTemplateEditorProps) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [sendingTest, setSendingTest] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const updateField = (field: keyof EmailTemplateData, value: string) => {
     onChange({ ...template, [field]: value });
   };
 
   const resolveVariable = (text: string) => {
-    return text.replace(/\{userName\}/g, userName);
+    return text.replace(/\{userName\}/g, userName).replace(/\{contactName\}/g, 'Contact Name').replace(/\{triggerDate\}/g, new Date().toLocaleDateString()).replace(/\{gracePeriodHours\}/g, '24');
+  };
+
+  const sendTestEmail = async (templateType: 'switch_triggered' | 'grace_period') => {
+    setSendingTest(templateType);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('send-test-email', {
+        body: { templateType },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+
+      toast({ title: "Test email sent ✉️", description: "Check your inbox for the test email." });
+    } catch (error: any) {
+      console.error('Error sending test email:', error);
+      toast({ title: "Error", description: error.message || "Failed to send test email", variant: "destructive" });
+    } finally {
+      setSendingTest(null);
+    }
   };
 
   return (
@@ -48,73 +94,45 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
               <Mail className="w-5 h-5 mr-2 text-destructive" />
               Switch Triggered Email
             </div>
-            <Badge variant="outline" className="text-xs border-destructive/30 text-destructive">
-              Sent to contacts
-            </Badge>
+            <Badge variant="outline" className="text-xs border-destructive/30 text-destructive">Sent to contacts</Badge>
           </CardTitle>
-          <p className="text-muted-foreground text-sm mt-2">
-            This email is sent to your emergency contacts when the switch is triggered.
-          </p>
+          <p className="text-muted-foreground text-sm mt-2">This email is sent to your emergency contacts when the switch is triggered.</p>
         </CardHeader>
         <CardContent className="space-y-5">
           <div>
             <Label className="text-foreground">Email Subject</Label>
-            <Input
-              value={template.email_subject}
-              onChange={e => updateField('email_subject', e.target.value)}
-              placeholder="Email subject line..."
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Use <code className="bg-muted px-1 rounded">{'{userName}'}</code> to insert your name
-            </p>
+            <Input value={template.email_subject} onChange={e => updateField('email_subject', e.target.value)} placeholder="Email subject line..." />
+            <VariablesInset />
           </div>
-
           <Separator className="bg-border/50" />
-
           <div>
             <Label className="text-foreground">Header Title</Label>
-            <Input
-              value={template.email_header_title}
-              onChange={e => updateField('email_header_title', e.target.value)}
-              placeholder="e.g. 🚨 Important Notification"
-            />
+            <Input value={template.email_header_title} onChange={e => updateField('email_header_title', e.target.value)} placeholder="e.g. 🚨 Important Notification" />
           </div>
-
           <div>
             <Label className="text-foreground">Header Subtitle</Label>
-            <Input
-              value={template.email_header_subtitle}
-              onChange={e => updateField('email_header_subtitle', e.target.value)}
-              placeholder="e.g. Dead Man's Switch Activated"
-            />
+            <Input value={template.email_header_subtitle} onChange={e => updateField('email_header_subtitle', e.target.value)} placeholder="e.g. Dead Man's Switch Activated" />
           </div>
-
           <Separator className="bg-border/50" />
-
           <div>
             <Label className="text-foreground">Introduction Message</Label>
-            <Textarea
-              value={template.email_intro_message}
-              onChange={e => updateField('email_intro_message', e.target.value)}
-              placeholder="Main introduction message..."
-              rows={4}
-              className="resize-none"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Use <code className="bg-muted px-1 rounded">{'{userName}'}</code> to insert your name. This appears after "Dear [Contact Name],"
-            </p>
+            <Textarea value={template.email_intro_message} onChange={e => updateField('email_intro_message', e.target.value)} placeholder="Main introduction message..." rows={4} className="resize-none" />
+            <VariablesInset />
           </div>
-
           <div>
             <Label className="text-foreground">Footer Message</Label>
-            <Textarea
-              value={template.email_footer_message}
-              onChange={e => updateField('email_footer_message', e.target.value)}
-              placeholder="Footer text..."
-              rows={2}
-              className="resize-none"
-            />
+            <Textarea value={template.email_footer_message} onChange={e => updateField('email_footer_message', e.target.value)} placeholder="Footer text..." rows={2} className="resize-none" />
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => sendTestEmail('switch_triggered')}
+            disabled={!!sendingTest}
+            className="rounded-xl"
+          >
+            {sendingTest === 'switch_triggered' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+            Send test email
+          </Button>
         </CardContent>
       </Card>
 
@@ -126,34 +144,31 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
               <Mail className="w-5 h-5 mr-2 text-warning" />
               Grace Period Warning Email
             </div>
-            <Badge variant="outline" className="text-xs border-warning/30 text-warning">
-              Sent to you
-            </Badge>
+            <Badge variant="outline" className="text-xs border-warning/30 text-warning">Sent to you</Badge>
           </CardTitle>
-          <p className="text-muted-foreground text-sm mt-2">
-            This email is sent to you when the grace period begins after a missed check-in.
-          </p>
+          <p className="text-muted-foreground text-sm mt-2">This email is sent to you when the grace period begins after a missed check-in.</p>
         </CardHeader>
         <CardContent className="space-y-5">
           <div>
             <Label className="text-foreground">Email Subject</Label>
-            <Input
-              value={template.email_grace_subject}
-              onChange={e => updateField('email_grace_subject', e.target.value)}
-              placeholder="Grace period subject..."
-            />
+            <Input value={template.email_grace_subject} onChange={e => updateField('email_grace_subject', e.target.value)} placeholder="Grace period subject..." />
+            <VariablesInset />
           </div>
-
           <div>
             <Label className="text-foreground">Introduction Message</Label>
-            <Textarea
-              value={template.email_grace_intro}
-              onChange={e => updateField('email_grace_intro', e.target.value)}
-              placeholder="Grace period intro text..."
-              rows={3}
-              className="resize-none"
-            />
+            <Textarea value={template.email_grace_intro} onChange={e => updateField('email_grace_intro', e.target.value)} placeholder="Grace period intro text..." rows={3} className="resize-none" />
+            <VariablesInset />
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => sendTestEmail('grace_period')}
+            disabled={!!sendingTest}
+            className="rounded-xl"
+          >
+            {sendingTest === 'grace_period' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+            Send test email
+          </Button>
         </CardContent>
       </Card>
 
@@ -165,12 +180,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
               <Eye className="w-5 h-5 mr-2 text-primary" />
               Email Preview
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPreview(!showPreview)}
-              className="rounded-xl"
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="rounded-xl">
               {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
               {showPreview ? 'Hide' : 'Show'} Preview
             </Button>
@@ -179,18 +189,13 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
         {showPreview && (
           <CardContent>
             <div className="rounded-xl border border-border overflow-hidden">
-              {/* Email header preview */}
               <div className="bg-destructive p-6 text-center">
                 <h2 className="text-xl font-semibold text-destructive-foreground">{template.email_header_title}</h2>
                 <p className="text-destructive-foreground/80 text-sm mt-1">{template.email_header_subtitle}</p>
               </div>
-              {/* Email body preview */}
               <div className="bg-card p-6 space-y-4">
                 <p className="text-foreground">Dear <strong>Contact Name</strong>,</p>
                 <p className="text-muted-foreground text-sm">{resolveVariable(template.email_intro_message)}</p>
-                <p className="text-muted-foreground text-sm">
-                  {userName} has designated you as a trusted contact and has authorized the following information to be shared with you:
-                </p>
                 <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
                   <h3 className="text-warning font-medium text-sm">⚠️ Emergency Instructions</h3>
                   <p className="text-muted-foreground text-xs mt-1">Your emergency instructions will appear here...</p>
@@ -216,24 +221,14 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
             <li>The <strong>Emergency Instructions</strong> from your Profile are included automatically</li>
             <li>The <strong>Custom Message</strong> per rule is added from your Activation Rules</li>
             <li><strong>Documents</strong> are shared based on each contact's permissions</li>
-            <li>Use <code className="bg-muted px-1 rounded">{'{userName}'}</code> in text fields to insert your name</li>
+            <li>Use variables listed below each field to insert dynamic content</li>
           </ul>
         </div>
       </div>
 
       {/* Save Button */}
       <Button onClick={onSave} disabled={saving} variant="default" className="w-full sm:w-auto">
-        {saving ? (
-          <>
-            <LoadingSpinner size="sm" className="mr-2" />
-            Saving...
-          </>
-        ) : (
-          <>
-            <Save className="w-4 h-4 mr-2" />
-            Save Email Templates
-          </>
-        )}
+        {saving ? (<><LoadingSpinner size="sm" className="mr-2" />Saving...</>) : (<><Save className="w-4 h-4 mr-2" />Save Email Templates</>)}
       </Button>
     </div>
   );

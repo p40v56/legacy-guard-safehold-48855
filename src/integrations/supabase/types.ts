@@ -113,6 +113,60 @@ export type Database = {
         }
         Relationships: []
       }
+      check_in_history: {
+        Row: {
+          checked_in_at: string
+          created_at: string
+          id: string
+          method: string
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          created_at?: string
+          id?: string
+          method?: string
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          created_at?: string
+          id?: string
+          method?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      check_in_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          method: string
+          token: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          method?: string
+          token: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          method?: string
+          token?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_access_tokens: {
         Row: {
           contact_id: string
@@ -325,7 +379,9 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          last_test_email_sent_at: string | null
           phone: string | null
+          setup_wizard_dismissed: boolean | null
           updated_at: string
           user_id: string
         }
@@ -343,7 +399,9 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          last_test_email_sent_at?: string | null
           phone?: string | null
+          setup_wizard_dismissed?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -361,7 +419,9 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          last_test_email_sent_at?: string | null
           phone?: string | null
+          setup_wizard_dismissed?: boolean | null
           updated_at?: string
           user_id?: string
         }
@@ -458,6 +518,7 @@ export type Database = {
           created_at: string
           custom_deadline: string | null
           deadline_mode: string
+          email_checkin_enabled: boolean | null
           grace_period_active: boolean
           grace_period_end: string | null
           grace_period_hours: number
@@ -465,6 +526,7 @@ export type Database = {
           is_active: boolean
           last_check_in: string | null
           next_check_in_due: string | null
+          sms_checkin_enabled: boolean | null
           switch_triggered: boolean
           switch_triggered_at: string | null
           updated_at: string
@@ -475,6 +537,7 @@ export type Database = {
           created_at?: string
           custom_deadline?: string | null
           deadline_mode?: string
+          email_checkin_enabled?: boolean | null
           grace_period_active?: boolean
           grace_period_end?: string | null
           grace_period_hours?: number
@@ -482,6 +545,7 @@ export type Database = {
           is_active?: boolean
           last_check_in?: string | null
           next_check_in_due?: string | null
+          sms_checkin_enabled?: boolean | null
           switch_triggered?: boolean
           switch_triggered_at?: string | null
           updated_at?: string
@@ -492,6 +556,7 @@ export type Database = {
           created_at?: string
           custom_deadline?: string | null
           deadline_mode?: string
+          email_checkin_enabled?: boolean | null
           grace_period_active?: boolean
           grace_period_end?: string | null
           grace_period_hours?: number
@@ -499,6 +564,7 @@ export type Database = {
           is_active?: boolean
           last_check_in?: string | null
           next_check_in_due?: string | null
+          sms_checkin_enabled?: boolean | null
           switch_triggered?: boolean
           switch_triggered_at?: string | null
           updated_at?: string

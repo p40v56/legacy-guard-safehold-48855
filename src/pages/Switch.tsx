@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePlan } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -18,6 +19,7 @@ import { SettingsService, ProfileService, NotificationSettingsService } from '@/
 const Switch = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { plan } = usePlan();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -250,8 +252,9 @@ const Switch = () => {
           smsCheckinEnabled={smsCheckinEnabled}
           hasPhone={hasPhone}
           smsNotificationsEnabled={smsNotificationsEnabled}
-          onEmailCheckinChange={(v) => handleCheckinMethodChange('email_checkin_enabled', v)}
-          onSmsCheckinChange={(v) => handleCheckinMethodChange('sms_checkin_enabled', v)}
+          onEmailCheckinChange={(v) => plan === 'paid' ? handleCheckinMethodChange('email_checkin_enabled', v) : null}
+          onSmsCheckinChange={(v) => plan === 'paid' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
+          isPaidPlan={plan === 'paid'}
         />
 
         <SwitchInfoCard />

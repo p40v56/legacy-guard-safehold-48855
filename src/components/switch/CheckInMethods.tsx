@@ -1,6 +1,7 @@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Mail, Phone } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Mail, Phone, Lock } from 'lucide-react';
 
 interface CheckInMethodsProps {
   emailCheckinEnabled: boolean;
@@ -9,6 +10,7 @@ interface CheckInMethodsProps {
   smsNotificationsEnabled: boolean;
   onEmailCheckinChange: (enabled: boolean) => void;
   onSmsCheckinChange: (enabled: boolean) => void;
+  isPaidPlan?: boolean;
 }
 
 const CheckInMethods = ({
@@ -18,6 +20,7 @@ const CheckInMethods = ({
   smsNotificationsEnabled,
   onEmailCheckinChange,
   onSmsCheckinChange,
+  isPaidPlan = true,
 }: CheckInMethodsProps) => {
   const showSms = hasPhone && smsNotificationsEnabled;
 
@@ -40,8 +43,9 @@ const CheckInMethods = ({
             <Label className="text-foreground">Email check-in reminders</Label>
             <p className="text-xs text-muted-foreground">Receive a check-in link via email before your deadline</p>
           </div>
+          {!isPaidPlan && <Badge variant="outline" className="text-xs ml-2"><Lock className="w-3 h-3 mr-1" />Paid</Badge>}
         </div>
-        <Switch checked={emailCheckinEnabled} onCheckedChange={onEmailCheckinChange} />
+        <Switch checked={emailCheckinEnabled} onCheckedChange={onEmailCheckinChange} disabled={!isPaidPlan} />
       </div>
 
       {showSms && (
@@ -52,8 +56,9 @@ const CheckInMethods = ({
               <Label className="text-foreground">SMS check-in</Label>
               <p className="text-xs text-muted-foreground">Receive a check-in link via SMS before your deadline</p>
             </div>
+            {!isPaidPlan && <Badge variant="outline" className="text-xs ml-2"><Lock className="w-3 h-3 mr-1" />Paid</Badge>}
           </div>
-          <Switch checked={smsCheckinEnabled} onCheckedChange={onSmsCheckinChange} />
+          <Switch checked={smsCheckinEnabled} onCheckedChange={onSmsCheckinChange} disabled={!isPaidPlan} />
         </div>
       )}
     </div>

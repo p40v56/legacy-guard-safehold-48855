@@ -160,11 +160,23 @@ const Settings = () => {
               </CardContent>
             </Card>
             <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader><CardTitle className="text-foreground">Account Status</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-foreground">Account Status & Plan</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">Account Type</span><Badge className="bg-success/20 text-success border-success/30">Free Plan</Badge></div>
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">Member Since</span><span className="text-foreground">Today</span></div>
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">Last Login</span><span className="text-foreground">Just now</span></div>
+                <div className="flex items-center justify-between"><span className="text-muted-foreground">Current Plan</span><Badge className="bg-success/20 text-success border-success/30">Free Plan</Badge></div>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• 1 contact (message only, no portal)</p>
+                  <p>• Switch fully functional</p>
+                  <p>• Web check-in only</p>
+                </div>
+                <Separator />
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  <h4 className="font-medium text-card-foreground mb-1">Paid Plan — £50/year</h4>
+                  <p className="text-sm text-muted-foreground mb-3">Unlimited contacts, documents, accounts, portal access, multi-channel check-in, and more.</p>
+                  <Button variant="default" className="rounded-full" disabled>
+                    Upgrade to Paid Plan
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">Contact us at support@legacyvault.app to upgrade your account.</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

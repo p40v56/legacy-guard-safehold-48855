@@ -15,6 +15,7 @@ import Contacts from "./pages/Contacts";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
 import Portal from "./pages/Portal";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -76,6 +77,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute>
+                    <Admin />
                   </ProtectedRoute>
                 } 
               />

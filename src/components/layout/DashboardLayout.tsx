@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePlan } from '@/hooks/usePlan';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,7 +14,9 @@ import {
   LogOut,
   Menu,
   X,
-  MessageCircle
+  MessageCircle,
+  ShieldCheck,
+  Crown
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -22,6 +25,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
+  const { isAdmin, plan } = usePlan();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,11 +52,26 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="flex items-center gap-2">
             <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
             <span className="text-lg lg:text-xl font-semibold text-white">LegacyVault</span>
+            {plan === 'paid' && (
+              <Crown className="w-4 h-4 text-yellow-400" />
+            )}
           </div>
           
           {/* Desktop user info */}
           <div className="hidden lg:flex items-center gap-4">
             <span className="text-white/80 text-sm">{user?.email}</span>
+            {isAdmin && (
+              <Link to="/admin">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              </Link>
+            )}
             <Button 
               variant="ghost" 
               size="sm"
@@ -104,6 +123,20 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </Link>
                 );
               })}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                    location.pathname === '/admin' 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-card-foreground hover:bg-muted'
+                  }`}
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span className="font-medium">Admin</span>
+                </Link>
+              )}
               <div className="border-t border-border pt-2 mt-2">
                 <button
                   onClick={handleSignOut}

@@ -97,7 +97,6 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10 rounded-full px-5" onClick={handleLogin}>Log in</Button>
-            <Button className="bg-white text-sky-700 hover:bg-white/90 rounded-full px-6 font-semibold" onClick={handleGetStarted}>Sign up</Button>
           </div>
         </div>
       </header>

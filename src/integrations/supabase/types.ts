@@ -368,6 +368,7 @@ export type Database = {
         Row: {
           bio: string | null
           created_at: string
+          deactivated: boolean
           email_footer_message: string | null
           email_grace_intro: string | null
           email_grace_subject: string | null
@@ -381,6 +382,8 @@ export type Database = {
           last_name: string | null
           last_test_email_sent_at: string | null
           phone: string | null
+          plan: string
+          plan_expires_at: string | null
           setup_wizard_dismissed: boolean | null
           updated_at: string
           user_id: string
@@ -388,6 +391,7 @@ export type Database = {
         Insert: {
           bio?: string | null
           created_at?: string
+          deactivated?: boolean
           email_footer_message?: string | null
           email_grace_intro?: string | null
           email_grace_subject?: string | null
@@ -401,6 +405,8 @@ export type Database = {
           last_name?: string | null
           last_test_email_sent_at?: string | null
           phone?: string | null
+          plan?: string
+          plan_expires_at?: string | null
           setup_wizard_dismissed?: boolean | null
           updated_at?: string
           user_id: string
@@ -408,6 +414,7 @@ export type Database = {
         Update: {
           bio?: string | null
           created_at?: string
+          deactivated?: boolean
           email_footer_message?: string | null
           email_grace_intro?: string | null
           email_grace_subject?: string | null
@@ -421,6 +428,8 @@ export type Database = {
           last_name?: string | null
           last_test_email_sent_at?: string | null
           phone?: string | null
+          plan?: string
+          plan_expires_at?: string | null
           setup_wizard_dismissed?: boolean | null
           updated_at?: string
           user_id?: string
@@ -512,6 +521,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           check_in_frequency: string
@@ -577,10 +607,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_get_stats: { Args: never; Returns: Json }
+      admin_list_profiles: {
+        Args: never
+        Returns: {
+          bio: string | null
+          created_at: string
+          deactivated: boolean
+          email_footer_message: string | null
+          email_grace_intro: string | null
+          email_grace_subject: string | null
+          email_header_subtitle: string | null
+          email_header_title: string | null
+          email_intro_message: string | null
+          email_subject: string | null
+          emergency_instructions: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          last_test_email_sent_at: string | null
+          phone: string | null
+          plan: string
+          plan_expires_at: string | null
+          setup_wizard_dismissed: boolean | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_update_profile: {
+        Args: { _profile_user_id: string; _updates: Json }
+        Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -707,6 +780,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

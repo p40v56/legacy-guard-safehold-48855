@@ -78,7 +78,15 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
       toast({ title: "Test email sent ✉️", description: "Check your inbox for the test email." });
     } catch (error: any) {
       console.error('Error sending test email:', error);
-      toast({ title: "Error", description: error.message || "Failed to send test email", variant: "destructive" });
+      const msg = error.message || "Failed to send test email";
+      const isResendLimit = msg.includes("only send testing emails");
+      toast({
+        title: isResendLimit ? "Resend free-tier limitation" : "Error",
+        description: isResendLimit
+          ? "On the free tier, test emails can only be sent to the Resend account owner's email. Verify a custom domain at resend.com/domains to send to any address."
+          : msg,
+        variant: "destructive",
+      });
     } finally {
       setSendingTest(null);
     }

@@ -6,6 +6,49 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface ContactPermissions {
+  digital_accounts?: {
+    all_accounts?: boolean;
+    by_category?: string[];
+    specific_accounts?: string[];
+  };
+  legacy_documents?: {
+    all_documents?: boolean;
+    by_category?: string[];
+    specific_documents?: string[];
+  };
+  contact_information?: boolean;
+  emergency_instructions?: boolean;
+  can_modify_information?: boolean;
+}
+
+function resolvePermissions(contact: any, typePermissions: any[]): ContactPermissions {
+  let permissions: ContactPermissions = contact.permissions || {};
+
+  if (contact.use_type_defaults) {
+    const typeDefault = typePermissions.find(
+      (tp: any) => tp.contact_type === contact.contact_type
+    );
+    if (typeDefault?.default_permissions) {
+      // Type defaults as base, contact overrides on top
+      permissions = { ...typeDefault.default_permissions, ...permissions };
+    }
+  }
+  return permissions;
+}
+
+function filterDocumentsByPermissions(documents: any[], permissions: ContactPermissions): any[] {
+  const docPerms = permissions.legacy_documents;
+  if (!docPerms) return [];
+
+  if (docPerms.all_documents) return documents;
+
+  const allowedCategories = docPerms.by_category || [];
+  if (allowedCategories.length === 0) return [];
+
+  return documents.filter((doc: any) => allowedCategories.includes(doc.document_type));
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -20,11 +63,88 @@ const handler = async (req: Request): Promise<Response> => {
     const action = url.searchParams.get("action");
     const token = url.searchParams.get("token");
 
-    // Action: verify token and return portal data
+    // Action: verify-answer - verify security question answer before granting access
+    if (action === "verify-answer" && req.method === "POST") {
+      const body = await req.json();
+      const { token: bodyToken, answer } = body;
+
+      if (!bodyToken || !answer) {
+        return new Response(
+          JSON.stringify({ error: "Missing token or answer" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Look up the token
+      const { data: tokenData, error: tokenError } = await supabase
+        .from("contact_access_tokens")
+        .select("*")
+        .eq("token", bodyToken)
+        .eq("is_active", true)
+        .single();
+
+      if (tokenError || !tokenData) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or expired access link" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
+        return new Response(
+          JSON.stringify({ error: "This access link has expired" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Get contact info
+      const { data: contact } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("id", tokenData.contact_id)
+        .single();
+
+      if (!contact) {
+        return new Response(
+          JSON.stringify({ error: "Contact not found" }),
+          { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Find the applicable security question
+      const { data: questions } = await supabase
+        .from("security_questions")
+        .select("*")
+        .eq("user_id", tokenData.user_id);
+
+      const applicableQuestion = findApplicableQuestion(questions || [], contact);
+
+      if (!applicableQuestion) {
+        return new Response(
+          JSON.stringify({ error: "No security question configured" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Compare answer (case-insensitive, trimmed)
+      const normalizedAnswer = answer.trim().toLowerCase();
+      const storedAnswer = applicableQuestion.answer_hash.trim().toLowerCase();
+
+      if (normalizedAnswer !== storedAnswer) {
+        return new Response(
+          JSON.stringify({ error: "Incorrect answer. Please try again." }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Answer correct - return the full portal data
+      return await servePortalData(supabase, tokenData, contact);
+    }
+
+    // Action: verify token - check if token is valid and if security question is required
     if (action === "verify" && token) {
       console.log(`Portal verify request for token: ${token.substring(0, 8)}...`);
 
-      // Look up the token
       const { data: tokenData, error: tokenError } = await supabase
         .from("contact_access_tokens")
         .select("*")
@@ -33,16 +153,13 @@ const handler = async (req: Request): Promise<Response> => {
         .single();
 
       if (tokenError || !tokenData) {
-        console.log("Token not found or inactive:", tokenError?.message);
         return new Response(
           JSON.stringify({ error: "Invalid or expired access link" }),
           { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
-      // Check expiration if set
       if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
-        console.log("Token expired");
         return new Response(
           JSON.stringify({ error: "This access link has expired" }),
           { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -56,93 +173,50 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("id", tokenData.id);
 
       // Get contact info
-      const { data: contact, error: contactError } = await supabase
+      const { data: contact } = await supabase
         .from("contacts")
         .select("*")
         .eq("id", tokenData.contact_id)
         .single();
 
-      if (contactError || !contact) {
-        console.log("Contact not found:", contactError?.message);
+      if (!contact) {
         return new Response(
           JSON.stringify({ error: "Contact not found" }),
           { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
-      const userId = tokenData.user_id;
-
-      // Get user profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("first_name, last_name, emergency_instructions")
-        .eq("user_id", userId)
-        .single();
-
-      // Get contact type permissions
-      const { data: typePermissions } = await supabase
-        .from("contact_type_permissions")
+      // Check if security question is required
+      const { data: questions } = await supabase
+        .from("security_questions")
         .select("*")
-        .eq("user_id", userId);
+        .eq("user_id", tokenData.user_id);
 
-      // Determine permissions for this contact
-      let permissions = contact.permissions || {};
-      if (contact.use_type_defaults) {
-        const typeDefault = (typePermissions || []).find(
-          (tp: any) => tp.contact_type === contact.contact_type
+      const applicableQuestion = findApplicableQuestion(questions || [], contact);
+
+      if (applicableQuestion) {
+        // Security question required - return question only, not data
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("user_id", tokenData.user_id)
+          .single();
+
+        const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+
+        return new Response(
+          JSON.stringify({
+            requiresAuth: true,
+            question: applicableQuestion.question,
+            contactName: contact.name,
+            userName,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
-        if (typeDefault) {
-          permissions = { ...typeDefault.default_permissions, ...permissions };
-        }
       }
 
-      // Get documents filtered by permissions
-      const { data: allDocuments } = await supabase
-        .from("legacy_documents")
-        .select("id, title, content, document_type, description, created_at")
-        .eq("user_id", userId);
-
-      const allowedDocuments = (allDocuments || []).filter((doc: any) => {
-        const docTypeKey = `documents_${doc.document_type}`;
-        return permissions[docTypeKey] === true;
-      });
-
-      // Get custom message for this contact
-      const { data: activationRules } = await supabase
-        .from("activation_rules")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("enabled", true);
-
-      let customMessage = contact.custom_message || null;
-      if (!customMessage && activationRules) {
-        for (const rule of activationRules) {
-          if (rule.target_type === 'contacts' && rule.contact_ids?.includes(contact.id)) {
-            customMessage = rule.custom_message;
-            break;
-          }
-          if (rule.target_type === 'category' && rule.contact_category === contact.contact_type) {
-            customMessage = rule.custom_message;
-            break;
-          }
-        }
-      }
-
-      const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
-
-      console.log(`Portal data served for contact ${contact.name}: ${allowedDocuments.length} documents`);
-
-      return new Response(
-        JSON.stringify({
-          contactName: contact.name,
-          userName,
-          customMessage,
-          emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
-          documents: allowedDocuments,
-          permissions,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      // No security question - serve data directly
+      return await servePortalData(supabase, tokenData, contact);
     }
 
     // Action: generate token (authenticated - for the owner)
@@ -178,7 +252,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Verify the contact belongs to this user
       const { data: contact } = await supabase
         .from("contacts")
         .select("id, user_id")
@@ -193,19 +266,16 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Generate token
       const tokenArray = new Uint8Array(32);
       crypto.getRandomValues(tokenArray);
       const newToken = Array.from(tokenArray).map(b => b.toString(16).padStart(2, '0')).join('');
 
-      // Deactivate existing tokens
       await supabase
         .from("contact_access_tokens")
         .update({ is_active: false })
         .eq("contact_id", contactId)
         .eq("user_id", claims.user.id);
 
-      // Create new token
       const { error: insertError } = await supabase
         .from("contact_access_tokens")
         .insert({
@@ -222,8 +292,6 @@ const handler = async (req: Request): Promise<Response> => {
           { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
-
-      console.log(`Portal token generated for contact ${contactId}`);
 
       return new Response(
         JSON.stringify({ token: newToken }),
@@ -244,5 +312,79 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
+
+// Find the most specific applicable security question for a contact
+function findApplicableQuestion(questions: any[], contact: any): any | null {
+  if (!questions || questions.length === 0) return null;
+
+  // Priority 1: Question targeting this specific contact
+  const contactSpecific = questions.find(
+    (q: any) => q.target_type === 'contact' && q.target_contact_id === contact.id
+  );
+  if (contactSpecific) return contactSpecific;
+
+  // Priority 2: Question targeting this contact's category
+  const categorySpecific = questions.find(
+    (q: any) => q.target_type === 'category' && q.target_contact_type === contact.contact_type
+  );
+  if (categorySpecific) return categorySpecific;
+
+  // Priority 3: Question targeting all contacts
+  const allContacts = questions.find((q: any) => q.target_type === 'all');
+  if (allContacts) return allContacts;
+
+  return null;
+}
+
+// Serve full portal data
+async function servePortalData(supabase: any, tokenData: any, contact: any): Promise<Response> {
+  const userId = tokenData.user_id;
+
+  const [profileRes, typePermissionsRes, allDocumentsRes, activationRulesRes] = await Promise.all([
+    supabase.from("profiles").select("first_name, last_name, emergency_instructions").eq("user_id", userId).single(),
+    supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
+    supabase.from("legacy_documents").select("id, title, content, document_type, description, created_at, file_path").eq("user_id", userId),
+    supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
+  ]);
+
+  const profile = profileRes.data;
+  const typePermissions = typePermissionsRes.data || [];
+  const allDocuments = allDocumentsRes.data || [];
+  const activationRules = activationRulesRes.data || [];
+
+  const permissions = resolvePermissions(contact, typePermissions);
+  const allowedDocuments = filterDocumentsByPermissions(allDocuments, permissions);
+
+  // Get custom message
+  let customMessage = contact.custom_message || null;
+  if (!customMessage && activationRules) {
+    for (const rule of activationRules) {
+      if (rule.target_type === 'contacts' && rule.contact_ids?.includes(contact.id)) {
+        customMessage = rule.custom_message;
+        break;
+      }
+      if (rule.target_type === 'category' && rule.contact_category === contact.contact_type) {
+        customMessage = rule.custom_message;
+        break;
+      }
+    }
+  }
+
+  const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+
+  console.log(`Portal data served for contact ${contact.name}: ${allowedDocuments.length} documents`);
+
+  return new Response(
+    JSON.stringify({
+      contactName: contact.name,
+      userName,
+      customMessage,
+      emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
+      documents: allowedDocuments,
+      permissions,
+    }),
+    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
 
 serve(handler);

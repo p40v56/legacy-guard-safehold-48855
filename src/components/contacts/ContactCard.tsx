@@ -11,6 +11,8 @@ import PermissionsConfig from '@/components/contacts/PermissionsConfig';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePlan } from '@/hooks/usePlan';
+import { Lock } from 'lucide-react';
 
 interface ContactCardProps {
   contact: EmergencyContact;
@@ -32,6 +34,8 @@ const ContactCard: React.FC<ContactCardProps> = ({
   onCustomMessageChange
 }) => {
   const { toast } = useToast();
+  const { plan } = usePlan();
+  const isFree = plan === 'free';
   const [portalLink, setPortalLink] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [customMsg, setCustomMsg] = useState(contact.custom_message || '');
@@ -192,18 +196,25 @@ const ContactCard: React.FC<ContactCardProps> = ({
                 >
                   {savingMessage ? 'Saving...' : 'Save Message'}
                 </Button>
-                <Button
-                  onClick={handleGeneratePortalLink}
-                  disabled={generatingLink}
-                  size="sm"
-                  variant="outline"
-                  className="rounded-xl"
-                >
-                  <Link2 className="w-4 h-4 mr-2" />
-                  {generatingLink ? 'Generating...' : portalLink ? 'Regenerate Portal Link' : 'Generate Portal Link'}
-                </Button>
+                {isFree ? (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <Lock className="w-4 h-4" />
+                    <span>Portal links require a paid plan</span>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleGeneratePortalLink}
+                    disabled={generatingLink}
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl"
+                  >
+                    <Link2 className="w-4 h-4 mr-2" />
+                    {generatingLink ? 'Generating...' : portalLink ? 'Regenerate Portal Link' : 'Generate Portal Link'}
+                  </Button>
+                )}
               </div>
-              {portalLink && (
+              {!isFree && portalLink && (
                 <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary flex-shrink-0" />
                   <p className="text-sm text-primary truncate flex-1">{portalLink}</p>

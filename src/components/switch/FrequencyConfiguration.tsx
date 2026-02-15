@@ -7,6 +7,7 @@ interface FrequencyConfigurationProps {
   gracePeriodHours: number;
   onFrequencyChange: (value: CheckInFrequency) => void;
   onGracePeriodChange: (value: string) => void;
+  isFree?: boolean;
 }
 
 const FREQUENCY_OPTIONS = [
@@ -22,7 +23,8 @@ const FrequencyConfiguration = ({
   frequency,
   gracePeriodHours,
   onFrequencyChange,
-  onGracePeriodChange
+  onGracePeriodChange,
+  isFree
 }: FrequencyConfigurationProps) => {
   return (
     <div className="space-y-6">
@@ -40,10 +42,25 @@ const FrequencyConfiguration = ({
         </Select>
       </div>
 
-      <GracePeriodPresets
-        gracePeriodHours={gracePeriodHours}
-        onGracePeriodChange={onGracePeriodChange}
-      />
+      {isFree ? (
+        <div className="space-y-2">
+          <Label className="text-foreground">Grace Period</Label>
+          <div className="flex items-center gap-3">
+            <div className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground border border-primary shadow-sm">
+              24h — Moderate
+            </div>
+            <span className="text-xs text-muted-foreground">Upgrade for custom grace periods</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Time buffer after missed check-in before alerts trigger
+          </p>
+        </div>
+      ) : (
+        <GracePeriodPresets
+          gracePeriodHours={gracePeriodHours}
+          onGracePeriodChange={onGracePeriodChange}
+        />
+      )}
     </div>
   );
 };

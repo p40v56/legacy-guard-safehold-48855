@@ -150,10 +150,6 @@ const Settings = () => {
                   <div><Label className="text-foreground">Email</Label><Input value={profile.email} disabled /><p className="text-xs text-muted-foreground mt-1">Email cannot be changed here</p></div>
                   <div><Label className="text-foreground">Phone Number</Label><Input value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} placeholder="+1 (555) 123-4567" /></div>
                 </div>
-                <div>
-                  <Label className="text-foreground">Emergency Instructions</Label>
-                  <RichTextEditor value={profile.emergency_instructions || ''} onChange={(value) => setProfile({...profile, emergency_instructions: value})} placeholder="Special instructions for emergency contacts" className="mt-1" />
-                </div>
                 <Button onClick={saveProfile} disabled={saving} variant="default">
                   {saving ? (<><LoadingSpinner size="sm" className="mr-2" />Saving...</>) : (<><Save className="w-4 h-4 mr-2" />Save Profile</>)}
                 </Button>

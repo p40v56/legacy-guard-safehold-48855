@@ -9,6 +9,7 @@ interface SwitchConfigurationProps {
   customDate: Date | undefined;
   customTime: string;
   saving: boolean;
+  isFree?: boolean;
   onUpdateSettings: (updates: Partial<UserSettings>) => Promise<void>;
   onSwitchToFrequencyMode: () => void;
   onCustomDateTimeUpdate: () => void;
@@ -21,6 +22,7 @@ const SwitchConfiguration = ({
   customDate,
   customTime,
   saving,
+  isFree,
   onUpdateSettings,
   onSwitchToFrequencyMode,
   onCustomDateTimeUpdate,
@@ -50,21 +52,29 @@ const SwitchConfiguration = ({
 
   return (
     <div className="space-y-6">
-      <DeadlineModeSelector
-        deadlineMode={settings.deadline_mode}
-        onModeChange={handleDeadlineModeChange}
-      />
+      {isFree ? (
+        <div className="text-sm text-muted-foreground bg-muted/30 rounded-xl p-3 flex items-center gap-2">
+          <span>📋</span>
+          <span>Free plan: frequency-based check-ins with 24h grace period. Upgrade for custom deadlines and flexible grace periods.</span>
+        </div>
+      ) : (
+        <DeadlineModeSelector
+          deadlineMode={settings.deadline_mode}
+          onModeChange={handleDeadlineModeChange}
+        />
+      )}
 
-      {settings.deadline_mode === 'frequency' && (
+      {(!isFree && settings.deadline_mode === 'frequency' || isFree) && (
         <FrequencyConfiguration
           frequency={settings.check_in_frequency}
           gracePeriodHours={settings.grace_period_hours}
           onFrequencyChange={handleFrequencyChange}
           onGracePeriodChange={handleGracePeriodChange}
+          isFree={isFree}
         />
       )}
 
-      {settings.deadline_mode === 'custom' && (
+      {!isFree && settings.deadline_mode === 'custom' && (
         <CustomDeadlineConfiguration
           customDate={customDate}
           customTime={customTime}

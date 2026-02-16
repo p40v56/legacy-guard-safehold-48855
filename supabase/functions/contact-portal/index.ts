@@ -30,23 +30,52 @@ function resolvePermissions(contact: any, typePermissions: any[]): ContactPermis
       (tp: any) => tp.contact_type === contact.contact_type
     );
     if (typeDefault?.default_permissions) {
-      // Type defaults as base, contact overrides on top
       permissions = { ...typeDefault.default_permissions, ...permissions };
     }
   }
   return permissions;
 }
 
-function filterDocumentsByPermissions(documents: any[], permissions: ContactPermissions): any[] {
+function filterDocumentsByPermissions(documents: any[], permissions: ContactPermissions, contactId: string): any[] {
   const docPerms = permissions.legacy_documents;
   if (!docPerms) return [];
 
-  if (docPerms.all_documents) return documents;
+  // First filter by permission categories
+  let permitted = documents;
+  if (!docPerms.all_documents) {
+    const allowedCategories = docPerms.by_category || [];
+    const specificIds = docPerms.specific_documents || [];
+    if (allowedCategories.length === 0 && specificIds.length === 0) return [];
+    permitted = documents.filter((doc: any) =>
+      allowedCategories.includes(doc.document_type) || specificIds.includes(doc.id)
+    );
+  }
 
-  const allowedCategories = docPerms.by_category || [];
-  if (allowedCategories.length === 0) return [];
+  // Then filter by visible_to (null = all contacts, or must include this contact)
+  // Documents don't have visible_to currently, so return all permitted
+  return permitted;
+}
 
-  return documents.filter((doc: any) => allowedCategories.includes(doc.document_type));
+function filterAccountsByPermissions(accounts: any[], permissions: ContactPermissions): any[] {
+  const acctPerms = permissions.digital_accounts;
+  if (!acctPerms) return [];
+
+  if (acctPerms.all_accounts) return accounts;
+
+  const allowedCategories = acctPerms.by_category || [];
+  const specificIds = acctPerms.specific_accounts || [];
+  if (allowedCategories.length === 0 && specificIds.length === 0) return [];
+
+  return accounts.filter((acct: any) =>
+    allowedCategories.includes(acct.account_type) || specificIds.includes(acct.id)
+  );
+}
+
+function filterFinancialAssets(assets: any[], contactId: string): any[] {
+  return assets.filter((a: any) => {
+    if (!a.visible_to || a.visible_to.length === 0) return true; // null/empty = all contacts
+    return a.visible_to.includes(contactId);
+  });
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -63,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
     const action = url.searchParams.get("action");
     const token = url.searchParams.get("token");
 
-    // Action: verify-answer - verify security question answer before granting access
+    // Action: verify-answer
     if (action === "verify-answer" && req.method === "POST") {
       const body = await req.json();
       const { token: bodyToken, answer } = body;
@@ -75,7 +104,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Look up the token
       const { data: tokenData, error: tokenError } = await supabase
         .from("contact_access_tokens")
         .select("*")
@@ -97,7 +125,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Get contact info
       const { data: contact } = await supabase
         .from("contacts")
         .select("*")
@@ -111,7 +138,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Find the applicable security question
       const { data: questions } = await supabase
         .from("security_questions")
         .select("*")
@@ -126,7 +152,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Compare answer (case-insensitive, trimmed)
       const normalizedAnswer = answer.trim().toLowerCase();
       const storedAnswer = applicableQuestion.answer_hash.trim().toLowerCase();
 
@@ -137,11 +162,10 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Answer correct - return the full portal data
       return await servePortalData(supabase, tokenData, contact);
     }
 
-    // Action: verify token - check if token is valid and if security question is required
+    // Action: verify token
     if (action === "verify" && token) {
       console.log(`Portal verify request for token: ${token.substring(0, 8)}...`);
 
@@ -166,13 +190,11 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Update last accessed
       await supabase
         .from("contact_access_tokens")
         .update({ last_accessed_at: new Date().toISOString() })
         .eq("id", tokenData.id);
 
-      // Get contact info
       const { data: contact } = await supabase
         .from("contacts")
         .select("*")
@@ -186,7 +208,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Check if security question is required
       const { data: questions } = await supabase
         .from("security_questions")
         .select("*")
@@ -195,7 +216,6 @@ const handler = async (req: Request): Promise<Response> => {
       const applicableQuestion = findApplicableQuestion(questions || [], contact);
 
       if (applicableQuestion) {
-        // Security question required - return question only, not data
         const { data: profile } = await supabase
           .from("profiles")
           .select("first_name, last_name")
@@ -215,11 +235,10 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // No security question - serve data directly
       return await servePortalData(supabase, tokenData, contact);
     }
 
-    // Action: generate token (authenticated - for the owner)
+    // Action: generate token (authenticated)
     if (action === "generate-token" && req.method === "POST") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) {
@@ -313,47 +332,56 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-// Find the most specific applicable security question for a contact
 function findApplicableQuestion(questions: any[], contact: any): any | null {
   if (!questions || questions.length === 0) return null;
 
-  // Priority 1: Question targeting this specific contact
   const contactSpecific = questions.find(
     (q: any) => q.target_type === 'contact' && q.target_contact_id === contact.id
   );
   if (contactSpecific) return contactSpecific;
 
-  // Priority 2: Question targeting this contact's category
   const categorySpecific = questions.find(
     (q: any) => q.target_type === 'category' && q.target_contact_type === contact.contact_type
   );
   if (categorySpecific) return categorySpecific;
 
-  // Priority 3: Question targeting all contacts
   const allContacts = questions.find((q: any) => q.target_type === 'all');
   if (allContacts) return allContacts;
 
   return null;
 }
 
-// Serve full portal data
 async function servePortalData(supabase: any, tokenData: any, contact: any): Promise<Response> {
   const userId = tokenData.user_id;
+  const contactId = tokenData.contact_id;
 
-  const [profileRes, typePermissionsRes, allDocumentsRes, activationRulesRes] = await Promise.all([
-    supabase.from("profiles").select("first_name, last_name, emergency_instructions").eq("user_id", userId).single(),
+  // Fetch all data in parallel
+  const [profileRes, typePermissionsRes, allDocumentsRes, activationRulesRes, accountsRes, financialAssetsRes, settingsRes] = await Promise.all([
+    supabase.from("profiles").select("first_name, last_name, emergency_instructions, plan").eq("user_id", userId).single(),
     supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
     supabase.from("legacy_documents").select("id, title, content, document_type, description, created_at, file_path").eq("user_id", userId),
     supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
+    supabase.from("accounts").select("*").eq("user_id", userId),
+    supabase.from("financial_assets").select("*").eq("user_id", userId),
+    supabase.from("user_settings").select("switch_triggered, switch_triggered_at").eq("user_id", userId).maybeSingle(),
   ]);
 
   const profile = profileRes.data;
   const typePermissions = typePermissionsRes.data || [];
   const allDocuments = allDocumentsRes.data || [];
   const activationRules = activationRulesRes.data || [];
+  const allAccounts = accountsRes.data || [];
+  const allFinancialAssets = financialAssetsRes.data || [];
+  const settings = settingsRes.data;
 
   const permissions = resolvePermissions(contact, typePermissions);
-  const allowedDocuments = filterDocumentsByPermissions(allDocuments, permissions);
+  const userPlan = profile?.plan || 'free';
+  const isFree = userPlan === 'free';
+
+  // Free plan: only personal message + emergency instructions, no extended portal
+  const allowedDocuments = isFree ? [] : filterDocumentsByPermissions(allDocuments, permissions, contactId);
+  const allowedAccounts = isFree ? [] : filterAccountsByPermissions(allAccounts, permissions);
+  const allowedFinancialAssets = isFree ? [] : filterFinancialAssets(allFinancialAssets, contactId);
 
   // Get custom message
   let customMessage = contact.custom_message || null;
@@ -372,15 +400,19 @@ async function servePortalData(supabase: any, tokenData: any, contact: any): Pro
 
   const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
 
-  console.log(`Portal data served for contact ${contact.name}: ${allowedDocuments.length} documents`);
+  console.log(`Portal data served for contact ${contact.name}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`);
 
   return new Response(
     JSON.stringify({
       contactName: contact.name,
       userName,
+      userPlan,
       customMessage,
       emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
+      switchTriggeredAt: settings?.switch_triggered_at || null,
       documents: allowedDocuments,
+      accounts: allowedAccounts,
+      financialAssets: allowedFinancialAssets,
       permissions,
     }),
     { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }

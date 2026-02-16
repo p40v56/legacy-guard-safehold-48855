@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package } from 'lucide-react';
+import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, ArrowLeft, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface FinancialAsset {
   id: string;
@@ -46,6 +47,8 @@ const formatCurrency = (v: number) =>
 
 const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) => {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(CATEGORY_ORDER));
+  const { token } = useParams();
+  const navigate = useNavigate();
 
   if (financialAssets.length === 0) return null;
 
@@ -62,6 +65,8 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       return next;
     });
   };
+
+  const totalValue = financialAssets.reduce((sum, a) => sum + (a.estimated_value || 0), 0);
 
   const renderCategoryFields = (asset: FinancialAsset) => {
     const csf = asset.category_specific_fields || {};
@@ -103,9 +108,22 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
   };
 
   return (
-    <div id="financials" className="space-y-4">
-      <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-        <p className="text-white/60 text-xs leading-relaxed">
+    <div className="space-y-6">
+      <button onClick={() => navigate(`/portal/${token}/overview`)} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
+      </button>
+
+      {/* Summary bar */}
+      {totalValue > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-between">
+          <span className="text-gray-500 text-sm">Total estimated value</span>
+          <span className="text-gray-900 text-lg font-semibold">{formatCurrency(totalValue)}</span>
+        </div>
+      )}
+
+      {/* Guide */}
+      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+        <p className="text-gray-600 text-xs leading-relaxed">
           💡 For each institution listed below, you will typically need to provide a certified copy of the death certificate. Start with insurance policies as they may have time-sensitive claims.
         </p>
       </div>
@@ -115,19 +133,19 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
         const isOpen = openCategories.has(cat);
 
         return (
-          <div key={cat} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
+          <div key={cat} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <button
               onClick={() => toggleCategory(cat)}
-              className="w-full flex items-center gap-3 p-4 hover:bg-white/5 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
             >
-              <span className="text-primary">{CATEGORY_ICONS[cat]}</span>
-              <span className="text-white font-medium flex-1">{CATEGORY_LABELS[cat] || cat}</span>
-              <span className="text-white/40 text-sm mr-2">{assets.length}</span>
-              {isOpen ? <ChevronDown className="w-4 h-4 text-white/40" /> : <ChevronRight className="w-4 h-4 text-white/40" />}
+              <span className="text-gray-500">{CATEGORY_ICONS[cat]}</span>
+              <span className="text-gray-900 font-medium flex-1">{CATEGORY_LABELS[cat] || cat}</span>
+              <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-2">{assets.length}</span>
+              {isOpen ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
             </button>
 
             {isOpen && (
-              <div className="border-t border-white/10 divide-y divide-white/10">
+              <div className="border-t border-gray-200 divide-y divide-gray-100">
                 {assets.map(asset => {
                   const csf = asset.category_specific_fields || {};
                   const categoryFields = renderCategoryFields(asset);
@@ -136,67 +154,56 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
                     <div key={asset.id} className="p-5 space-y-3">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <h4 className="text-white font-medium">{asset.name}</h4>
-                          {asset.institution && (
-                            <p className="text-white/50 text-sm">{asset.institution}</p>
-                          )}
+                          <h4 className="text-gray-900 font-medium">{asset.name}</h4>
+                          {asset.institution && <p className="text-gray-500 text-sm">{asset.institution}</p>}
                         </div>
                         {asset.estimated_value != null && asset.estimated_value > 0 && (
-                          <span className="text-white font-semibold text-sm whitespace-nowrap">
+                          <span className="text-gray-900 font-semibold text-sm whitespace-nowrap">
                             {formatCurrency(asset.estimated_value)}
                           </span>
                         )}
                       </div>
 
-                      {/* Reference number — fully visible in portal */}
                       {asset.reference_number && (
                         <div className="text-sm">
-                          <span className="text-white/50">Reference: </span>
-                          <span className="text-white font-mono">{asset.reference_number}</span>
+                          <span className="text-gray-500">Reference: </span>
+                          <span className="text-gray-900 font-mono">{asset.reference_number}</span>
                         </div>
                       )}
 
-                      {/* Category-specific fields */}
                       {categoryFields.length > 0 && (
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                           {categoryFields.map((f, i) => (
                             <div key={i}>
-                              <span className="text-white/50">{f.label}: </span>
-                              <span className="text-white">{f.value}</span>
+                              <span className="text-gray-500">{f.label}: </span>
+                              <span className="text-gray-900 font-medium">{f.value}</span>
                             </div>
                           ))}
                         </div>
                       )}
 
-                      {/* Death claim process */}
                       {csf.death_claim_process && (
-                        <div className="bg-warning/10 rounded-xl p-3 border border-warning/20">
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                           <div className="flex items-center gap-2 mb-1">
-                            <AlertTriangle className="w-3.5 h-3.5 text-warning" />
-                            <span className="text-warning text-xs font-medium">Death Claim Process</span>
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="text-amber-800 text-xs font-semibold">Death Claim Process</span>
                           </div>
-                          <p className="text-white/80 text-sm whitespace-pre-wrap">{csf.death_claim_process}</p>
+                          <p className="text-amber-900 text-sm whitespace-pre-wrap">{csf.death_claim_process}</p>
                         </div>
                       )}
 
-                      {/* Notes */}
-                      {asset.notes && (
-                        <p className="text-white/60 text-sm whitespace-pre-wrap">{asset.notes}</p>
-                      )}
+                      {asset.notes && <p className="text-gray-600 text-sm whitespace-pre-wrap">{asset.notes}</p>}
 
-                      {/* Contact info */}
                       {(asset.contact_name || asset.contact_phone || asset.contact_email) && (
                         <div className="flex items-center gap-4 flex-wrap text-sm">
-                          {asset.contact_name && (
-                            <span className="text-white/70">{asset.contact_name}</span>
-                          )}
+                          {asset.contact_name && <span className="text-gray-700">{asset.contact_name}</span>}
                           {asset.contact_phone && (
-                            <a href={`tel:${asset.contact_phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                            <a href={`tel:${asset.contact_phone}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline">
                               <Phone className="w-3 h-3" />{asset.contact_phone}
                             </a>
                           )}
                           {asset.contact_email && (
-                            <a href={`mailto:${asset.contact_email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                            <a href={`mailto:${asset.contact_email}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline">
                               <Mail className="w-3 h-3" />{asset.contact_email}
                             </a>
                           )}

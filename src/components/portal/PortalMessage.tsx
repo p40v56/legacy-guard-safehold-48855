@@ -8,14 +8,14 @@ interface PortalMessageProps {
 
 const PortalMessage: React.FC<PortalMessageProps> = ({ userName, customMessage }) => {
   return (
-    <div className="bg-primary/10 backdrop-blur-xl rounded-2xl p-6 border border-primary/30">
-      <div className="flex items-center gap-3 mb-4">
-        <MessageSquare className="w-5 h-5 text-primary" />
-        <h3 className="text-base font-semibold text-white">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 border-l-4 border-l-blue-500">
+      <div className="flex items-center gap-3 mb-3">
+        <MessageSquare className="w-5 h-5 text-blue-600" />
+        <h3 className="text-base font-semibold text-gray-900">
           Personal Message from {userName}
         </h3>
       </div>
-      <div className="text-white/80 text-sm whitespace-pre-wrap leading-relaxed">
+      <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
         {customMessage}
       </div>
     </div>

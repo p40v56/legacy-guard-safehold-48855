@@ -1,5 +1,6 @@
 import React from 'react';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface PortalDocument {
   id: string;
@@ -19,6 +20,9 @@ const formatDocumentType = (type: string) =>
   type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
 const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
+  const { token } = useParams();
+  const navigate = useNavigate();
+
   if (documents.length === 0) return null;
 
   const grouped: Record<string, PortalDocument[]> = {};
@@ -29,32 +33,34 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   }
 
   return (
-    <div id="documents" className="space-y-4">
+    <div className="space-y-6">
+      <button onClick={() => navigate(`/portal/${token}/overview`)} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
+      </button>
+
       {Object.entries(grouped).map(([docType, docs]) => (
         <div key={docType} className="space-y-3">
           <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-primary" />
-            <h4 className="text-white font-medium text-sm">{formatDocumentType(docType)}</h4>
-            <span className="text-white/30 text-xs">({docs.length})</span>
+            <FileText className="w-4 h-4 text-gray-500" />
+            <h4 className="text-gray-900 font-medium text-sm">{formatDocumentType(docType)}</h4>
+            <span className="text-gray-400 text-xs">({docs.length})</span>
           </div>
 
           {docs.map(doc => (
-            <div key={doc.id} className="bg-white/10 backdrop-blur-xl rounded-2xl p-5 border border-white/20">
-              <h5 className="text-white font-medium mb-1">{doc.title}</h5>
-              {doc.description && (
-                <p className="text-white/50 text-sm mb-3">{doc.description}</p>
-              )}
+            <div key={doc.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              <h5 className="text-gray-900 font-medium mb-1">{doc.title}</h5>
+              {doc.description && <p className="text-gray-500 text-sm mb-3">{doc.description}</p>}
               {doc.content && (
-                <div className="bg-white/5 rounded-xl p-4 text-white/80 text-sm whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto mb-3">
+                <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto mb-3">
                   {doc.content}
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-white/30 text-xs">
+                <span className="text-gray-400 text-xs">
                   {new Date(doc.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
                 {doc.file_path && (
-                  <button className="inline-flex items-center gap-1.5 text-primary text-xs hover:underline">
+                  <button className="inline-flex items-center gap-1.5 text-blue-600 text-xs hover:underline">
                     <Download className="w-3 h-3" />Download
                   </button>
                 )}

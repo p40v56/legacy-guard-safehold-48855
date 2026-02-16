@@ -1,5 +1,6 @@
 import React from 'react';
-import { Globe, Monitor, Mail } from 'lucide-react';
+import { Globe, Monitor, Mail, ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface DigitalAccount {
   id: string;
@@ -30,6 +31,9 @@ interface PortalAccountsProps {
 }
 
 const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
+  const { token } = useParams();
+  const navigate = useNavigate();
+
   if (accounts.length === 0) return null;
 
   const grouped: Record<string, DigitalAccount[]> = {};
@@ -40,29 +44,31 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
   }
 
   return (
-    <div id="accounts" className="space-y-4">
+    <div className="space-y-6">
+      <button onClick={() => navigate(`/portal/${token}/overview`)} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
+      </button>
+
       {Object.entries(grouped).map(([type, accts]) => (
         <div key={type} className="space-y-3">
           <div className="flex items-center gap-2">
-            <Monitor className="w-4 h-4 text-primary" />
-            <h4 className="text-white font-medium text-sm">{ACCOUNT_TYPE_LABELS[type] || type}</h4>
-            <span className="text-white/30 text-xs">({accts.length})</span>
+            <Monitor className="w-4 h-4 text-gray-500" />
+            <h4 className="text-gray-900 font-medium text-sm">{ACCOUNT_TYPE_LABELS[type] || type}</h4>
+            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{accts.length}</span>
           </div>
 
           {accts.map(acct => (
-            <div key={acct.id} className="bg-white/10 backdrop-blur-xl rounded-2xl p-5 border border-white/20">
+            <div key={acct.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div>
-                  <h5 className="text-white font-medium">{acct.platform || acct.account_name}</h5>
-                  {acct.username && (
-                    <p className="text-white/50 text-sm">Username: {acct.username}</p>
-                  )}
+                  <h5 className="text-gray-900 font-medium">{acct.platform || acct.account_name}</h5>
+                  {acct.username && <p className="text-gray-500 text-sm">Username: {acct.username}</p>}
                 </div>
                 {acct.importance && (
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    acct.importance === 'critical' ? 'bg-destructive/20 text-destructive' :
-                    acct.importance === 'high' ? 'bg-warning/20 text-warning' :
-                    'bg-white/10 text-white/50'
+                    acct.importance === 'critical' ? 'bg-red-100 text-red-700' :
+                    acct.importance === 'high' ? 'bg-amber-100 text-amber-700' :
+                    'bg-gray-100 text-gray-600'
                   }`}>
                     {acct.importance}
                   </span>
@@ -72,28 +78,26 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
               <div className="space-y-1.5 text-sm">
                 {acct.email && (
                   <div className="flex items-center gap-2">
-                    <Mail className="w-3 h-3 text-white/40" />
-                    <span className="text-white/70">{acct.email}</span>
+                    <Mail className="w-3 h-3 text-gray-400" />
+                    <a href={`mailto:${acct.email}`} className="text-blue-600 hover:underline">{acct.email}</a>
                   </div>
                 )}
                 {acct.website_url && (
                   <div className="flex items-center gap-2">
-                    <Globe className="w-3 h-3 text-white/40" />
-                    <a href={acct.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">{acct.website_url}</a>
+                    <Globe className="w-3 h-3 text-gray-400" />
+                    <a href={acct.website_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{acct.website_url}</a>
                   </div>
                 )}
               </div>
 
               {acct.closure_action && (
-                <div className="mt-3 bg-white/5 rounded-xl p-3">
-                  <p className="text-white/50 text-xs font-medium mb-1">Closure Instructions</p>
-                  <p className="text-white/80 text-sm">{acct.closure_action}</p>
+                <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                  <p className="text-gray-500 text-xs font-medium mb-1">Closure Instructions</p>
+                  <p className="text-gray-700 text-sm">{acct.closure_action}</p>
                 </div>
               )}
 
-              {acct.notes && (
-                <p className="text-white/60 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>
-              )}
+              {acct.notes && <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>}
             </div>
           ))}
         </div>

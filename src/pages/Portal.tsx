@@ -1,27 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Shield, FileText, AlertTriangle, MessageSquare, Lock, KeyRound, Download } from 'lucide-react';
+import { Shield, Lock, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface PortalDocument {
-  id: string;
-  title: string;
-  content: string | null;
-  document_type: string;
-  description: string | null;
-  created_at: string;
-  file_path?: string | null;
-}
+import PortalHeader from '@/components/portal/PortalHeader';
+import PortalMessage from '@/components/portal/PortalMessage';
+import PortalUrgentActions from '@/components/portal/PortalUrgentActions';
+import PortalFinancials from '@/components/portal/PortalFinancials';
+import PortalDocuments from '@/components/portal/PortalDocuments';
+import PortalAccounts from '@/components/portal/PortalAccounts';
+import PortalNavigation from '@/components/portal/PortalNavigation';
 
 interface PortalData {
   contactName: string;
   userName: string;
+  userPlan: string;
   customMessage: string | null;
   emergencyInstructions: string | null;
-  documents: PortalDocument[];
+  switchTriggeredAt: string | null;
+  documents: any[];
+  accounts: any[];
+  financialAssets: any[];
   permissions: any;
 }
 
@@ -32,10 +32,6 @@ interface SecurityChallenge {
   userName: string;
 }
 
-const formatDocumentType = (type: string) => {
-  return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-};
-
 const Portal = () => {
   const { token } = useParams<{ token: string }>();
   const [portalData, setPortalData] = useState<PortalData | null>(null);
@@ -45,6 +41,7 @@ const Portal = () => {
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState('overview');
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -57,24 +54,11 @@ const Portal = () => {
     try {
       const response = await fetch(
         `${supabaseUrl}/functions/v1/contact-portal?action=verify&token=${token}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-        }
+        { method: 'GET', headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey } }
       );
-
       const result = await response.json();
-
-      if (!response.ok) {
-        setError(result.error || 'Failed to load portal');
-        return;
-      }
-
-      if (result.requiresAuth) {
-        setSecurityChallenge(result);
-      } else {
-        setPortalData(result);
-      }
+      if (!response.ok) { setError(result.error || 'Failed to load portal'); return; }
+      if (result.requiresAuth) { setSecurityChallenge(result); } else { setPortalData(result); }
     } catch (err) {
       console.error('Portal fetch error:', err);
       setError('Failed to load the document portal. Please try again later.');
@@ -86,36 +70,42 @@ const Portal = () => {
   const handleAnswerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!answer.trim()) return;
-
     setVerifying(true);
     setAnswerError(null);
-
     try {
       const response = await fetch(
         `${supabaseUrl}/functions/v1/contact-portal?action=verify-answer`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-          body: JSON.stringify({ token, answer: answer.trim() }),
-        }
+        { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey }, body: JSON.stringify({ token, answer: answer.trim() }) }
       );
-
       const result = await response.json();
-
-      if (!response.ok) {
-        setAnswerError(result.error || 'Incorrect answer');
-        return;
-      }
-
+      if (!response.ok) { setAnswerError(result.error || 'Incorrect answer'); return; }
       setSecurityChallenge(null);
       setPortalData(result);
-    } catch (err) {
+    } catch {
       setAnswerError('Failed to verify answer. Please try again.');
     } finally {
       setVerifying(false);
     }
   };
 
+  const handleNavigate = useCallback((id: string) => {
+    setActiveSection(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // Build sections for navigation
+  const sections = useMemo(() => {
+    if (!portalData) return [];
+    const s: { id: string; label: string }[] = [{ id: 'overview', label: 'Overview' }];
+    if (portalData.financialAssets.length > 0) s.push({ id: 'financials', label: 'Financials' });
+    if (portalData.documents.length > 0) s.push({ id: 'documents', label: 'Documents' });
+    if (portalData.accounts.length > 0) s.push({ id: 'accounts', label: 'Accounts' });
+    return s;
+  }, [portalData]);
+
+  const isFreePortal = portalData?.userPlan === 'free';
+
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
@@ -129,6 +119,7 @@ const Portal = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
@@ -143,7 +134,7 @@ const Portal = () => {
     );
   }
 
-  // Security question challenge
+  // Security challenge
   if (securityChallenge) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
@@ -157,7 +148,6 @@ const Portal = () => {
               Welcome, {securityChallenge.contactName}. Please answer the security question to access {securityChallenge.userName}'s portal.
             </p>
           </div>
-          
           <form onSubmit={handleAnswerSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label className="text-white/80 font-medium">{securityChallenge.question}</Label>
@@ -169,18 +159,12 @@ const Portal = () => {
                 autoFocus
               />
             </div>
-            
             {answerError && (
               <div className="bg-destructive/20 border border-destructive/30 rounded-xl p-3">
                 <p className="text-destructive text-sm">{answerError}</p>
               </div>
             )}
-            
-            <Button
-              type="submit"
-              disabled={verifying || !answer.trim()}
-              className="w-full bg-primary hover:bg-primary/90 rounded-xl"
-            >
+            <Button type="submit" disabled={verifying || !answer.trim()} className="w-full bg-primary hover:bg-primary/90 rounded-xl">
               {verifying ? 'Verifying...' : 'Verify & Access Portal'}
             </Button>
           </form>
@@ -191,27 +175,18 @@ const Portal = () => {
 
   if (!portalData) return null;
 
-  // Group documents by type
-  const documentsByType: Record<string, PortalDocument[]> = {};
-  for (const doc of portalData.documents) {
-    if (!documentsByType[doc.document_type]) {
-      documentsByType[doc.document_type] = [];
-    }
-    documentsByType[doc.document_type].push(doc);
-  }
-
   return (
     <div className="min-h-screen bg-gradient-hero">
-      {/* Header */}
+      {/* Top bar */}
       <div className="bg-white/5 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary" />
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">Secure Document Portal</h1>
-              <p className="text-white/60 text-sm">
+              <h1 className="text-lg font-semibold text-white">Secure Portal</h1>
+              <p className="text-white/50 text-xs">
                 Shared by <span className="text-primary font-medium">{portalData.userName}</span>
               </p>
             </div>
@@ -219,95 +194,84 @@ const Portal = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* Welcome */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-          <h2 className="text-lg font-medium text-white mb-2">
-            Welcome, {portalData.contactName}
-          </h2>
-          <p className="text-white/70 text-sm">
-            {portalData.userName} has designated you as a trusted contact. Below is the information they have authorized you to access.
-          </p>
-        </div>
+      {/* Mobile nav */}
+      <div className="lg:hidden">
+        <PortalNavigation sections={sections} activeSection={activeSection} onNavigate={handleNavigate} />
+      </div>
 
-        {/* Custom Message */}
-        {portalData.customMessage && (
-          <div className="bg-primary/10 backdrop-blur-xl rounded-2xl p-6 border border-primary/30">
-            <div className="flex items-center gap-3 mb-4">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-medium text-white">
-                Personal Message from {portalData.userName}
-              </h3>
-            </div>
-            <div className="text-white/80 whitespace-pre-wrap leading-relaxed">
-              {portalData.customMessage}
-            </div>
-          </div>
-        )}
+      <div className="max-w-5xl mx-auto px-4 py-8 flex gap-8">
+        {/* Desktop sidebar nav */}
+        <PortalNavigation sections={sections} activeSection={activeSection} onNavigate={handleNavigate} />
 
-        {/* Emergency Instructions */}
-        {portalData.emergencyInstructions && (
-          <div className="bg-warning/10 backdrop-blur-xl rounded-2xl p-6 border border-warning/30">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              <h3 className="text-lg font-medium text-white">Emergency Instructions</h3>
-            </div>
-            <div className="text-white/80 whitespace-pre-wrap leading-relaxed">
-              {portalData.emergencyInstructions}
-            </div>
-          </div>
-        )}
+        {/* Main content */}
+        <div className="flex-1 min-w-0 space-y-8">
+          {/* Section: Overview */}
+          <div id="overview" className="space-y-6">
+            <PortalHeader
+              contactName={portalData.contactName}
+              userName={portalData.userName}
+              switchTriggeredAt={portalData.switchTriggeredAt}
+              emergencyInstructions={portalData.emergencyInstructions}
+            />
 
-        {/* Documents by Category */}
-        {Object.keys(documentsByType).length > 0 ? (
-          Object.entries(documentsByType).map(([docType, docs]) => (
-            <div key={docType} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-medium text-white">
-                  {formatDocumentType(docType)}
-                </h3>
-                <span className="text-white/40 text-sm">({docs.length})</span>
+            {portalData.customMessage && (
+              <PortalMessage userName={portalData.userName} customMessage={portalData.customMessage} />
+            )}
+
+            {/* Free plan limited notice */}
+            {isFreePortal && portalData.financialAssets.length === 0 && portalData.documents.length === 0 && portalData.accounts.length === 0 && (
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center">
+                <p className="text-white/60 text-sm">
+                  {portalData.userName} shared a message with you. For more detailed information, their account plan does not include extended portal access.
+                </p>
               </div>
-              
-              {docs.map((doc) => (
-                <div 
-                  key={doc.id} 
-                  className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 hover:border-primary/30 transition-colors"
-                >
-                  <h4 className="text-white font-medium mb-2">{doc.title}</h4>
-                  {doc.description && (
-                    <p className="text-white/60 text-sm mb-4">{doc.description}</p>
-                  )}
-                  {doc.content && (
-                    <div className="bg-white/5 rounded-xl p-4 text-white/80 text-sm whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
-                      {doc.content}
-                    </div>
-                  )}
-                  <p className="text-white/40 text-xs mt-3">
-                    Created: {new Date(doc.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ))
-        ) : (
-          !portalData.customMessage && !portalData.emergencyInstructions && (
-            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-12 border border-white/20 text-center">
-              <FileText className="w-12 h-12 text-white/30 mx-auto mb-4" />
-              <h3 className="text-white font-medium mb-2">No Documents Available</h3>
-              <p className="text-white/60 text-sm">
-                No documents have been shared with you at this time.
-              </p>
-            </div>
-          )
-        )}
+            )}
 
-        {/* Footer */}
-        <div className="text-center py-8">
-          <p className="text-white/40 text-xs">
-            This is a secure, private portal. The information shown here is confidential.
-          </p>
+            {/* Urgent actions */}
+            {portalData.financialAssets.length > 0 && (
+              <PortalUrgentActions financialAssets={portalData.financialAssets} />
+            )}
+          </div>
+
+          {/* Section: Financials */}
+          {portalData.financialAssets.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                💰 Financial Assets
+              </h2>
+              <PortalFinancials financialAssets={portalData.financialAssets} />
+            </div>
+          )}
+
+          {/* Section: Documents */}
+          {portalData.documents.length > 0 && (
+            <div className="space-y-3">
+              <h2 id="documents-heading" className="text-lg font-semibold text-white flex items-center gap-2">
+                📄 Documents
+              </h2>
+              <PortalDocuments documents={portalData.documents} />
+            </div>
+          )}
+
+          {/* Section: Digital Accounts */}
+          {portalData.accounts.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                🔐 Digital Accounts
+              </h2>
+              <PortalAccounts accounts={portalData.accounts} />
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="text-center py-8 space-y-2">
+            <p className="text-white/40 text-xs">
+              This is a secure, private portal. The information shown here is confidential.
+            </p>
+            <p className="text-white/30 text-xs">
+              If you need help or have questions, contact LegacyVault support.
+            </p>
+          </div>
         </div>
       </div>
     </div>

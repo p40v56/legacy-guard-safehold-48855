@@ -64,6 +64,7 @@ export const FREE_PLAN_LIMITS = {
   maxContacts: 1,
   maxDocuments: 0,
   maxAccounts: 0,
+  maxFinancialAssets: 2,
   maxRules: 1,
   hasPortalAccess: false,
   hasMultiChannelCheckin: false,

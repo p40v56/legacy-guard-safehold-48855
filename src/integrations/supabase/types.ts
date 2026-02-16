@@ -289,6 +289,63 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_assets: {
+        Row: {
+          attached_document_ids: string[] | null
+          category: string
+          category_specific_fields: Json | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          estimated_value: number | null
+          id: string
+          institution: string | null
+          name: string
+          notes: string | null
+          reference_number: string | null
+          updated_at: string
+          user_id: string
+          visible_to: string[] | null
+        }
+        Insert: {
+          attached_document_ids?: string[] | null
+          category: string
+          category_specific_fields?: Json | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          institution?: string | null
+          name: string
+          notes?: string | null
+          reference_number?: string | null
+          updated_at?: string
+          user_id: string
+          visible_to?: string[] | null
+        }
+        Update: {
+          attached_document_ids?: string[] | null
+          category?: string
+          category_specific_fields?: Json | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          institution?: string | null
+          name?: string
+          notes?: string | null
+          reference_number?: string | null
+          updated_at?: string
+          user_id?: string
+          visible_to?: string[] | null
+        }
+        Relationships: []
+      }
       legacy_documents: {
         Row: {
           content: string | null

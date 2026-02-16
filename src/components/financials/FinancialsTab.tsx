@@ -1,0 +1,152 @@
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, PoundSterling } from 'lucide-react';
+import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
+import { useFinancialAssets } from '@/hooks/useFinancialAssets';
+import UpgradePrompt from '@/components/UpgradePrompt';
+import FinancialSummary from '@/components/financials/FinancialSummary';
+import FinancialAssetCard from '@/components/financials/FinancialAssetCard';
+import FinancialAssetForm from '@/components/financials/FinancialAssetForm';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
+import type { FinancialAsset, FinancialCategory, FinancialAssetInsert } from '@/types/financial';
+import { CATEGORY_LABELS } from '@/types/financial';
+
+const FREE_MAX_FINANCIAL_ASSETS = 2;
+
+const FinancialsTab: React.FC = () => {
+  const { plan } = usePlan();
+  const { assets, loading, createAsset, updateAsset, deleteAsset } = useFinancialAssets();
+  const [showForm, setShowForm] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<FinancialAsset | null>(null);
+
+  const isFree = plan === 'free';
+  const canAdd = !isFree || assets.length < FREE_MAX_FINANCIAL_ASSETS;
+
+  const grouped = useMemo(() => {
+    const groups: Record<string, FinancialAsset[]> = {};
+    assets.forEach(a => {
+      if (!groups[a.category]) groups[a.category] = [];
+      groups[a.category].push(a);
+    });
+    return groups;
+  }, [assets]);
+
+  const handleSubmit = async (data: FinancialAssetInsert) => {
+    if (editingAsset) {
+      await updateAsset(editingAsset.id, data);
+    } else {
+      await createAsset(data);
+    }
+    setShowForm(false);
+    setEditingAsset(null);
+  };
+
+  const handleEdit = (asset: FinancialAsset) => {
+    setEditingAsset(asset);
+    setShowForm(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this financial asset?')) {
+      deleteAsset(id);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingAsset(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center animate-pulse">
+          <PoundSterling className="w-6 h-6 text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header actions */}
+      <div className="flex items-center justify-between">
+        <p className="text-muted-foreground">
+          Document your financial assets to help your loved ones know where to find what matters.
+        </p>
+        {canAdd && (
+          <Button onClick={() => { setEditingAsset(null); setShowForm(true); }} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
+            <Plus className="w-5 h-5 mr-2" />Add Asset
+          </Button>
+        )}
+      </div>
+
+      {isFree && assets.length >= FREE_MAX_FINANCIAL_ASSETS && (
+        <UpgradePrompt message="Free plan allows up to 2 financial assets for personal reference. Upgrade to add unlimited assets and share them with your contacts." />
+      )}
+
+      {isFree && assets.length > 0 && (
+        <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
+          Free plan: financial assets are for your personal reference only and won't be shared with contacts.
+        </div>
+      )}
+
+      {/* Form */}
+      {showForm && (
+        <FinancialAssetForm
+          initialData={editingAsset}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+        />
+      )}
+
+      {/* Summary */}
+      <FinancialSummary assets={assets} />
+
+      {/* Grouped assets */}
+      {assets.length === 0 && !showForm ? (
+        <Card className="bg-card border-border">
+          <CardContent className="p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6">
+                <PoundSterling className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">No financial assets documented yet</h3>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Adding your financial information here will help your loved ones know exactly where to find what matters.
+              </p>
+              <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 shadow-lg font-semibold">
+                <Plus className="w-4 h-4 mr-2" />Add your first asset
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {(Object.entries(grouped) as [FinancialCategory, FinancialAsset[]][]).map(([cat, catAssets]) => (
+            <Collapsible key={cat} defaultOpen>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                <span className="font-semibold text-foreground">{CATEGORY_LABELS[cat]} ({catAssets.length})</span>
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3 space-y-3">
+                {catAssets.map(asset => (
+                  <FinancialAssetCard
+                    key={asset.id}
+                    asset={asset}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FinancialsTab;

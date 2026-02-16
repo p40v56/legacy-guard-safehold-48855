@@ -1,18 +1,16 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Shield, Lock, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import PortalHeader from '@/components/portal/PortalHeader';
-import PortalMessage from '@/components/portal/PortalMessage';
-import PortalUrgentActions from '@/components/portal/PortalUrgentActions';
+import PortalLayout from '@/components/portal/PortalLayout';
+import PortalOverview from '@/components/portal/PortalOverview';
 import PortalFinancials from '@/components/portal/PortalFinancials';
 import PortalDocuments from '@/components/portal/PortalDocuments';
 import PortalAccounts from '@/components/portal/PortalAccounts';
-import PortalNavigation from '@/components/portal/PortalNavigation';
 
-interface PortalData {
+export interface PortalData {
   contactName: string;
   userName: string;
   userPlan: string;
@@ -41,7 +39,6 @@ const Portal = () => {
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState('overview');
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -88,32 +85,15 @@ const Portal = () => {
     }
   };
 
-  const handleNavigate = useCallback((id: string) => {
-    setActiveSection(id);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
-
-  // Build sections for navigation
-  const sections = useMemo(() => {
-    if (!portalData) return [];
-    const s: { id: string; label: string }[] = [{ id: 'overview', label: 'Overview' }];
-    if (portalData.financialAssets.length > 0) s.push({ id: 'financials', label: 'Financials' });
-    if (portalData.documents.length > 0) s.push({ id: 'documents', label: 'Documents' });
-    if (portalData.accounts.length > 0) s.push({ id: 'accounts', label: 'Accounts' });
-    return s;
-  }, [portalData]);
-
-  const isFreePortal = portalData?.userPlan === 'free';
-
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Shield className="w-8 h-8 text-blue-600" />
           </div>
-          <p className="text-white/70">Loading secure portal...</p>
+          <p className="text-gray-500">Loading secure portal...</p>
         </div>
       </div>
     );
@@ -122,13 +102,13 @@ const Portal = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 text-center">
-          <div className="w-16 h-16 bg-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-8 h-8 text-destructive" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 border border-gray-200 text-center">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-red-600" />
           </div>
-          <h1 className="text-2xl font-semibold text-white mb-3">Access Denied</h1>
-          <p className="text-white/70">{error}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-3">Access Denied</h1>
+          <p className="text-gray-600">{error}</p>
         </div>
       </div>
     );
@@ -137,34 +117,34 @@ const Portal = () => {
   // Security challenge
   if (securityChallenge) {
     return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <KeyRound className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <KeyRound className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-semibold text-white mb-2">Security Verification</h1>
-            <p className="text-white/60 text-sm">
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">Security Verification</h1>
+            <p className="text-gray-500 text-sm">
               Welcome, {securityChallenge.contactName}. Please answer the security question to access {securityChallenge.userName}'s portal.
             </p>
           </div>
           <form onSubmit={handleAnswerSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-white/80 font-medium">{securityChallenge.question}</Label>
+              <Label className="text-gray-900 font-medium">{securityChallenge.question}</Label>
               <Input
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="Your answer..."
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                 autoFocus
               />
             </div>
             {answerError && (
-              <div className="bg-destructive/20 border border-destructive/30 rounded-xl p-3">
-                <p className="text-destructive text-sm">{answerError}</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-700 text-sm">{answerError}</p>
               </div>
             )}
-            <Button type="submit" disabled={verifying || !answer.trim()} className="w-full bg-primary hover:bg-primary/90 rounded-xl">
+            <Button type="submit" disabled={verifying || !answer.trim()} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
               {verifying ? 'Verifying...' : 'Verify & Access Portal'}
             </Button>
           </form>
@@ -176,105 +156,21 @@ const Portal = () => {
   if (!portalData) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      {/* Top bar */}
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-white">Secure Portal</h1>
-              <p className="text-white/50 text-xs">
-                Shared by <span className="text-primary font-medium">{portalData.userName}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile nav */}
-      <div className="lg:hidden">
-        <PortalNavigation sections={sections} activeSection={activeSection} onNavigate={handleNavigate} />
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 py-8 flex gap-8">
-        {/* Desktop sidebar nav */}
-        <PortalNavigation sections={sections} activeSection={activeSection} onNavigate={handleNavigate} />
-
-        {/* Main content */}
-        <div className="flex-1 min-w-0 space-y-8">
-          {/* Section: Overview */}
-          <div id="overview" className="space-y-6">
-            <PortalHeader
-              contactName={portalData.contactName}
-              userName={portalData.userName}
-              switchTriggeredAt={portalData.switchTriggeredAt}
-              emergencyInstructions={portalData.emergencyInstructions}
-            />
-
-            {portalData.customMessage && (
-              <PortalMessage userName={portalData.userName} customMessage={portalData.customMessage} />
-            )}
-
-            {/* Free plan limited notice */}
-            {isFreePortal && portalData.financialAssets.length === 0 && portalData.documents.length === 0 && portalData.accounts.length === 0 && (
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center">
-                <p className="text-white/60 text-sm">
-                  {portalData.userName} shared a message with you. For more detailed information, their account plan does not include extended portal access.
-                </p>
-              </div>
-            )}
-
-            {/* Urgent actions */}
-            {portalData.financialAssets.length > 0 && (
-              <PortalUrgentActions financialAssets={portalData.financialAssets} />
-            )}
-          </div>
-
-          {/* Section: Financials */}
-          {portalData.financialAssets.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                💰 Financial Assets
-              </h2>
-              <PortalFinancials financialAssets={portalData.financialAssets} />
-            </div>
-          )}
-
-          {/* Section: Documents */}
-          {portalData.documents.length > 0 && (
-            <div className="space-y-3">
-              <h2 id="documents-heading" className="text-lg font-semibold text-white flex items-center gap-2">
-                📄 Documents
-              </h2>
-              <PortalDocuments documents={portalData.documents} />
-            </div>
-          )}
-
-          {/* Section: Digital Accounts */}
-          {portalData.accounts.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                🔐 Digital Accounts
-              </h2>
-              <PortalAccounts accounts={portalData.accounts} />
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="text-center py-8 space-y-2">
-            <p className="text-white/40 text-xs">
-              This is a secure, private portal. The information shown here is confidential.
-            </p>
-            <p className="text-white/30 text-xs">
-              If you need help or have questions, contact LegacyVault support.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <PortalLayout portalData={portalData} token={token || ''}>
+      <Routes>
+        <Route path="overview" element={<PortalOverview portalData={portalData} />} />
+        {portalData.financialAssets.length > 0 && (
+          <Route path="financials" element={<PortalFinancials financialAssets={portalData.financialAssets} />} />
+        )}
+        {portalData.documents.length > 0 && (
+          <Route path="documents" element={<PortalDocuments documents={portalData.documents} />} />
+        )}
+        {portalData.accounts.length > 0 && (
+          <Route path="accounts" element={<PortalAccounts accounts={portalData.accounts} />} />
+        )}
+        <Route path="*" element={<Navigate to="overview" replace />} />
+      </Routes>
+    </PortalLayout>
   );
 };
 

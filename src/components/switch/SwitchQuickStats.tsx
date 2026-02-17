@@ -1,6 +1,6 @@
 
 import { Separator } from '@/components/ui/separator';
-import { formatDateShort } from '@/utils/dateUtils';
+import { formatDateEU } from '@/utils/dateUtils';
 import { CheckInFrequency, DeadlineMode } from '@/types/switch';
 
 interface SwitchQuickStatsProps {
@@ -22,7 +22,7 @@ const getFrequencyLabel = (frequency: CheckInFrequency): string => {
 
 const formatLastCheckIn = (lastCheckIn: string | null): string => {
   if (!lastCheckIn) return 'Never';
-  return formatDateShort(lastCheckIn);
+  return formatDateEU(lastCheckIn);
 };
 
 const SwitchQuickStats = ({ 

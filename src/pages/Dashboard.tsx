@@ -11,6 +11,7 @@ import { DashboardStats } from '@/types/common';
 import { DashboardService, SettingsService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
 import { useCountdown } from '@/hooks/useCountdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { formatDateEU } from '@/utils/dateUtils';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ const Dashboard = () => {
   const [wizardDismissed, setWizardDismissed] = useState(true);
   const [rulesCount, setRulesCount] = useState(0);
   const [testEmailSent, setTestEmailSent] = useState(false);
+  const [firstName, setFirstName] = useState('');
 
   const settings = stats.userSettings;
   const currentDeadline = settings?.deadline_mode === 'custom' && settings?.custom_deadline
@@ -39,14 +41,12 @@ const Dashboard = () => {
     settings?.grace_period_end
   );
 
-  // Improved alert badge logic based on percentage of cycle remaining
   const getAlertBadge = () => {
     if (!settings?.is_active) return null;
     if (settings.switch_triggered) return { label: 'TRIGGERED', color: 'bg-destructive/20 text-destructive' };
     if (settings.grace_period_active) return { label: 'WARNING', color: 'bg-destructive/20 text-destructive' };
     if (countdown.isOverdue) return { label: 'OVERDUE', color: 'bg-destructive/20 text-destructive' };
 
-    // Calculate percentage of cycle remaining
     if (currentDeadline && settings.last_check_in) {
       const totalCycle = new Date(currentDeadline).getTime() - new Date(settings.last_check_in).getTime();
       const remaining = new Date(currentDeadline).getTime() - Date.now();
@@ -83,6 +83,7 @@ const Dashboard = () => {
       setStats(dashboardStats);
       setWizardDismissed(profile.setup_wizard_dismissed ?? false);
       setTestEmailSent(!!profile.last_test_email_sent_at);
+      setFirstName(profile.first_name || '');
       setRulesCount(rules.length);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -149,7 +150,6 @@ const Dashboard = () => {
 
   const statusDisplay = getSystemStatusDisplay();
 
-  // Contextual quick actions
   const quickActions = [
     {
       name: 'Switch',
@@ -183,28 +183,11 @@ const Dashboard = () => {
     },
   ];
 
-  // Security checklist with explanations
   const securityItems = [
-    {
-      label: 'Two-Factor Auth',
-      enabled: true,
-      explanation: 'Your account is protected by two-factor authentication.',
-    },
-    {
-      label: 'Data Encryption',
-      enabled: true,
-      explanation: 'All your data is encrypted in transit (TLS) and at rest (AES-256). Your documents are securely stored in our infrastructure.',
-    },
-    {
-      label: 'Backup Status',
-      enabled: true,
-      explanation: 'Your data is automatically backed up and replicated across multiple zones.',
-    },
-    {
-      label: 'Emergency Contacts',
-      enabled: stats.contactsCount > 0,
-      explanation: `You have configured ${stats.contactsCount} trusted contact${stats.contactsCount !== 1 ? 's' : ''}.`,
-    },
+    { label: 'Two-Factor Auth', enabled: true, explanation: 'Your account is protected by two-factor authentication.' },
+    { label: 'Data Encryption', enabled: true, explanation: 'All your data is encrypted in transit (TLS) and at rest (AES-256). Your documents are securely stored in our infrastructure.' },
+    { label: 'Backup Status', enabled: true, explanation: 'Your data is automatically backed up and replicated across multiple zones.' },
+    { label: 'Emergency Contacts', enabled: stats.contactsCount > 0, explanation: `You have configured ${stats.contactsCount} trusted contact${stats.contactsCount !== 1 ? 's' : ''}.` },
   ];
 
   return (
@@ -214,7 +197,7 @@ const Dashboard = () => {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground">
-              {getTimeOfDay()}!
+              {getTimeOfDay()}{firstName ? `, ${firstName}` : ''}!
             </h1>
             {alertBadge && (
               <Badge className={`${alertBadge.color} border-none text-xs font-medium`}>
@@ -295,7 +278,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Countdown */}
+          {/* Countdown - swapped layout: time left on left, date on right */}
           {settings?.is_active && currentDeadline && !settings?.switch_triggered && (
             <div className={`rounded-2xl p-4 border ${
               countdown.isOverdue || settings?.grace_period_active ? 'bg-destructive/5 border-destructive/30' : 'bg-muted border-transparent'
@@ -304,13 +287,13 @@ const Dashboard = () => {
                 <>
                   <p className="text-sm text-muted-foreground mb-1">Next check-in due</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-lg font-medium text-card-foreground">{new Date(currentDeadline).toLocaleString()}</p>
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2">
                       <Timer className="w-4 h-4 text-primary" />
-                      <span className="text-primary">
+                      <span className="text-lg font-medium text-primary">
                         {countdown.days > 0 && `${countdown.days}d `}{countdown.hours}h {countdown.minutes}m
                       </span>
                     </div>
+                    <p className="text-sm text-muted-foreground">{formatDateEU(currentDeadline)}</p>
                   </div>
                 </>
               ) : settings?.grace_period_active && settings?.grace_period_end ? (
@@ -328,14 +311,14 @@ const Dashboard = () => {
               ) : (
                 <>
                   <p className="text-sm text-destructive mb-1 font-medium">🚨 Overdue since</p>
-                  <p className="text-lg font-medium text-destructive">{new Date(currentDeadline).toLocaleString()}</p>
+                  <p className="text-lg font-medium text-destructive">{formatDateEU(currentDeadline)}</p>
                 </>
               )}
             </div>
           )}
         </div>
 
-        {/* Quick Actions - Contextual */}
+        {/* Quick Actions */}
         <div className="space-y-4">
           <h3 className="text-xl font-medium text-card-foreground">Quick Actions</h3>
           <div className="grid md:grid-cols-2 gap-4">
@@ -360,7 +343,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Security Checklist - Expandable */}
+        {/* Security Checklist */}
         <div className="bg-muted/30 rounded-2xl p-6">
           <h3 className="text-xl font-medium text-card-foreground mb-6">Security Checklist</h3>
           <div className="space-y-2">

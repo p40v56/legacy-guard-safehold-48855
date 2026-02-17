@@ -1,5 +1,6 @@
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import { useState } from 'react';
 
 interface GracePeriodPresetsProps {
@@ -28,7 +29,19 @@ const GracePeriodPresets = ({ gracePeriodHours, onGracePeriodChange }: GracePeri
 
   return (
     <div className="space-y-2">
-      <Label className="text-foreground">Grace Period</Label>
+      <div className="flex items-center gap-2">
+        <span className="text-foreground font-medium text-sm">Grace Period</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <p className="text-sm">When the grace period expires, emails are sent to your contacts. You'll receive a warning email when it begins. Check in anytime to cancel.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <div className="flex flex-wrap gap-2">
         {PRESETS.map((preset) => (
           <button
@@ -67,9 +80,6 @@ const GracePeriodPresets = ({ gracePeriodHours, onGracePeriodChange }: GracePeri
           placeholder="Hours"
         />
       )}
-      <p className="text-xs text-muted-foreground">
-        Time buffer after missed check-in before alerts trigger (0 = immediate)
-      </p>
     </div>
   );
 };

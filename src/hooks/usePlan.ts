@@ -6,14 +6,16 @@ export type PlanType = 'free' | 'paid';
 
 interface PlanInfo {
   plan: PlanType;
+  rawPlan: PlanType;
   planExpiresAt: string | null;
+  isExpired: boolean;
   isAdmin: boolean;
   loading: boolean;
 }
 
 export const usePlan = (): PlanInfo => {
   const { user } = useAuth();
-  const [plan, setPlan] = useState<PlanType>('free');
+  const [rawPlan, setRawPlan] = useState<PlanType>('free');
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ export const usePlan = (): PlanInfo => {
         ]);
 
         if (profileResult.data) {
-          setPlan((profileResult.data as any).plan || 'free');
+          setRawPlan((profileResult.data as any).plan || 'free');
           setPlanExpiresAt((profileResult.data as any).plan_expires_at || null);
         }
 
@@ -49,11 +51,14 @@ export const usePlan = (): PlanInfo => {
     fetchPlanAndRole();
   }, [user]);
 
-  const isPaid = plan === 'paid' && (!planExpiresAt || new Date(planExpiresAt) > new Date());
+  const isExpired = rawPlan === 'paid' && !!planExpiresAt && new Date(planExpiresAt) <= new Date();
+  const isPaid = rawPlan === 'paid' && (!planExpiresAt || new Date(planExpiresAt) > new Date());
 
   return {
     plan: isPaid ? 'paid' : 'free',
+    rawPlan,
     planExpiresAt,
+    isExpired,
     isAdmin,
     loading,
   };

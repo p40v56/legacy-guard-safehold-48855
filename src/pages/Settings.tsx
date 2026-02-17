@@ -66,7 +66,7 @@ const contactTypeLabels: Record<ContactCategory, string> = {
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { plan, planExpiresAt } = usePlan();
+  const { plan, planExpiresAt, isExpired, rawPlan } = usePlan();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'profile';
   const {
@@ -163,11 +163,20 @@ const Settings = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Current Plan</span>
-                  <Badge className={plan === 'paid' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-success/20 text-success border-success/30'}>
-                    {plan === 'paid' ? 'Paid Plan' : 'Free Plan'}
+                  <Badge className={
+                    isExpired ? 'bg-destructive/20 text-destructive border-destructive/30' :
+                    plan === 'paid' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-success/20 text-success border-success/30'
+                  }>
+                    {isExpired ? 'Expired' : plan === 'paid' ? 'Paid Plan' : 'Free Plan'}
                   </Badge>
                 </div>
-                {plan === 'paid' && planExpiresAt && (
+                {isExpired && planExpiresAt && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
+                    <p className="text-sm text-destructive font-medium">Your paid plan expired on {formatDateEUShort(planExpiresAt)}.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Your data is preserved. Contact us to renew.</p>
+                  </div>
+                )}
+                {plan === 'paid' && !isExpired && planExpiresAt && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Expires</span>
                     <span className="text-card-foreground font-medium">{formatDateEUShort(planExpiresAt)}</span>

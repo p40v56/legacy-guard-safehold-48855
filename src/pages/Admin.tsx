@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import SearchInput from '@/components/ui/search-input';
-import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle } from 'lucide-react';
+import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle, CalendarIcon } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { format } from 'date-fns';
@@ -58,6 +58,9 @@ const Admin = () => {
   const [showExpiryEditor, setShowExpiryEditor] = useState(false);
   const [expiryTarget, setExpiryTarget] = useState<UserProfile | null>(null);
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
+  const [expiryDateInput, setExpiryDateInput] = useState('');
+  const [expiryDateError, setExpiryDateError] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
     if (isAdmin) fetchData();
@@ -138,18 +141,64 @@ const Admin = () => {
     setExpiryTarget(userProfile);
     const defaultDate = new Date();
     defaultDate.setFullYear(defaultDate.getFullYear() + 1);
-    setExpiryDate(userProfile.plan_expires_at ? new Date(userProfile.plan_expires_at) : defaultDate);
+    const date = userProfile.plan_expires_at ? new Date(userProfile.plan_expires_at) : defaultDate;
+    setExpiryDate(date);
+    setExpiryDateInput(formatDateEUShort(date.toISOString()));
+    setExpiryDateError('');
+    setShowCalendar(false);
     setShowExpiryEditor(true);
   };
 
+  const parseEUDate = (input: string): Date | null => {
+    const match = input.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const [, day, month, year] = match;
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    if (date.getDate() !== parseInt(day) || date.getMonth() !== parseInt(month) - 1 || date.getFullYear() !== parseInt(year)) return null;
+    return date;
+  };
+
+  const handleExpiryDateInputChange = (value: string) => {
+    setExpiryDateInput(value);
+    setExpiryDateError('');
+    const parsed = parseEUDate(value);
+    if (parsed) {
+      if (parsed <= new Date()) {
+        setExpiryDateError('Date must be in the future');
+      } else {
+        setExpiryDate(parsed);
+        setExpiryDateError('');
+      }
+    }
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      setExpiryDate(date);
+      setExpiryDateInput(formatDateEUShort(date.toISOString()));
+      setExpiryDateError('');
+      setShowCalendar(false);
+    }
+  };
+
   const handleSaveExpiry = async () => {
-    if (!expiryTarget || !expiryDate) return;
+    if (!expiryTarget) return;
+    // Validate from input field
+    const parsed = parseEUDate(expiryDateInput);
+    if (!parsed) {
+      setExpiryDateError('Enter a valid date in DD/MM/YYYY format');
+      return;
+    }
+    if (parsed <= new Date()) {
+      setExpiryDateError('Date must be in the future');
+      return;
+    }
     try {
       await supabase.rpc('admin_update_profile', {
         _profile_user_id: expiryTarget.user_id,
-        _updates: { plan_expires_at: expiryDate.toISOString() },
+        _updates: { plan_expires_at: parsed.toISOString() },
       });
-      toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(expiryDate.toISOString())}` });
+      toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(parsed.toISOString())}` });
       setShowExpiryEditor(false);
       fetchData();
     } catch (error) {
@@ -260,14 +309,24 @@ const Admin = () => {
                       <div className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}...</div>
                     </td>
                     <td className="p-4">
-                      <Badge className={u.plan === 'paid' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-muted text-muted-foreground'}>
-                        {u.plan === 'paid' ? 'Paid' : 'Free'}
-                      </Badge>
-                      {u.plan === 'paid' && u.plan_expires_at && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Expires {formatDateEUShort(u.plan_expires_at)}
-                        </p>
-                      )}
+                      {(() => {
+                        const isExpired = u.plan === 'paid' && u.plan_expires_at && new Date(u.plan_expires_at) <= new Date();
+                        return (
+                          <>
+                            <Badge className={
+                              isExpired ? 'bg-destructive/20 text-destructive border-destructive/30' :
+                              u.plan === 'paid' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-muted text-muted-foreground'
+                            }>
+                              {isExpired ? 'Expired' : u.plan === 'paid' ? 'Paid' : 'Free'}
+                            </Badge>
+                            {u.plan === 'paid' && u.plan_expires_at && (
+                              <p className={cn("text-xs mt-1", isExpired ? 'text-destructive' : 'text-muted-foreground')}>
+                                {isExpired ? 'Expired' : 'Expires'} {formatDateEUShort(u.plan_expires_at)}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="p-4">
                       <Badge className={u.deactivated ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}>
@@ -354,24 +413,43 @@ const Admin = () => {
               <p className="text-sm text-muted-foreground">
                 Set expiry date for {expiryTarget?.first_name || ''} {expiryTarget?.last_name || ''}
               </p>
-              <div className="flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={expiryDate}
-                  onSelect={setExpiryDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto rounded-lg border border-border")}
-                />
+              <div>
+                <Label className="text-card-foreground">Expiry Date (DD/MM/YYYY)</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={expiryDateInput}
+                    onChange={e => handleExpiryDateInputChange(e.target.value)}
+                    placeholder="DD/MM/YYYY"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+                {expiryDateError && (
+                  <p className="text-sm text-destructive mt-1">{expiryDateError}</p>
+                )}
               </div>
-              {expiryDate && (
-                <p className="text-sm text-center text-muted-foreground">
-                  Selected: <span className="font-medium text-card-foreground">{formatDateEUShort(expiryDate.toISOString())}</span>
-                </p>
+              {showCalendar && (
+                <div className="flex justify-center">
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={handleCalendarSelect}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto rounded-lg border border-border")}
+                  />
+                </div>
               )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowExpiryEditor(false)}>Cancel</Button>
-              <Button onClick={handleSaveExpiry} disabled={!expiryDate}>Save Expiry Date</Button>
+              <Button onClick={handleSaveExpiry}>Save Expiry Date</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

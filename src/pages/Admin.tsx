@@ -12,10 +12,15 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import SearchInput from '@/components/ui/search-input';
-import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle } from 'lucide-react';
+import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle, CalendarIcon } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import { formatDateEUShort } from '@/utils/dateUtils';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface UserProfile {
   user_id: string;
@@ -49,6 +54,11 @@ const Admin = () => {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', plan: 'free' });
+  
+  // Expiry date editor state
+  const [showExpiryEditor, setShowExpiryEditor] = useState(false);
+  const [expiryTarget, setExpiryTarget] = useState<UserProfile | null>(null);
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (isAdmin) fetchData();
@@ -125,11 +135,33 @@ const Admin = () => {
     }
   };
 
+  const handleOpenExpiryEditor = (userProfile: UserProfile) => {
+    setExpiryTarget(userProfile);
+    const defaultDate = new Date();
+    defaultDate.setFullYear(defaultDate.getFullYear() + 1);
+    setExpiryDate(userProfile.plan_expires_at ? new Date(userProfile.plan_expires_at) : defaultDate);
+    setShowExpiryEditor(true);
+  };
+
+  const handleSaveExpiry = async () => {
+    if (!expiryTarget || !expiryDate) return;
+    try {
+      await supabase.rpc('admin_update_profile', {
+        _profile_user_id: expiryTarget.user_id,
+        _updates: { plan_expires_at: expiryDate.toISOString() },
+      });
+      toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(expiryDate.toISOString())}` });
+      setShowExpiryEditor(false);
+      fetchData();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update expiry date', variant: 'destructive' });
+    }
+  };
+
   const handleCreateUser = async () => {
     if (!newUser.email || !newUser.password) return;
     setCreating(true);
     try {
-      // Use edge function to create user as admin
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: { email: newUser.email, password: newUser.password, plan: newUser.plan },
       });
@@ -234,7 +266,7 @@ const Admin = () => {
                       </Badge>
                       {u.plan === 'paid' && u.plan_expires_at && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Expires {new Date(u.plan_expires_at).toLocaleDateString()}
+                          Expires {formatDateEUShort(u.plan_expires_at)}
                         </p>
                       )}
                     </td>
@@ -244,7 +276,7 @@ const Admin = () => {
                       </Badge>
                     </td>
                     <td className="p-4 text-sm text-muted-foreground">
-                      {new Date(u.created_at).toLocaleDateString()}
+                      {formatDateEUShort(u.created_at)}
                     </td>
                     <td className="p-4">
                       <DropdownMenu>
@@ -257,6 +289,7 @@ const Admin = () => {
                           {u.plan === 'paid' && (
                             <DropdownMenuItem onClick={() => handleExtendPlan(u)}>Extend +1 year</DropdownMenuItem>
                           )}
+                          <DropdownMenuItem onClick={() => handleOpenExpiryEditor(u)}>Edit expiry date</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleDeactivation(u)}>
                             {u.deactivated ? 'Reactivate' : 'Deactivate'}
                           </DropdownMenuItem>
@@ -308,6 +341,47 @@ const Admin = () => {
                 {creating ? <LoadingSpinner size="sm" className="mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
                 Create User
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Expiry Date Dialog */}
+        <Dialog open={showExpiryEditor} onOpenChange={setShowExpiryEditor}>
+          <DialogContent className="bg-card border-border rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-card-foreground">Edit Plan Expiry Date</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Set expiry date for {expiryTarget?.first_name || ''} {expiryTarget?.last_name || ''}
+              </p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryDate ? formatDateEUShort(expiryDate.toISOString()) : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowExpiryEditor(false)}>Cancel</Button>
+              <Button onClick={handleSaveExpiry} disabled={!expiryDate}>Save Expiry Date</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

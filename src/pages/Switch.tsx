@@ -3,15 +3,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePlan } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Clock, Shield, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SwitchCountdown from '@/components/switch/SwitchCountdown';
-import SwitchQuickStats from '@/components/switch/SwitchQuickStats';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
-import SwitchInfoCard from '@/components/switch/SwitchInfoCard';
-import PreTriggerInfoCard from '@/components/switch/PreTriggerInfoCard';
 import CheckInMethods from '@/components/switch/CheckInMethods';
 import { CheckInFrequency, UserSettings } from '@/types/common';
 import { SettingsService, ProfileService, NotificationSettingsService } from '@/services/supabaseService';
@@ -175,7 +171,7 @@ const Switch = () => {
           </p>
         </div>
 
-        {/* Main Control Panel */}
+        {/* Section 1: System Control */}
         <div className="bg-muted/30 rounded-2xl p-6 space-y-6">
           <div className="flex items-center gap-4 mb-6">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${settings?.is_active ? 'bg-success/20' : 'bg-warning/20'}`}>
@@ -183,7 +179,7 @@ const Switch = () => {
             </div>
             <div>
               <h2 className="text-xl font-medium text-card-foreground">System Control</h2>
-              <p className="text-sm text-muted-foreground">Monitor status and configure your safety settings</p>
+              <p className="text-sm text-muted-foreground">Monitor status and perform check-ins</p>
             </div>
           </div>
 
@@ -206,21 +202,9 @@ const Switch = () => {
               Perform Check-in Now
             </Button>
           </div>
-
-          {settings && (
-            <SwitchQuickStats
-              checkInFrequency={settings.check_in_frequency}
-              deadlineMode={settings.deadline_mode}
-              gracePeriodHours={settings.grace_period_hours}
-              lastCheckIn={settings.last_check_in}
-            />
-          )}
         </div>
 
-        {/* Pre-trigger info */}
-        <PreTriggerInfoCard />
-
-        {/* Configuration */}
+        {/* Section 2: Configuration */}
         <div className="bg-muted/30 rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -247,7 +231,7 @@ const Switch = () => {
           )}
         </div>
 
-        {/* Check-in Methods */}
+        {/* Section 3: Check-in Methods */}
         <CheckInMethods
           emailCheckinEnabled={emailCheckinEnabled}
           smsCheckinEnabled={smsCheckinEnabled}
@@ -257,8 +241,6 @@ const Switch = () => {
           onSmsCheckinChange={(v) => plan === 'paid' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
           isPaidPlan={plan === 'paid'}
         />
-
-        <SwitchInfoCard />
       </div>
 
       <AlertDialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>

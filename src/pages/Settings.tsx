@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { useContacts } from '@/hooks/useContacts';
+import { usePlan } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import { ContactTypePermissions as ContactTypePermissionsType } from '@/types/ac
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import EmailTemplateEditor, { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
 import { useSearchParams } from 'react-router-dom';
+import { formatDateEUShort } from '@/utils/dateUtils';
 
 interface Profile {
   id: string;
@@ -64,6 +66,7 @@ const contactTypeLabels: Record<ContactCategory, string> = {
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { plan, planExpiresAt } = usePlan();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'profile';
   const {
@@ -158,21 +161,44 @@ const Settings = () => {
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader><CardTitle className="text-foreground">Account Status & Plan</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">Current Plan</span><Badge className="bg-success/20 text-success border-success/30">Free Plan</Badge></div>
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <p>• 1 contact (message only, no portal)</p>
-                  <p>• Switch fully functional</p>
-                  <p>• Web check-in only</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Current Plan</span>
+                  <Badge className={plan === 'paid' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-success/20 text-success border-success/30'}>
+                    {plan === 'paid' ? 'Paid Plan' : 'Free Plan'}
+                  </Badge>
                 </div>
-                <Separator />
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-                  <h4 className="font-medium text-card-foreground mb-1">Paid Plan — £50/year</h4>
-                  <p className="text-sm text-muted-foreground mb-3">Unlimited contacts, documents, accounts, portal access, multi-channel check-in, and more.</p>
-                  <Button variant="default" className="rounded-full" disabled>
-                    Upgrade to Paid Plan
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">Contact us at support@legacyvault.app to upgrade your account.</p>
-                </div>
+                {plan === 'paid' && planExpiresAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Expires</span>
+                    <span className="text-card-foreground font-medium">{formatDateEUShort(planExpiresAt)}</span>
+                  </div>
+                )}
+                {plan === 'paid' ? (
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>• Unlimited contacts with portal access</p>
+                    <p>• Unlimited documents & digital accounts</p>
+                    <p>• Multi-channel check-in (email, SMS)</p>
+                    <p>• Custom deadlines & flexible grace periods</p>
+                    <p>• Full email template customization</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>• 1 contact (message only, no portal)</p>
+                      <p>• Switch fully functional</p>
+                      <p>• Web check-in only</p>
+                    </div>
+                    <Separator />
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                      <h4 className="font-medium text-card-foreground mb-1">Paid Plan — £50/year</h4>
+                      <p className="text-sm text-muted-foreground mb-3">Unlimited contacts, documents, accounts, portal access, multi-channel check-in, and more.</p>
+                      <Button variant="default" className="rounded-full" disabled>
+                        Upgrade to Paid Plan
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2">Contact us at support@legacyvault.app to upgrade your account.</p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

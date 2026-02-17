@@ -1,51 +1,49 @@
 import { CheckInFrequency } from '@/types/common';
 
-export const formatDate = (dateString: string): string => {
+/**
+ * Format date in European format: DD/MM/YYYY, HH:mm
+ */
+export const formatDateEU = (dateString: string): string => {
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      throw new Error('Invalid date');
-    }
-    return date.toLocaleString();
-  } catch (error) {
-    console.error('Error formatting date:', error);
+    if (isNaN(date.getTime())) throw new Error('Invalid date');
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year}, ${hours}:${minutes}`;
+  } catch {
     return 'Invalid date';
   }
+};
+
+/**
+ * Format date in European format: DD/MM/YYYY (date only)
+ */
+export const formatDateEUShort = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) throw new Error('Invalid date');
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return 'Invalid date';
+  }
+};
+
+export const formatDate = (dateString: string): string => {
+  return formatDateEU(dateString);
 };
 
 export const formatDateShort = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      throw new Error('Invalid date');
-    }
-    return date.toLocaleDateString();
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'Invalid date';
-  }
+  return formatDateEUShort(dateString);
 };
 
 export const formatDeadlineDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      throw new Error('Invalid date');
-    }
-    // Using Intl.DateTimeFormat for better formatting
-    return new Intl.DateTimeFormat('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    }).format(date);
-  } catch (error) {
-    console.error('Error formatting deadline date:', error);
-    return 'Invalid date';
-  }
+  return formatDateEU(dateString);
 };
 
 export const isValidDate = (dateString: string): boolean => {

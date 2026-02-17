@@ -2,7 +2,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Timer, AlertTriangle, Skull } from 'lucide-react';
 import { useCountdown } from '@/hooks/useCountdown';
-import { formatDeadlineDate } from '@/utils/dateUtils';
+import { formatDateEU } from '@/utils/dateUtils';
 import { getUrgencyLevel, getUrgencyColors } from '@/utils/urgencyUtils';
 
 interface SwitchCountdownProps {
@@ -116,7 +116,7 @@ const SwitchCountdown = ({
 
           <div className="mt-6 pt-4 border-t border-warning/30">
             <p className="text-warning/80 text-sm text-center font-medium">
-              Grace Period Ends: {formatDeadlineDate(gracePeriodEnd)}
+              Grace Period Ends: {formatDateEU(gracePeriodEnd)}
             </p>
           </div>
         </div>
@@ -193,7 +193,7 @@ const SwitchCountdown = ({
         {currentDeadline && (
           <div className="mt-6 pt-4 border-t border-border/50">
             <p className="text-muted-foreground text-sm text-center font-medium">
-              Deadline: {formatDeadlineDate(currentDeadline)}
+              Deadline: {formatDateEU(currentDeadline)}
             </p>
           </div>
         )}

@@ -1,8 +1,8 @@
-
 import { UserSettings } from '@/types/common';
-import DeadlineModeSelector from './DeadlineModeSelector';
 import FrequencyConfiguration from './FrequencyConfiguration';
 import CustomDeadlineConfiguration from './CustomDeadlineConfiguration';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info, Clock, Calendar } from 'lucide-react';
 
 interface SwitchConfigurationProps {
   settings: UserSettings;
@@ -58,10 +58,48 @@ const SwitchConfiguration = ({
           <span>Free plan: frequency-based check-ins with 24h grace period. Upgrade for custom deadlines and flexible grace periods.</span>
         </div>
       ) : (
-        <DeadlineModeSelector
-          deadlineMode={settings.deadline_mode}
-          onModeChange={handleDeadlineModeChange}
-        />
+        /* Deadline Mode - Radio Cards */
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-card-foreground font-medium">Deadline Mode</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleDeadlineModeChange('frequency')}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                settings.deadline_mode === 'frequency'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border bg-muted/20 hover:border-primary/40'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className={`w-4 h-4 ${settings.deadline_mode === 'frequency' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <span className={`font-medium ${settings.deadline_mode === 'frequency' ? 'text-primary' : 'text-card-foreground'}`}>
+                  Frequency Based
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">Recurring check-ins on a schedule</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDeadlineModeChange('custom')}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                settings.deadline_mode === 'custom'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border bg-muted/20 hover:border-primary/40'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Calendar className={`w-4 h-4 ${settings.deadline_mode === 'custom' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <span className={`font-medium ${settings.deadline_mode === 'custom' ? 'text-primary' : 'text-card-foreground'}`}>
+                  Custom Deadline
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">Set a specific date and time</p>
+            </button>
+          </div>
+        </div>
       )}
 
       {(!isFree && settings.deadline_mode === 'frequency' || isFree) && (

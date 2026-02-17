@@ -26,6 +26,7 @@ const Contacts = () => {
   const [filterCategory, setFilterCategory] = useState<ContactType | 'all'>('all');
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
   const [selectedContactForPermissions, setSelectedContactForPermissions] = useState<EmergencyContact | null>(null);
+  const [expandedContactId, setExpandedContactId] = useState<string | null>(null);
 
   const contactTypeLabels: Record<ContactType, string> = {
     immediate_family: 'Immediate Family',
@@ -103,6 +104,10 @@ const Contacts = () => {
     setSelectedContactForPermissions(null);
   };
 
+  const handleToggleExpand = (contactId: string) => {
+    setExpandedContactId(prev => prev === contactId ? null : contactId);
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -162,7 +167,7 @@ const Contacts = () => {
           <ContactPermissionsDialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog} contactName={selectedContactForPermissions.name} permissions={selectedContactForPermissions.permissions} onSave={handleSavePermissions} />
         )}
 
-        <div className="grid gap-4">
+        <div className="grid gap-2">
           {filteredContacts.length === 0 ? (
             <div className="bg-muted/30 rounded-2xl p-12 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
@@ -186,7 +191,17 @@ const Contacts = () => {
             </div>
           ) : (
             filteredContacts.map((contact) => (
-              <ContactCard key={contact.id} contact={contact} contactTypeLabels={contactTypeLabels} onEdit={handleEditContact} onDelete={deleteContact} onPermissionsChange={updateContactPermissions} onUseTypeDefaultsChange={updateUseTypeDefaults} />
+              <ContactCard
+                key={contact.id}
+                contact={contact}
+                contactTypeLabels={contactTypeLabels}
+                onEdit={handleEditContact}
+                onDelete={deleteContact}
+                onPermissionsChange={updateContactPermissions}
+                onUseTypeDefaultsChange={updateUseTypeDefaults}
+                isExpanded={expandedContactId === contact.id}
+                onToggleExpand={() => handleToggleExpand(contact.id)}
+              />
             ))
           )}
         </div>

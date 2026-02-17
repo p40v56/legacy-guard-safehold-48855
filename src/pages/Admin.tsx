@@ -12,11 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import SearchInput from '@/components/ui/search-input';
-import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle, CalendarIcon } from 'lucide-react';
+import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { format } from 'date-fns';
@@ -355,29 +354,20 @@ const Admin = () => {
               <p className="text-sm text-muted-foreground">
                 Set expiry date for {expiryTarget?.first_name || ''} {expiryTarget?.last_name || ''}
               </p>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !expiryDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expiryDate ? formatDateEUShort(expiryDate.toISOString()) : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={expiryDate}
-                    onSelect={setExpiryDate}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="flex justify-center">
+                <Calendar
+                  mode="single"
+                  selected={expiryDate}
+                  onSelect={setExpiryDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto rounded-lg border border-border")}
+                />
+              </div>
+              {expiryDate && (
+                <p className="text-sm text-center text-muted-foreground">
+                  Selected: <span className="font-medium text-card-foreground">{formatDateEUShort(expiryDate.toISOString())}</span>
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowExpiryEditor(false)}>Cancel</Button>

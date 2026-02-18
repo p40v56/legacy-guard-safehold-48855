@@ -319,17 +319,14 @@ const Settings = () => {
                   <Switch checked={notifications.email_notifications} onCheckedChange={checked => setNotifications({...notifications, email_notifications: checked})} />
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between opacity-60">
                   <div className="flex items-center space-x-3"><Phone className="w-5 h-5 text-muted-foreground" /><div><Label className="text-foreground">SMS Notifications</Label><p className="text-sm text-muted-foreground">Receive updates via text message</p></div></div>
-                  <Switch checked={notifications.sms_notifications} onCheckedChange={checked => setNotifications({...notifications, sms_notifications: checked})} />
+                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Coming soon</Badge>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between opacity-60">
                   <div className="flex items-center space-x-3"><Shield className="w-5 h-5 text-muted-foreground" /><div><Label className="text-foreground">Emergency Alerts</Label><p className="text-sm text-muted-foreground">Critical notifications for emergency situations</p></div></div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
-                    <Switch checked={notifications.emergency_alerts} onCheckedChange={checked => setNotifications({...notifications, emergency_alerts: checked})} />
-                  </div>
+                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Coming soon</Badge>
                 </div>
               </CardContent>
             </Card>

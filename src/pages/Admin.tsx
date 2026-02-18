@@ -404,8 +404,8 @@ const Admin = () => {
         </Dialog>
 
         {/* Edit Expiry Date Dialog */}
-        <Dialog open={showExpiryEditor} onOpenChange={setShowExpiryEditor}>
-          <DialogContent className="bg-card border-border rounded-2xl">
+        <Dialog open={showExpiryEditor} onOpenChange={(open) => { setShowExpiryEditor(open); if (!open) setShowCalendar(false); }}>
+          <DialogContent className="bg-card border-border rounded-2xl" onPointerDownOutside={() => { setShowExpiryEditor(false); setShowCalendar(false); }}>
             <DialogHeader>
               <DialogTitle className="text-card-foreground">Edit Plan Expiry Date</DialogTitle>
             </DialogHeader>
@@ -436,7 +436,7 @@ const Admin = () => {
                 )}
               </div>
               {showCalendar && (
-                <div className="flex justify-center">
+                <div className="flex justify-center pointer-events-auto">
                   <Calendar
                     mode="single"
                     selected={expiryDate}
@@ -448,7 +448,7 @@ const Admin = () => {
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowExpiryEditor(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setShowExpiryEditor(false); setShowCalendar(false); }}>Cancel</Button>
               <Button onClick={handleSaveExpiry}>Save Expiry Date</Button>
             </DialogFooter>
           </DialogContent>

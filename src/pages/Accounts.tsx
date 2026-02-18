@@ -89,6 +89,20 @@ const Accounts = () => {
 
   const isFreeBlocked = plan === 'free';
 
+  if (!loading && isFreeBlocked) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="mb-4">
+            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Accounts & Financials</h1>
+            <p className="text-muted-foreground">Manage your digital accounts and financial legacy</p>
+          </div>
+          <UpgradePrompt message="Upgrade to access and manage your digital accounts and financial assets." />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingAccount) {

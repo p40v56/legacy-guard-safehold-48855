@@ -47,8 +47,8 @@ const CheckInMethods = ({
         <Switch checked={emailCheckinEnabled} onCheckedChange={onEmailCheckinChange} disabled={!isPaidPlan} />
       </div>
 
-      {/* 2. Check-in via email — paid only, available */}
-      <div className="flex items-center justify-between">
+      {/* 2. Check-in via email — paid only, coming soon */}
+      <div className="flex items-center justify-between opacity-60">
         <div className="flex items-center gap-3">
           <MessageSquare className="w-5 h-5 text-muted-foreground" />
           <div>

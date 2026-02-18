@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -12,13 +12,13 @@
     --card-foreground: 220 15% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 15% 15%;
-    --primary: 199 89% 48%;
+    --primary: 199 80% 47%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 14% 96%;
     --secondary-foreground: 220 15% 15%;
     --muted: 220 14% 96%;
     --muted-foreground: 220 10% 45%;
-    --accent: 199 70% 50%;
+    --accent: 199 70% 47%;
     --accent-foreground: 0 0% 100%;
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
@@ -28,7 +28,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 199 89% 48%;
+    --ring: 199 80% 47%;
     --radius: 1rem;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 15% 15%;
@@ -74,10 +74,10 @@
   html { scroll-behavior: smooth; }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 600;
     letter-spacing: -0.02em;
   }
@@ -86,7 +86,7 @@
 @layer components {
   /* Hero gradient - dark enough for white text */
   .bg-gradient-hero {
-    background: linear-gradient(135deg, hsl(199 89% 35%) 0%, hsl(199 80% 45%) 50%, hsl(210 70% 50%) 100%);
+    background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%);
   }
 
   /* Glass morphism effects */
@@ -124,7 +124,7 @@
 
   /* Page header with gradient background */
   .page-header {
-    background: linear-gradient(135deg, hsl(199 89% 35%) 0%, hsl(199 80% 45%) 50%, hsl(210 70% 50%) 100%);
+    background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%);
     border-radius: 1.5rem;
     padding: 2rem;
     margin-bottom: 1.5rem;
@@ -145,38 +145,40 @@
 
   /* Landing page sky gradient - matches dashboard bg-gradient-hero */
   .hero-gradient-sky {
-    background: linear-gradient(135deg, hsl(199 89% 35%) 0%, hsl(199 80% 45%) 50%, hsl(210 70% 50%) 100%);
+    background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%);
   }
 
   /* Dark sections for landing page */
   .dark-section-sky {
-    background: linear-gradient(135deg, hsl(210 40% 12%) 0%, hsl(210 35% 18%) 50%, hsl(199 30% 20%) 100%);
+    background: #0D1B2A;
   }
 
   /* Feature cards for landing page */
   .feature-card-sky {
-    background: hsl(210 30% 15% / 0.8);
-    border: 1px solid hsl(199 50% 30% / 0.3);
-    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
     padding: 2rem;
     transition: all 0.3s ease;
   }
   .feature-card-sky:hover {
-    border-color: hsl(199 89% 48% / 0.5);
-    box-shadow: 0 8px 30px hsl(199 89% 48% / 0.1);
+    border-color: rgba(26, 155, 215, 0.5);
+    box-shadow: 0 8px 30px rgba(26, 155, 215, 0.1);
     transform: translateY(-2px);
   }
 
   /* Testimonial cards for landing page */
   .testimonial-card-sky {
-    background: hsl(210 30% 15% / 0.6);
-    border: 1px solid hsl(199 50% 30% / 0.2);
-    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
     padding: 2rem;
     transition: all 0.3s ease;
   }
   .testimonial-card-sky:hover {
-    border-color: hsl(199 89% 48% / 0.4);
+    border-color: rgba(26, 155, 215, 0.4);
   }
 }
 

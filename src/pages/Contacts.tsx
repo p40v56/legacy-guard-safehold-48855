@@ -120,19 +120,7 @@ const Contacts = () => {
     );
   }
 
-  if (plan === 'free') {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Emergency Contacts</h1>
-            <p className="text-muted-foreground">Manage your trusted contacts for notifications</p>
-          </div>
-          <UpgradePrompt message="Upgrade to access and manage your emergency contacts." />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Free users can manage up to 1 contact — no full block
 
   return (
     <DashboardLayout>

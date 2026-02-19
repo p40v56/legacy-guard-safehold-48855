@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { decryptFields } from '@/lib/crypto';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
@@ -16,6 +18,7 @@ import { formatDateEU } from '@/utils/dateUtils';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { vaultKey } = useEncryption();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     contactsCount: 0,
@@ -65,7 +68,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user) fetchStats();
-  }, [user]);
+  }, [user, vaultKey]);
 
   useEffect(() => {
     const handleFocus = () => { if (user) fetchStats(); };
@@ -84,7 +87,14 @@ const Dashboard = () => {
       setStats(dashboardStats);
       setWizardDismissed(profile.setup_wizard_dismissed ?? false);
       setTestEmailSent(!!profile.last_test_email_sent_at);
-      setFirstName(profile.first_name || '');
+      let firstName = profile.first_name || '';
+      if (vaultKey && firstName) {
+        try {
+          const decrypted = await decryptFields(profile as any, ['first_name'], vaultKey);
+          firstName = decrypted.first_name || firstName;
+        } catch { /* use raw */ }
+      }
+      setFirstName(firstName);
       setRulesCount(rules.length);
     } catch (error) {
       console.error('Error fetching stats:', error);

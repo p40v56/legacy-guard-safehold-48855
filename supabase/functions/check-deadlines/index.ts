@@ -290,7 +290,7 @@ async function triggerSwitch(
       portalBaseUrl: APP_BASE_URL,
     };
     
-    console.log(`Sending to ${contactLabel}: customMessage="${customMessage}", docs=${allowedDocuments.length}, portalToken=${portalToken ? 'generated' : 'none'}`);
+    console.log(`Sending to ${contactLabel}: portalToken=${portalToken ? 'generated' : 'none'}`);
     
     try {
       const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {

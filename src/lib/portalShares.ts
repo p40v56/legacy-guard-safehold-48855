@@ -30,7 +30,8 @@ export function hexToBytes(hex: string): Uint8Array {
 const ENCRYPTED_DOC_FIELDS = ['title', 'description', 'content'];
 const ENCRYPTED_ACCOUNT_FIELDS = ['account_name', 'username', 'credentials', 'website_url', 'notes', 'email', 'platform'];
 const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email'];
-const ENCRYPTED_CONTACT_FIELDS = ['phone', 'relationship', 'notes', 'custom_message'];
+const ENCRYPTED_CONTACT_FIELDS = ['name', 'phone', 'relationship', 'notes', 'custom_message'];
+const ENCRYPTED_PROFILE_FIELDS = ['first_name', 'last_name'];
 
 interface ContactPermissions {
   digital_accounts?: {
@@ -85,7 +86,7 @@ export async function createPortalShares(
 
   // Fetch all user data in parallel
   const [profileRes, docsRes, accountsRes, financialsRes, settingsRes, rulesRes] = await Promise.all([
-    supabase.from('profiles').select('first_name, last_name, emergency_instructions, plan').eq('user_id', userId).single(),
+    supabase.from('profiles').select('first_name, first_name_iv, last_name, last_name_iv, emergency_instructions, plan').eq('user_id', userId).single(),
     supabase.from('legacy_documents').select('*').eq('user_id', userId),
     supabase.from('accounts').select('*').eq('user_id', userId),
     supabase.from('financial_assets').select('*').eq('user_id', userId),
@@ -96,6 +97,10 @@ export async function createPortalShares(
   const profile = profileRes.data;
   const userPlan = profile?.plan || 'free';
   const isFree = userPlan === 'free';
+
+  // Decrypt profile names
+  const decryptedProfileValues = profile ? await decryptFields(profile, ENCRYPTED_PROFILE_FIELDS, vaultKey) : {};
+  const decryptedProfile = { ...profile, ...decryptedProfileValues };
 
   // Decrypt contact fields
   const decryptedContactValues = await decryptFields(contact, ENCRYPTED_CONTACT_FIELDS, vaultKey);
@@ -189,7 +194,7 @@ export async function createPortalShares(
     }
   }
 
-  const userName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'User';
+  const userName = `${decryptedProfile?.first_name || ''} ${decryptedProfile?.last_name || ''}`.trim() || 'User';
 
   // Build clean portal data object (plaintext)
   const portalData = {

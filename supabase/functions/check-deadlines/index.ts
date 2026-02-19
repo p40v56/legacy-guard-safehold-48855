@@ -256,7 +256,7 @@ async function triggerSwitch(
   
   for (const contact of contacts) {
     if (!contact.email) {
-      console.log(`Skipping contact ${contact.name} - no email`);
+      console.log(`Skipping contact (id: ${contact.id}) - no email`);
       continue;
     }
     
@@ -264,6 +264,8 @@ async function triggerSwitch(
     const allowedDocuments = filterDocumentsByPermissions(documents, permissions);
     const customMessage = getCustomMessageForContact(contact, activationRules);
     const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+    // Note: contact.name may be encrypted in DB; use email as identifier in logs
+    const contactLabel = contact.email || contact.id;
     
     const emailTemplate = profile ? {
       email_subject: profile.email_subject,
@@ -278,7 +280,7 @@ async function triggerSwitch(
     const notificationPayload = {
       notificationType: "switch_triggered",
       contactId: contact.id,
-      contactName: contact.name,
+      contactName: contact.email || 'Trusted Contact', // name is encrypted; use email as fallback display
       contactEmail: contact.email,
       contactType: contact.contact_type,
       userName,
@@ -291,7 +293,7 @@ async function triggerSwitch(
       portalBaseUrl: APP_BASE_URL,
     };
     
-    console.log(`Sending to ${contact.name}: customMessage="${customMessage}", docs=${allowedDocuments.length}, portalToken=${portalToken ? 'generated' : 'none'}`);
+    console.log(`Sending to ${contactLabel}: customMessage="${customMessage}", docs=${allowedDocuments.length}, portalToken=${portalToken ? 'generated' : 'none'}`);
     
     try {
       const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
@@ -317,18 +319,16 @@ async function triggerSwitch(
       
       results.push({
         contactId: contact.id,
-        contactName: contact.name,
         success: sendResult.success,
         error: sendResult.error,
       });
       
-      console.log(`Switch notification to ${contact.name}: ${sendResult.success ? "sent" : "failed"}`);
+      console.log(`Switch notification to ${contactLabel}: ${sendResult.success ? "sent" : "failed"}`);
     } catch (err: unknown) {
       const errMessage = err instanceof Error ? err.message : "Unknown error";
-      console.error(`Error sending to ${contact.name}:`, errMessage);
+      console.error(`Error sending to ${contactLabel}:`, errMessage);
       results.push({
         contactId: contact.id,
-        contactName: contact.name,
         success: false,
         error: errMessage,
       });

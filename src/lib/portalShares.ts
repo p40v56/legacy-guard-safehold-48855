@@ -16,7 +16,6 @@ import {
   encryptText,
   decryptText,
   decryptFields,
-  hashToken,
 } from '@/lib/crypto';
 
 export function hexToBytes(hex: string): Uint8Array {
@@ -25,6 +24,16 @@ export function hexToBytes(hex: string): Uint8Array {
     bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
   }
   return bytes;
+}
+
+/** Hash the raw token string (not bytes) for DB lookup — must match portal side */
+async function hashTokenString(rawToken: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(rawToken));
+  const bytes = new Uint8Array(digest);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
 }
 
 const ENCRYPTED_DOC_FIELDS = ['title', 'description', 'content'];
@@ -69,9 +78,9 @@ export async function createPortalShares(
   tokenHex: string,
   vaultKey: CryptoKey
 ): Promise<void> {
-  const tokenBytes = hexToBytes(tokenHex);
-  const shareKey = await deriveKeyFromToken(tokenBytes);
-  const tokenHash = await hashToken(tokenBytes);
+  // tokenHex is the raw token string — pass directly to deriveKeyFromToken
+  const shareKey = await deriveKeyFromToken(tokenHex);
+  const tokenHash = await hashTokenString(tokenHex);
 
   // Fetch contact and permissions
   const [contactRes, typePermRes] = await Promise.all([

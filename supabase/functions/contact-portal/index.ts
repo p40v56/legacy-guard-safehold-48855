@@ -22,19 +22,15 @@ interface ContactPermissions {
   can_modify_information?: boolean;
 }
 
-// ── Token hashing (must match client-side hashToken) ─────────
+// ── Token hashing — must match client-side hashTokenString in portalShares.ts ──
+// Hashes the raw token *string* (not its hex bytes) via SHA-256 → base64
 
-async function hashTokenHex(tokenHex: string): Promise<string> {
-  const bytes = new Uint8Array(tokenHex.length / 2);
-  for (let i = 0; i < tokenHex.length; i += 2) {
-    bytes[i / 2] = parseInt(tokenHex.substring(i, i + 2), 16);
-  }
-  const digest = await crypto.subtle.digest("SHA-256", bytes.buffer);
+async function hashTokenString(rawToken: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(rawToken));
   const arr = new Uint8Array(digest);
   let binary = "";
-  for (let i = 0; i < arr.length; i++) {
-    binary += String.fromCharCode(arr[i]);
-  }
+  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
   return btoa(binary);
 }
 
@@ -93,7 +89,7 @@ async function servePortalResponse(
 ): Promise<Response> {
   // Try encrypted shares first
   try {
-    const tokenHash = await hashTokenHex(tokenData.token);
+    const tokenHash = await hashTokenString(tokenData.token);
     const { data: share } = await supabase
       .from("contact_shares")
       .select("encrypted_content, content_iv")

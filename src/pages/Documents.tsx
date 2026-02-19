@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlan } from '@/hooks/usePlan';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { encryptFields, decryptFields, encryptFile, decryptFile } from '@/lib/crypto';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +35,7 @@ interface LegacyDocument {
 const Documents = () => {
   const { user } = useAuth();
   const { plan } = usePlan();
+  const { vaultKey } = useEncryption();
   const isFreeBlocked = plan === 'free';
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -86,7 +89,17 @@ const Documents = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
+      
+      // Decrypt document fields
+      const decryptedDocs = await Promise.all((data || []).map(async (doc) => {
+        if (vaultKey) {
+          const decryptedValues = await decryptFields(doc, ['title', 'description', 'content'], vaultKey);
+          return { ...doc, ...decryptedValues };
+        }
+        return doc;
+      }));
+      
+      setDocuments(decryptedDocs);
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast({
@@ -103,7 +116,7 @@ const Documents = () => {
     e.preventDefault();
     
     try {
-      const submissionData = {
+      let submissionData: any = {
         title: formData.title,
         document_type: formData.document_type,
         description: formData.description,
@@ -112,6 +125,15 @@ const Documents = () => {
         file_type: (formData as any).file_type || null,
         file_size: (formData as any).file_size || null,
       };
+
+      // Encrypt text fields before storage
+      if (vaultKey) {
+        const encrypted = await encryptFields({
+          title: formData.title,
+          description: formData.description,
+        }, vaultKey);
+        submissionData = { ...submissionData, ...encrypted };
+      }
 
       if (editingDocument) {
         const { error } = await supabase
@@ -190,15 +212,24 @@ const Documents = () => {
   const handleFileUpload = async (file: File) => {
     setUploading(true);
     try {
-      // Generate a unique file path
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${user?.id}/${fileName}`;
 
-      // Upload file to Supabase Storage
+      // Read file and optionally encrypt before upload
+      let fileToUpload: Blob | File = file;
+      let fileIv: string | null = null;
+
+      if (vaultKey) {
+        const arrayBuffer = await file.arrayBuffer();
+        const { ciphertext, iv } = await encryptFile(arrayBuffer, vaultKey);
+        fileToUpload = new Blob([ciphertext], { type: 'application/octet-stream' });
+        fileIv = iv;
+      }
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(filePath, file);
+        .upload(filePath, fileToUpload);
 
       if (uploadError) throw uploadError;
 
@@ -213,8 +244,9 @@ const Documents = () => {
         title: prev.title || file.name.split('.')[0],
         file_path: uploadData.path,
         file_type: file.type,
-        file_size: file.size
-      }));
+        file_size: file.size,
+        file_iv: fileIv,
+      } as any));
       
     } catch (error) {
       console.error('Upload error:', error);
@@ -256,8 +288,17 @@ const Documents = () => {
 
       if (error) throw error;
 
+      // Decrypt file if it was encrypted (check for file_iv)
+      let fileBlob = data;
+      const docRecord = document as any;
+      if (vaultKey && docRecord.file_iv) {
+        const encryptedBuffer = await data.arrayBuffer();
+        const decryptedBuffer = await decryptFile(encryptedBuffer, docRecord.file_iv, vaultKey);
+        fileBlob = new Blob([decryptedBuffer], { type: document.file_type || 'application/octet-stream' });
+      }
+
       // Create download link
-      const url = URL.createObjectURL(data);
+      const url = URL.createObjectURL(fileBlob);
       const a = window.document.createElement('a');
       a.href = url;
       a.download = document.title + (document.file_type?.includes('pdf') ? '.pdf' : '');

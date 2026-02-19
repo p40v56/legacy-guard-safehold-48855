@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ContactsService } from '@/services/supabaseService';
 import { useToast } from '@/hooks/use-toast';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { encryptFields, decryptFields } from '@/lib/crypto';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
+
+// Contact fields that get encrypted (name and email stay plaintext for notifications)
+const ENCRYPTED_CONTACT_FIELDS = ['phone', 'relationship', 'notes', 'custom_message'];
 
 export const useContacts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { vaultKey } = useEncryption();
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,25 +21,32 @@ export const useContacts = () => {
     
     try {
       const data = await ContactsService.getContacts(user.id);
-      const transformedData: EmergencyContact[] = data.map(contact => ({
-        id: contact.id,
-        name: contact.name,
-        email: contact.email,
-        phone: contact.phone || undefined,
-        relationship: contact.relationship || undefined,
-        contact_type: contact.contact_type as ContactType,
-        priority_order: contact.priority_order,
-        can_receive_messages: contact.can_receive_messages ?? true,
-        permissions: (contact.permissions || {
-          digital_accounts: { all_accounts: false, by_category: [], specific_accounts: [] },
-          legacy_documents: { all_documents: false, by_category: [], specific_documents: [] },
-          contact_information: false,
-          emergency_instructions: false,
-          can_modify_information: false,
-        }) as unknown as ContactPermissions,
-        use_type_defaults: contact.use_type_defaults ?? true,
-        custom_message: contact.custom_message || null,
-        created_at: contact.created_at,
+      const transformedData: EmergencyContact[] = await Promise.all(data.map(async (contact) => {
+        let decrypted = contact;
+        if (vaultKey) {
+          const decryptedValues = await decryptFields(contact, ENCRYPTED_CONTACT_FIELDS, vaultKey);
+          decrypted = { ...contact, ...decryptedValues };
+        }
+        return {
+          id: decrypted.id,
+          name: decrypted.name,
+          email: decrypted.email,
+          phone: decrypted.phone || undefined,
+          relationship: decrypted.relationship || undefined,
+          contact_type: decrypted.contact_type as ContactType,
+          priority_order: decrypted.priority_order,
+          can_receive_messages: decrypted.can_receive_messages ?? true,
+          permissions: (decrypted.permissions || {
+            digital_accounts: { all_accounts: false, by_category: [], specific_accounts: [] },
+            legacy_documents: { all_documents: false, by_category: [], specific_documents: [] },
+            contact_information: false,
+            emergency_instructions: false,
+            can_modify_information: false,
+          }) as unknown as ContactPermissions,
+          use_type_defaults: decrypted.use_type_defaults ?? true,
+          custom_message: decrypted.custom_message || null,
+          created_at: decrypted.created_at,
+        };
       }));
       setContacts(transformedData);
     } catch (error) {
@@ -52,19 +65,32 @@ export const useContacts = () => {
     if (!user) return;
     
     try {
-      const newContact = await ContactsService.createContact(user.id, formData);
+      let contactData: any = { ...formData };
+
+      if (vaultKey) {
+        const fieldsToEncrypt: Record<string, string | null | undefined> = {
+          phone: formData.phone,
+          relationship: formData.relationship,
+          notes: (formData as any).notes,
+          custom_message: formData.custom_message,
+        };
+        const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
+        contactData = { ...contactData, ...encrypted };
+      }
+
+      const newContact = await ContactsService.createContact(user.id, contactData);
       const transformedContact: EmergencyContact = {
         id: newContact.id,
-        name: newContact.name,
-        email: newContact.email,
-        phone: newContact.phone || undefined,
-        relationship: newContact.relationship || undefined,
-        contact_type: newContact.contact_type as ContactType,
-        priority_order: newContact.priority_order,
-        can_receive_messages: newContact.can_receive_messages ?? true,
-        permissions: (newContact.permissions || {}) as unknown as ContactPermissions,
-        use_type_defaults: newContact.use_type_defaults ?? true,
-        custom_message: newContact.custom_message || null,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        relationship: formData.relationship || undefined,
+        contact_type: formData.contact_type,
+        priority_order: formData.priority_order,
+        can_receive_messages: formData.can_receive_messages ?? true,
+        permissions: formData.permissions,
+        use_type_defaults: formData.use_type_defaults ?? true,
+        custom_message: formData.custom_message || null,
         created_at: newContact.created_at,
       };
       setContacts(prev => [...prev, transformedContact]);
@@ -85,19 +111,32 @@ export const useContacts = () => {
 
   const updateContact = async (contactId: string, formData: Omit<EmergencyContact, 'id' | 'created_at'>) => {
     try {
-      const updatedContact = await ContactsService.updateContact(contactId, formData);
+      let contactData: any = { ...formData };
+
+      if (vaultKey) {
+        const fieldsToEncrypt: Record<string, string | null | undefined> = {
+          phone: formData.phone,
+          relationship: formData.relationship,
+          notes: (formData as any).notes,
+          custom_message: formData.custom_message,
+        };
+        const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
+        contactData = { ...contactData, ...encrypted };
+      }
+
+      const updatedContact = await ContactsService.updateContact(contactId, contactData);
       const transformedContact: EmergencyContact = {
         id: updatedContact.id,
-        name: updatedContact.name,
-        email: updatedContact.email,
-        phone: updatedContact.phone || undefined,
-        relationship: updatedContact.relationship || undefined,
-        contact_type: updatedContact.contact_type as ContactType,
-        priority_order: updatedContact.priority_order,
-        can_receive_messages: updatedContact.can_receive_messages ?? true,
-        permissions: (updatedContact.permissions || {}) as unknown as ContactPermissions,
-        use_type_defaults: updatedContact.use_type_defaults ?? true,
-        custom_message: updatedContact.custom_message || null,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        relationship: formData.relationship || undefined,
+        contact_type: formData.contact_type,
+        priority_order: formData.priority_order,
+        can_receive_messages: formData.can_receive_messages ?? true,
+        permissions: formData.permissions,
+        use_type_defaults: formData.use_type_defaults ?? true,
+        custom_message: formData.custom_message || null,
         created_at: updatedContact.created_at,
       };
       setContacts(prev => prev.map(contact => 
@@ -179,7 +218,7 @@ export const useContacts = () => {
     if (user) {
       fetchContacts();
     }
-  }, [user]);
+  }, [user, vaultKey]);
 
   return {
     contacts,

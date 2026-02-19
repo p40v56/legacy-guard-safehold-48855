@@ -196,9 +196,9 @@ export async function createPortalShares(
 
   const userName = `${decryptedProfile?.first_name || ''} ${decryptedProfile?.last_name || ''}`.trim() || 'User';
 
-  // Build clean portal data object (plaintext)
+  // Build clean portal data object (plaintext — all values must be decrypted before here)
   const portalData = {
-    contactName: contact.name,
+    contactName: decryptedContact.name || contact.name,
     userName,
     userPlan,
     customMessage,

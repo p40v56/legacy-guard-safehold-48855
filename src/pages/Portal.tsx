@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Routes, Route, Navigate } from 'react-router-dom';
-import { Shield, Lock, KeyRound } from 'lucide-react';
+import { Shield, Lock, KeyRound, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,7 @@ const Portal = () => {
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [decrypting, setDecrypting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -72,8 +73,15 @@ const Portal = () => {
       if (result.requiresAuth) {
         setSecurityChallenge(result);
       } else if (result.encrypted && token) {
-        const data = await decryptPortalResponse(result, token);
-        setPortalData(data);
+        setDecrypting(true);
+        try {
+          const data = await decryptPortalResponse(result, token);
+          setPortalData(data);
+        } catch {
+          setError('This access link is invalid or has expired.');
+        } finally {
+          setDecrypting(false);
+        }
       } else {
         setPortalData(result);
       }
@@ -100,8 +108,15 @@ const Portal = () => {
 
       setSecurityChallenge(null);
       if (result.encrypted && token) {
-        const data = await decryptPortalResponse(result, token);
-        setPortalData(data);
+        setDecrypting(true);
+        try {
+          const data = await decryptPortalResponse(result, token);
+          setPortalData(data);
+        } catch {
+          setAnswerError('This access link is invalid or has expired.');
+        } finally {
+          setDecrypting(false);
+        }
       } else {
         setPortalData(result);
       }
@@ -111,6 +126,21 @@ const Portal = () => {
       setVerifying(false);
     }
   };
+
+  // Decrypting state
+  if (decrypting) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          </div>
+          <p className="text-gray-700 font-medium">Decrypting your documents…</p>
+          <p className="text-gray-400 text-sm mt-1">Your data is being decrypted locally in your browser</p>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (loading) {

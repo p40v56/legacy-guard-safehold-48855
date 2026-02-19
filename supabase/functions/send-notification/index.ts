@@ -262,8 +262,9 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   // If no content was added (no custom message, no instructions, no documents)
   if (!sectionsHtml) {
     sectionsHtml = `
-      <div style="background-color: #f3f4f6; padding: 24px; text-align: center; border-radius: 8px; margin: 20px 0;">
-        <p style="color: #6b7280; margin: 0;">No additional information was specified for you at this time.</p>
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 24px; text-align: center; border-radius: 8px; margin: 20px 0;">
+        <p style="color: #15803d; margin: 0; font-weight: 600;">All your personalised content and documents are available securely in your portal.</p>
+        <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 13px;">Use the secure access link below to view everything ${userName} has prepared for you.</p>
       </div>
     `;
   }

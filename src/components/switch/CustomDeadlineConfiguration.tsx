@@ -61,7 +61,7 @@ const CustomDeadlineConfiguration = ({
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {customDate ? customDate.toLocaleDateString() : "Pick a date"}
+                {customDate ? `${customDate.getDate().toString().padStart(2,'0')}/${(customDate.getMonth()+1).toString().padStart(2,'0')}/${customDate.getFullYear()}` : "Pick a date"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">

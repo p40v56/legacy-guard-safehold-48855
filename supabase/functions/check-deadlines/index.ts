@@ -238,19 +238,15 @@ async function triggerSwitch(
     return { success: false, results: [] };
   }
   
-  const [contactsRes, documentsRes, typePermissionsRes, activationRulesRes] = await Promise.all([
+  const [contactsRes, typePermissionsRes] = await Promise.all([
     supabase.from("contacts").select("*").eq("user_id", userId).eq("can_receive_messages", true),
-    supabase.from("legacy_documents").select("*").eq("user_id", userId),
     supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
-    supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
   ]);
   
   const contacts = (contactsRes.data || []) as Contact[];
-  const documents = (documentsRes.data || []) as Document[];
   const typePermissions = (typePermissionsRes.data || []) as ContactTypePermission[];
-  const activationRules = (activationRulesRes.data || []) as ActivationRule[];
   
-  console.log(`Processing ${contacts.length} contacts, ${activationRules.length} activation rules`);
+  console.log(`Processing ${contacts.length} contacts`);
   
   const results: any[] = [];
   
@@ -261,10 +257,8 @@ async function triggerSwitch(
     }
     
     const permissions = resolvePermissions(contact, typePermissions);
-    const allowedDocuments = filterDocumentsByPermissions(documents, permissions);
-    const customMessage = getCustomMessageForContact(contact, activationRules);
     const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
-    // Note: contact.name may be encrypted in DB; use email as identifier in logs
+    // Note: contact.name is encrypted; we do not embed it in the email to avoid sending ciphertext
     const contactLabel = contact.email || contact.id;
     
     const emailTemplate = profile ? {
@@ -277,16 +271,19 @@ async function triggerSwitch(
     
     const portalToken = await generatePortalToken(supabase, userId, contact.id);
     
+    // IMPORTANT: We do NOT pass documents or customMessage here because those fields
+    // are encrypted in the database and cannot be decrypted server-side.
+    // The contact can access all their decrypted content via the secure portal link.
     const notificationPayload = {
       notificationType: "switch_triggered",
       contactId: contact.id,
-      contactName: contact.email || 'Trusted Contact', // name is encrypted; use email as fallback display
+      contactName: contact.email || 'Trusted Contact', // encrypted name — use email as display fallback
       contactEmail: contact.email,
       contactType: contact.contact_type,
-      userName,
-      emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
-      customMessage,
-      documents: allowedDocuments,
+      userName: userName || "User",
+      emergencyInstructions: null, // encrypted server-side; do not embed
+      customMessage: null, // encrypted server-side; accessible via portal
+      documents: [], // encrypted server-side; accessible via portal
       permissions,
       emailTemplate,
       portalToken,

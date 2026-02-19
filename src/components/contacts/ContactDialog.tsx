@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import PermissionsConfig from '@/components/contacts/PermissionsConfig';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
-import { User, Mail, Phone, Users, Hash } from 'lucide-react';
+import { Shield } from 'lucide-react';
+import { User, Mail, Phone, Users, Hash, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ContactDialogProps {
   isOpen: boolean;
@@ -152,17 +153,27 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
             </div>
           </div>
 
-          {/* Permissions */}
-          <div className="bg-muted/20 rounded-2xl p-4">
-            <PermissionsConfig
-              permissions={contactData.permissions as ContactPermissions}
-              onChange={(permissions) => setContactData({ ...contactData, permissions })}
-              useTypeDefaults={contactData.use_type_defaults || true}
-              onUseTypeDefaultsChange={(useDefaults) => setContactData({ ...contactData, use_type_defaults: useDefaults })}
-            />
-          </div>
+          {/* Permissions link */}
+          {isEditing && (
+            <div className="bg-muted/20 rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-card-foreground">Access Permissions</p>
+                <p className="text-xs text-muted-foreground">Manage what this contact can access from the contact card</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl gap-2"
+                onClick={() => onOpenChange(false)}
+              >
+                <Shield className="w-4 h-4" />
+                Go to Permissions
+                <ExternalLink className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
 
-          <Button 
+          <Button
             onClick={onSubmit} 
             className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
           >

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useEncryption } from '@/contexts/EncryptionContext';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { Shield, Mail, Lock, ArrowLeft } from 'lucide-react';
 
@@ -17,6 +18,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { unlock, setupNewUser } = useEncryption();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,6 +55,16 @@ const Auth = () => {
       });
 
       if (error) throw error;
+
+      // Unlock the encryption vault with the user's password
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const unlocked = await unlock(formData.password, user.id);
+        if (!unlocked) {
+          // First time after migration — setup encryption
+          await setupNewUser(formData.password, user.id);
+        }
+      }
 
       toast({
         title: "Welcome back!",

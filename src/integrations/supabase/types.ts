@@ -17,51 +17,72 @@ export type Database = {
       accounts: {
         Row: {
           account_name: string
+          account_name_iv: string | null
           account_type: string
           closure_action: string | null
           created_at: string
           credentials: string | null
+          credentials_iv: string | null
           email: string | null
+          email_iv: string | null
           id: string
           importance: string | null
           notes: string | null
+          notes_iv: string | null
           platform: string | null
+          platform_iv: string | null
           updated_at: string
           user_id: string
           username: string | null
+          username_iv: string | null
           website_url: string | null
+          website_url_iv: string | null
         }
         Insert: {
           account_name: string
+          account_name_iv?: string | null
           account_type: string
           closure_action?: string | null
           created_at?: string
           credentials?: string | null
+          credentials_iv?: string | null
           email?: string | null
+          email_iv?: string | null
           id?: string
           importance?: string | null
           notes?: string | null
+          notes_iv?: string | null
           platform?: string | null
+          platform_iv?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
+          username_iv?: string | null
           website_url?: string | null
+          website_url_iv?: string | null
         }
         Update: {
           account_name?: string
+          account_name_iv?: string | null
           account_type?: string
           closure_action?: string | null
           created_at?: string
           credentials?: string | null
+          credentials_iv?: string | null
           email?: string | null
+          email_iv?: string | null
           id?: string
           importance?: string | null
           notes?: string | null
+          notes_iv?: string | null
           platform?: string | null
+          platform_iv?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
+          username_iv?: string | null
           website_url?: string | null
+          website_url_iv?: string | null
         }
         Relationships: []
       }
@@ -73,6 +94,7 @@ export type Database = {
           contact_ids: string[] | null
           created_at: string
           custom_message: string | null
+          custom_message_iv: string | null
           delay_hours: number
           enabled: boolean | null
           id: string
@@ -88,6 +110,7 @@ export type Database = {
           contact_ids?: string[] | null
           created_at?: string
           custom_message?: string | null
+          custom_message_iv?: string | null
           delay_hours: number
           enabled?: boolean | null
           id?: string
@@ -103,6 +126,7 @@ export type Database = {
           contact_ids?: string[] | null
           created_at?: string
           custom_message?: string | null
+          custom_message_iv?: string | null
           delay_hours?: number
           enabled?: boolean | null
           id?: string
@@ -208,6 +232,63 @@ export type Database = {
           },
         ]
       }
+      contact_shares: {
+        Row: {
+          access_token_hash: string | null
+          contact_id: string
+          content_iv: string | null
+          created_at: string
+          document_id: string | null
+          encrypted_content: string | null
+          encrypted_share_key: string | null
+          id: string
+          share_key_iv: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_hash?: string | null
+          contact_id: string
+          content_iv?: string | null
+          created_at?: string
+          document_id?: string | null
+          encrypted_content?: string | null
+          encrypted_share_key?: string | null
+          id?: string
+          share_key_iv?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_hash?: string | null
+          contact_id?: string
+          content_iv?: string | null
+          created_at?: string
+          document_id?: string | null
+          encrypted_content?: string | null
+          encrypted_share_key?: string | null
+          id?: string
+          share_key_iv?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_shares_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_shares_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legacy_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_type_permissions: {
         Row: {
           contact_type: string
@@ -241,14 +322,18 @@ export type Database = {
           contact_type: string
           created_at: string
           custom_message: string | null
+          custom_message_iv: string | null
           email: string | null
           id: string
           name: string
           notes: string | null
+          notes_iv: string | null
           permissions: Json | null
           phone: string | null
+          phone_iv: string | null
           priority_order: number
           relationship: string | null
+          relationship_iv: string | null
           updated_at: string
           use_type_defaults: boolean | null
           user_id: string
@@ -258,14 +343,18 @@ export type Database = {
           contact_type: string
           created_at?: string
           custom_message?: string | null
+          custom_message_iv?: string | null
           email?: string | null
           id?: string
           name: string
           notes?: string | null
+          notes_iv?: string | null
           permissions?: Json | null
           phone?: string | null
+          phone_iv?: string | null
           priority_order?: number
           relationship?: string | null
+          relationship_iv?: string | null
           updated_at?: string
           use_type_defaults?: boolean | null
           user_id: string
@@ -275,14 +364,18 @@ export type Database = {
           contact_type?: string
           created_at?: string
           custom_message?: string | null
+          custom_message_iv?: string | null
           email?: string | null
           id?: string
           name?: string
           notes?: string | null
+          notes_iv?: string | null
           permissions?: Json | null
           phone?: string | null
+          phone_iv?: string | null
           priority_order?: number
           relationship?: string | null
+          relationship_iv?: string | null
           updated_at?: string
           use_type_defaults?: boolean | null
           user_id?: string
@@ -295,15 +388,22 @@ export type Database = {
           category: string
           category_specific_fields: Json | null
           contact_email: string | null
+          contact_email_iv: string | null
           contact_name: string | null
+          contact_name_iv: string | null
           contact_phone: string | null
+          contact_phone_iv: string | null
           created_at: string
           estimated_value: number | null
           id: string
           institution: string | null
+          institution_iv: string | null
           name: string
+          name_iv: string | null
           notes: string | null
+          notes_iv: string | null
           reference_number: string | null
+          reference_number_iv: string | null
           updated_at: string
           user_id: string
           visible_to: string[] | null
@@ -313,15 +413,22 @@ export type Database = {
           category: string
           category_specific_fields?: Json | null
           contact_email?: string | null
+          contact_email_iv?: string | null
           contact_name?: string | null
+          contact_name_iv?: string | null
           contact_phone?: string | null
+          contact_phone_iv?: string | null
           created_at?: string
           estimated_value?: number | null
           id?: string
           institution?: string | null
+          institution_iv?: string | null
           name: string
+          name_iv?: string | null
           notes?: string | null
+          notes_iv?: string | null
           reference_number?: string | null
+          reference_number_iv?: string | null
           updated_at?: string
           user_id: string
           visible_to?: string[] | null
@@ -331,15 +438,22 @@ export type Database = {
           category?: string
           category_specific_fields?: Json | null
           contact_email?: string | null
+          contact_email_iv?: string | null
           contact_name?: string | null
+          contact_name_iv?: string | null
           contact_phone?: string | null
+          contact_phone_iv?: string | null
           created_at?: string
           estimated_value?: number | null
           id?: string
           institution?: string | null
+          institution_iv?: string | null
           name?: string
+          name_iv?: string | null
           notes?: string | null
+          notes_iv?: string | null
           reference_number?: string | null
+          reference_number_iv?: string | null
           updated_at?: string
           user_id?: string
           visible_to?: string[] | null
@@ -349,43 +463,55 @@ export type Database = {
       legacy_documents: {
         Row: {
           content: string | null
+          content_iv: string | null
           created_at: string
           description: string | null
+          description_iv: string | null
           document_type: string
+          file_iv: string | null
           file_path: string | null
           file_size: number | null
           file_type: string | null
           id: string
           is_public: boolean | null
           title: string
+          title_iv: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           content?: string | null
+          content_iv?: string | null
           created_at?: string
           description?: string | null
+          description_iv?: string | null
           document_type: string
+          file_iv?: string | null
           file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           id?: string
           is_public?: boolean | null
           title: string
+          title_iv?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           content?: string | null
+          content_iv?: string | null
           created_at?: string
           description?: string | null
+          description_iv?: string | null
           document_type?: string
+          file_iv?: string | null
           file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           id?: string
           is_public?: boolean | null
           title?: string
+          title_iv?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -434,6 +560,7 @@ export type Database = {
           email_intro_message: string | null
           email_subject: string | null
           emergency_instructions: string | null
+          encrypted_vault_key: string | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -441,9 +568,11 @@ export type Database = {
           phone: string | null
           plan: string
           plan_expires_at: string | null
+          salt: string | null
           setup_wizard_dismissed: boolean | null
           updated_at: string
           user_id: string
+          vault_key_iv: string | null
         }
         Insert: {
           bio?: string | null
@@ -457,6 +586,7 @@ export type Database = {
           email_intro_message?: string | null
           email_subject?: string | null
           emergency_instructions?: string | null
+          encrypted_vault_key?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -464,9 +594,11 @@ export type Database = {
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null
+          salt?: string | null
           setup_wizard_dismissed?: boolean | null
           updated_at?: string
           user_id: string
+          vault_key_iv?: string | null
         }
         Update: {
           bio?: string | null
@@ -480,6 +612,7 @@ export type Database = {
           email_intro_message?: string | null
           email_subject?: string | null
           emergency_instructions?: string | null
+          encrypted_vault_key?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -487,9 +620,11 @@ export type Database = {
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null
+          salt?: string | null
           setup_wizard_dismissed?: boolean | null
           updated_at?: string
           user_id?: string
+          vault_key_iv?: string | null
         }
         Relationships: []
       }
@@ -682,6 +817,7 @@ export type Database = {
           email_intro_message: string | null
           email_subject: string | null
           emergency_instructions: string | null
+          encrypted_vault_key: string | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -689,9 +825,11 @@ export type Database = {
           phone: string | null
           plan: string
           plan_expires_at: string | null
+          salt: string | null
           setup_wizard_dismissed: boolean | null
           updated_at: string
           user_id: string
+          vault_key_iv: string | null
         }[]
         SetofOptions: {
           from: "*"

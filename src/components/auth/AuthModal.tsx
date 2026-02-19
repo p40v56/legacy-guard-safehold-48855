@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useEncryption } from '@/contexts/EncryptionContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,7 @@ interface AuthModalProps {
 
 const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
   const { toast } = useToast();
+  const { unlock, setupNewUser } = useEncryption();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -35,6 +37,13 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
 
       if (error) throw error;
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const unlocked = await unlock(formData.password, user.id);
+        if (!unlocked) {
+          await setupNewUser(formData.password, user.id);
+        }
+      }
       toast({
         title: "Welcome back!",
         description: "You have been signed in successfully.",

@@ -11,8 +11,12 @@ import { EmergencyContact, ContactPermissions, ContactType } from '@/types/acces
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { usePlan } from '@/hooks/usePlan';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { encryptFields } from '@/lib/crypto';
+import { createPortalShares } from '@/lib/portalShares';
 import { Lock } from 'lucide-react';
 import { formatDateEU } from '@/utils/dateUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ContactCardProps {
   contact: EmergencyContact;
@@ -39,6 +43,8 @@ const ContactCard: React.FC<ContactCardProps> = ({
 }) => {
   const { toast } = useToast();
   const { plan } = usePlan();
+  const { user } = useAuth();
+  const { vaultKey } = useEncryption();
   const isFree = plan === 'free';
   const [portalLink, setPortalLink] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
@@ -65,6 +71,16 @@ const ContactCard: React.FC<ContactCardProps> = ({
       );
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
+
+      // Create encrypted portal shares if vault is unlocked
+      if (vaultKey && user) {
+        try {
+          await createPortalShares(user.id, contact.id, result.token, vaultKey);
+        } catch (err) {
+          console.error('Failed to create portal shares:', err);
+        }
+      }
+
       const link = `${window.location.origin}/portal/${result.token}`;
       setPortalLink(link);
       await navigator.clipboard.writeText(link);
@@ -80,7 +96,12 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const handleSaveCustomMessage = async () => {
     setSavingMessage(true);
     try {
-      const { error } = await supabase.from('contacts').update({ custom_message: customMsg || null }).eq('id', contact.id);
+      let updateData: any = { custom_message: customMsg || null, custom_message_iv: null };
+      if (vaultKey && customMsg) {
+        const encrypted = await encryptFields({ custom_message: customMsg }, vaultKey);
+        updateData = encrypted;
+      }
+      const { error } = await supabase.from('contacts').update(updateData).eq('id', contact.id);
       if (error) throw error;
       toast({ title: "Message saved", description: "Custom message updated for this contact." });
     } catch (error) {

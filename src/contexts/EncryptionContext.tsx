@@ -8,6 +8,7 @@ import {
   encryptVaultKey,
   decryptVaultKey,
 } from '@/lib/crypto';
+import { migrateUserData } from '@/lib/dataMigration';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,6 +85,17 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       setShowReauth(false);
       setReauthPassword('');
       setReauthError('');
+
+      // Auto-migrate plaintext data on first unlock
+      try {
+        const result = await migrateUserData(userId, decryptedVaultKey);
+        if (result.total > 0) {
+          console.log(`Encrypted ${result.total} existing records`);
+        }
+      } catch (e) {
+        console.error('Data migration error:', e);
+      }
+
       return true;
     } catch {
       return false;

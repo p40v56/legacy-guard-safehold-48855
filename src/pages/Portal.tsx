@@ -10,7 +10,7 @@ import PortalFinancials from '@/components/portal/PortalFinancials';
 import PortalDocuments from '@/components/portal/PortalDocuments';
 import PortalAccounts from '@/components/portal/PortalAccounts';
 import { deriveKeyFromToken, decryptText } from '@/lib/crypto';
-import { hexToBytes } from '@/lib/portalShares';
+
 
 export interface PortalData {
   contactName: string;
@@ -33,13 +33,15 @@ interface SecurityChallenge {
 }
 
 /**
- * If the API returns an encrypted payload, derive the share key from the URL
- * token and decrypt to get the plaintext PortalData JSON.
+ * Decrypt the portal bundle using the raw token string from the URL.
+ * Steps: token string → PBKDF2 key → decrypt encrypted_content → parse JSON
  */
-async function decryptPortalResponse(result: any, tokenHex: string): Promise<PortalData> {
-  const tokenBytes = hexToBytes(tokenHex);
-  const shareKey = await deriveKeyFromToken(tokenBytes);
+async function decryptPortalResponse(result: any, rawToken: string): Promise<PortalData> {
+  // 1. Derive key from raw token string (same function as share-creation side)
+  const shareKey = await deriveKeyFromToken(rawToken);
+  // 2. Decrypt the portal bundle
   const plaintext = await decryptText(result.encryptedContent, result.contentIv, shareKey);
+  // 3. Parse and return
   return JSON.parse(plaintext);
 }
 

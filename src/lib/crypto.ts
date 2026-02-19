@@ -73,14 +73,17 @@ export async function deriveMasterKey(
   );
 }
 
+/**
+ * Derives an AES-GCM key from a raw token string (hex or base64).
+ * MUST be byte-for-byte identical on both owner (share creation) and contact (portal) sides.
+ */
 export async function deriveKeyFromToken(
-  tokenBytes: Uint8Array
+  rawToken: string
 ): Promise<CryptoKey> {
-  const fixedSalt = new TextEncoder().encode('legacyvault-share-token-v1');
-
-  const baseKey = await crypto.subtle.importKey(
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    ab(tokenBytes),
+    encoder.encode(rawToken),
     'PBKDF2',
     false,
     ['deriveKey']
@@ -89,11 +92,11 @@ export async function deriveKeyFromToken(
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: ab(fixedSalt),
+      salt: encoder.encode('legacyvault-contact-salt'),
       iterations: 100_000,
       hash: 'SHA-256',
     },
-    baseKey,
+    keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt']

@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Shield, ArrowRight, Check, Timer, Users, Lock } from 'lucide-react';
+import { Shield, ArrowRight } from 'lucide-react';
+import DeadMansSwitchDemo from '@/components/landing/DeadMansSwitchDemo';
 import { motion, useReducedMotion } from 'framer-motion';
 
 /* ───────── Scroll-triggered wrapper ───────── */
@@ -66,11 +67,6 @@ const Index = () => {
     );
   }
 
-  const features = [
-    { icon: Timer, title: 'Dead Man\'s Switch', description: 'If you stop checking in, your vault unlocks automatically.' },
-    { icon: Users, title: 'Trusted Contacts', description: 'Choose exactly who gets access to what, and when.' },
-    { icon: Lock, title: 'Secure Vault', description: 'Your family gets access the moment it matters.' },
-  ];
 
   const steps = [
     { num: '1', label: 'Account', desc: 'Create your secure account' },
@@ -150,28 +146,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ─── 3. FEATURES ─── */}
-      <section id="features" className="py-32 px-6 bg-[#0D1B2A]">
-        <div className="max-w-6xl mx-auto">
-          <FadeUp className="text-center mb-20">
-            <span className="text-[#1A9BD7] text-sm font-semibold uppercase tracking-[0.2em]">What you get</span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-white mt-4">Everything your loved ones need.</h2>
-          </FadeUp>
-          <div className="grid md:grid-cols-3 gap-6">
-            {features.map((f, i) => (
-              <FadeUp key={i} delay={i * 0.15}>
-                <div className="feature-card-sky group h-full">
-                  <div className="w-14 h-14 bg-[#1A9BD7]/20 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#1A9BD7]/30 transition-all">
-                    <f.icon className="w-7 h-7 text-[#1A9BD7]" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">{f.title}</h3>
-                  <p className="text-white/50">{f.description}</p>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ─── 3. DEAD MAN'S SWITCH DEMO ─── */}
+      <DeadMansSwitchDemo />
 
       {/* ─── 4. PROCESS ─── */}
       <section id="how-it-works" className="py-32 px-6" style={{ background: 'linear-gradient(135deg, #1A9BD7, #0D6EA8)' }}>

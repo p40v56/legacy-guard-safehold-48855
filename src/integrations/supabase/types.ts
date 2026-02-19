@@ -497,6 +497,7 @@ export type Database = {
         Row: {
           answer_hash: string
           created_at: string
+          hint: string | null
           id: string
           question: string
           target_contact_id: string | null
@@ -508,6 +509,7 @@ export type Database = {
         Insert: {
           answer_hash: string
           created_at?: string
+          hint?: string | null
           id?: string
           question: string
           target_contact_id?: string | null
@@ -519,6 +521,7 @@ export type Database = {
         Update: {
           answer_hash?: string
           created_at?: string
+          hint?: string | null
           id?: string
           question?: string
           target_contact_id?: string | null

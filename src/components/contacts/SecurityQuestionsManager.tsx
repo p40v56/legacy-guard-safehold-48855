@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Plus, Trash2, Shield } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Shield, Pencil, Eye, EyeOff, X, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ interface SecurityQuestion {
   id: string;
   question: string;
   answer_hash: string;
+  hint: string | null;
   target_type: 'all' | 'category' | 'contact';
   target_contact_type: string | null;
   target_contact_id: string | null;
@@ -32,10 +33,22 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
   const [loading, setLoading] = useState(true);
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
+  const [newHint, setNewHint] = useState('');
   const [newTargetType, setNewTargetType] = useState<'all' | 'category' | 'contact'>('all');
   const [newTargetContactType, setNewTargetContactType] = useState<string>('');
   const [newTargetContactId, setNewTargetContactId] = useState<string>('');
   const [saving, setSaving] = useState(false);
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editQuestion, setEditQuestion] = useState('');
+  const [editAnswer, setEditAnswer] = useState('');
+  const [editHint, setEditHint] = useState('');
+  const [editTargetType, setEditTargetType] = useState<'all' | 'category' | 'contact'>('all');
+  const [editTargetContactType, setEditTargetContactType] = useState<string>('');
+  const [editTargetContactId, setEditTargetContactId] = useState<string>('');
+  const [showEditAnswer, setShowEditAnswer] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => {
     if (user) fetchQuestions();
@@ -68,6 +81,7 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
         user_id: user.id,
         question: newQuestion.trim(),
         answer_hash: newAnswer.trim(),
+        hint: newHint.trim() || null,
         target_type: newTargetType,
         target_contact_type: newTargetType === 'category' ? newTargetContactType : null,
         target_contact_id: newTargetType === 'contact' ? newTargetContactId : null,
@@ -84,6 +98,7 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
       setQuestions(prev => [...prev, data as SecurityQuestion]);
       setNewQuestion('');
       setNewAnswer('');
+      setNewHint('');
       setNewTargetType('all');
       setNewTargetContactType('');
       setNewTargetContactId('');
@@ -97,6 +112,55 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
     }
   };
 
+  const startEdit = (q: SecurityQuestion) => {
+    setEditingId(q.id);
+    setEditQuestion(q.question);
+    setEditAnswer(q.answer_hash);
+    setEditHint(q.hint || '');
+    setEditTargetType(q.target_type);
+    setEditTargetContactType(q.target_contact_type || '');
+    setEditTargetContactId(q.target_contact_id || '');
+    setShowEditAnswer(false);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setShowEditAnswer(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editQuestion.trim() || !editAnswer.trim()) return;
+    setEditSaving(true);
+
+    try {
+      const payload: any = {
+        question: editQuestion.trim(),
+        answer_hash: editAnswer.trim(),
+        hint: editHint.trim() || null,
+        target_type: editTargetType,
+        target_contact_type: editTargetType === 'category' ? editTargetContactType : null,
+        target_contact_id: editTargetType === 'contact' ? editTargetContactId : null,
+      };
+
+      const { error } = await supabase
+        .from('security_questions')
+        .update(payload)
+        .eq('id', editingId);
+
+      if (error) throw error;
+
+      setQuestions(prev => prev.map(q => q.id === editingId ? { ...q, ...payload } : q));
+      setEditingId(null);
+      setShowEditAnswer(false);
+      toast({ title: 'Updated', description: 'Security question updated.' });
+    } catch (error) {
+      console.error('Error updating security question:', error);
+      toast({ title: 'Error', description: 'Failed to update security question', variant: 'destructive' });
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -106,6 +170,7 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
 
       if (error) throw error;
       setQuestions(prev => prev.filter(q => q.id !== id));
+      if (editingId === id) setEditingId(null);
       toast({ title: 'Deleted', description: 'Security question removed.' });
     } catch (error) {
       console.error('Error deleting security question:', error);
@@ -125,6 +190,8 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
     return 'Unknown';
   };
 
+  const maskedAnswer = (answer: string) => '•'.repeat(Math.max(answer.length, 6));
+
   return (
     <Card className="bg-card/50 border-border">
       <CardHeader>
@@ -142,23 +209,106 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
         {questions.length > 0 && (
           <div className="space-y-3">
             {questions.map((q) => (
-              <div key={q.id} className="flex items-start justify-between gap-3 p-4 bg-muted/30 rounded-xl border border-border">
-                <div className="flex-1 space-y-1">
-                  <p className="text-foreground font-medium text-sm">{q.question}</p>
-                  <p className="text-muted-foreground text-xs">Answer: {q.answer_hash}</p>
-                  <Badge variant="secondary" className="text-xs">
-                    {q.target_type === 'all' && <Shield className="w-3 h-3 mr-1" />}
-                    {getTargetLabel(q)}
-                  </Badge>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(q.id)}
-                  className="text-destructive hover:text-destructive/80"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+              <div key={q.id} className="p-4 bg-muted/30 rounded-xl border border-border">
+                {editingId === q.id ? (
+                  /* Edit mode */
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Question</Label>
+                      <Input value={editQuestion} onChange={e => setEditQuestion(e.target.value)} className="bg-card/50 border-border" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Answer</Label>
+                      <div className="relative">
+                        <Input
+                          type={showEditAnswer ? 'text' : 'password'}
+                          value={editAnswer}
+                          onChange={e => setEditAnswer(e.target.value)}
+                          className="bg-card/50 border-border pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                          onClick={() => setShowEditAnswer(!showEditAnswer)}
+                        >
+                          {showEditAnswer ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Hint <span className="text-muted-foreground">(optional)</span></Label>
+                      <Input value={editHint} onChange={e => setEditHint(e.target.value)} placeholder="A clue to help the contact" className="bg-card/50 border-border" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Applies To</Label>
+                      <Select value={editTargetType} onValueChange={(v: 'all' | 'category' | 'contact') => setEditTargetType(v)}>
+                        <SelectTrigger className="bg-card/50 border-border"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-card border-border">
+                          <SelectItem value="all">All Contacts</SelectItem>
+                          <SelectItem value="category">Contact Category</SelectItem>
+                          <SelectItem value="contact">Specific Contact</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {editTargetType === 'category' && (
+                      <div className="space-y-2">
+                        <Label className="text-foreground text-sm">Category</Label>
+                        <Select value={editTargetContactType} onValueChange={setEditTargetContactType}>
+                          <SelectTrigger className="bg-card/50 border-border"><SelectValue placeholder="Select category" /></SelectTrigger>
+                          <SelectContent className="bg-card border-border">
+                            {Object.entries(contactTypeLabels).map(([key, label]) => (
+                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {editTargetType === 'contact' && (
+                      <div className="space-y-2">
+                        <Label className="text-foreground text-sm">Contact</Label>
+                        <Select value={editTargetContactId} onValueChange={setEditTargetContactId}>
+                          <SelectTrigger className="bg-card/50 border-border"><SelectValue placeholder="Select contact" /></SelectTrigger>
+                          <SelectContent className="bg-card border-border">
+                            {contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveEdit} disabled={editSaving || !editQuestion.trim() || !editAnswer.trim()} size="sm">
+                        <Check className="w-4 h-4 mr-1" />{editSaving ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button onClick={cancelEdit} variant="ghost" size="sm">
+                        <X className="w-4 h-4 mr-1" />Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* View mode */
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-1">
+                      <p className="text-foreground font-medium text-sm">{q.question}</p>
+                      <p className="text-muted-foreground text-xs">Answer: {maskedAnswer(q.answer_hash)}</p>
+                      {q.hint && (
+                        <p className="text-muted-foreground text-xs">Hint: {q.hint}</p>
+                      )}
+                      <Badge variant="secondary" className="text-xs">
+                        {q.target_type === 'all' && <Shield className="w-3 h-3 mr-1" />}
+                        {getTargetLabel(q)}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => startEdit(q)} className="text-muted-foreground hover:text-foreground">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(q.id)} className="text-destructive hover:text-destructive/80">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -170,30 +320,23 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
           
           <div className="space-y-2">
             <Label className="text-foreground text-sm">Question</Label>
-            <Input
-              value={newQuestion}
-              onChange={(e) => setNewQuestion(e.target.value)}
-              placeholder="e.g. What was the name of our childhood pet?"
-              className="bg-card/50 border-border"
-            />
+            <Input value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} placeholder="e.g. What was the name of our childhood pet?" className="bg-card/50 border-border" />
           </div>
 
           <div className="space-y-2">
             <Label className="text-foreground text-sm">Answer</Label>
-            <Input
-              value={newAnswer}
-              onChange={(e) => setNewAnswer(e.target.value)}
-              placeholder="The exact answer the contact must provide"
-              className="bg-card/50 border-border"
-            />
+            <Input value={newAnswer} onChange={(e) => setNewAnswer(e.target.value)} placeholder="The exact answer the contact must provide" className="bg-card/50 border-border" />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-foreground text-sm">Hint <span className="text-muted-foreground">(optional)</span></Label>
+            <Input value={newHint} onChange={(e) => setNewHint(e.target.value)} placeholder="A clue to help the contact remember" className="bg-card/50 border-border" />
           </div>
 
           <div className="space-y-2">
             <Label className="text-foreground text-sm">Applies To</Label>
             <Select value={newTargetType} onValueChange={(v: 'all' | 'category' | 'contact') => setNewTargetType(v)}>
-              <SelectTrigger className="bg-card/50 border-border">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="bg-card/50 border-border"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-card border-border">
                 <SelectItem value="all">All Contacts</SelectItem>
                 <SelectItem value="category">Contact Category</SelectItem>
@@ -206,9 +349,7 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
             <div className="space-y-2">
               <Label className="text-foreground text-sm">Category</Label>
               <Select value={newTargetContactType} onValueChange={setNewTargetContactType}>
-                <SelectTrigger className="bg-card/50 border-border">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
+                <SelectTrigger className="bg-card/50 border-border"><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent className="bg-card border-border">
                   {Object.entries(contactTypeLabels).map(([key, label]) => (
                     <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -222,9 +363,7 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
             <div className="space-y-2">
               <Label className="text-foreground text-sm">Contact</Label>
               <Select value={newTargetContactId} onValueChange={setNewTargetContactId}>
-                <SelectTrigger className="bg-card/50 border-border">
-                  <SelectValue placeholder="Select contact" />
-                </SelectTrigger>
+                <SelectTrigger className="bg-card/50 border-border"><SelectValue placeholder="Select contact" /></SelectTrigger>
                 <SelectContent className="bg-card border-border">
                   {contacts.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>

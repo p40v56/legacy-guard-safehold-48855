@@ -1,0 +1,1 @@
+ALTER TABLE public.security_questions ADD COLUMN hint text DEFAULT NULL;

@@ -151,7 +151,8 @@ async function startGracePeriod(
     return { success: true };
   }
   
-  const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+  // first_name/last_name are encrypted server-side — use generic placeholder
+  const userName = "the vault owner";
   const emailTemplate = profile ? {
     email_grace_subject: profile.email_grace_subject,
     email_grace_intro: profile.email_grace_intro,
@@ -257,8 +258,9 @@ async function triggerSwitch(
     }
     
     const permissions = resolvePermissions(contact, typePermissions);
-    const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
-    // Note: contact.name is encrypted; we do not embed it in the email to avoid sending ciphertext
+    // Note: first_name, last_name, and contact.name are all encrypted server-side.
+    // We must NOT embed them in emails. The portal URL carries the access token;
+    // all decrypted content is delivered via the contact portal.
     const contactLabel = contact.email || contact.id;
     
     const emailTemplate = profile ? {
@@ -271,7 +273,7 @@ async function triggerSwitch(
     
     const portalToken = await generatePortalToken(supabase, userId, contact.id);
     
-    // IMPORTANT: We do NOT pass documents or customMessage here because those fields
+    // IMPORTANT: We do NOT pass documents, names, or customMessage here because those fields
     // are encrypted in the database and cannot be decrypted server-side.
     // The contact can access all their decrypted content via the secure portal link.
     const notificationPayload = {
@@ -280,7 +282,7 @@ async function triggerSwitch(
       contactName: contact.email || 'Trusted Contact', // encrypted name — use email as display fallback
       contactEmail: contact.email,
       contactType: contact.contact_type,
-      userName: userName || "User",
+      userName: "the vault owner", // encrypted server-side; placeholder used in email template
       emergencyInstructions: null, // encrypted server-side; do not embed
       customMessage: null, // encrypted server-side; accessible via portal
       documents: [], // encrypted server-side; accessible via portal

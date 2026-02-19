@@ -78,7 +78,7 @@ const Documents = () => {
     if (user) {
       fetchDocuments();
     }
-  }, [user]);
+  }, [user, vaultKey]);
 
   const fetchDocuments = async () => {
     try {

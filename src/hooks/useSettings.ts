@@ -10,6 +10,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { ContactType } from '@/types/access-control';
 import { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { encryptFields, decryptFields } from '@/lib/crypto';
 
 interface Profile {
   id: string;
@@ -50,6 +52,7 @@ const defaultEmailTemplate: EmailTemplateData = {
 export const useSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { vaultKey } = useEncryption();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -111,14 +114,23 @@ export const useSettings = () => {
         emergency_alerts: notificationData.emergency_alerts
       });
 
-      const transformedRules = rulesData.map(rule => ({
-        id: rule.id,
-        target_type: rule.target_type as 'category' | 'contacts',
-        contact_category: rule.contact_category as ContactType,
-        contact_ids: rule.contact_ids || [],
-        delay_hours: rule.delay_hours,
-        custom_message: rule.custom_message || '',
-        enabled: rule.enabled
+      const transformedRules = await Promise.all(rulesData.map(async (rule) => {
+        let customMessage = rule.custom_message || '';
+        if (vaultKey && customMessage && rule.custom_message_iv) {
+          try {
+            const decrypted = await decryptFields(rule as any, ['custom_message'], vaultKey);
+            customMessage = decrypted.custom_message || customMessage;
+          } catch { /* use raw */ }
+        }
+        return {
+          id: rule.id,
+          target_type: rule.target_type as 'category' | 'contacts',
+          contact_category: rule.contact_category as ContactType,
+          contact_ids: rule.contact_ids || [],
+          delay_hours: rule.delay_hours,
+          custom_message: customMessage,
+          enabled: rule.enabled,
+        };
       }));
       setActivationRules(transformedRules);
 
@@ -221,17 +233,24 @@ export const useSettings = () => {
       const existingRules = await ActivationRulesService.getActivationRules(user.id);
       await Promise.all(existingRules.map(rule => ActivationRulesService.deleteActivationRule(rule.id)));
       
-      await Promise.all(activationRules.map(rule => 
-        ActivationRulesService.createActivationRule(user.id, {
+      await Promise.all(activationRules.map(async (rule) => {
+        let ruleData: any = {
           target_type: rule.target_type,
           contact_category: rule.contact_category,
           contact_ids: rule.contact_ids,
           delay_hours: rule.delay_hours,
           custom_message: rule.custom_message,
           enabled: rule.enabled,
-          action_type: 'send_message'
-        })
-      ));
+          action_type: 'send_message',
+        };
+
+        if (vaultKey && rule.custom_message) {
+          const encrypted = await encryptFields({ custom_message: rule.custom_message }, vaultKey);
+          ruleData = { ...ruleData, ...encrypted };
+        }
+
+        return ActivationRulesService.createActivationRule(user.id, ruleData);
+      }));
 
       toast({
         title: "Success",
@@ -273,7 +292,7 @@ export const useSettings = () => {
     if (user) {
       fetchSettings();
     }
-  }, [user]);
+  }, [user, vaultKey]);
 
   return {
     profile,

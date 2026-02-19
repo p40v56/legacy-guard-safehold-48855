@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Routes, Route, Navigate } from 'react-router-dom';
 import { Shield, Lock, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import PortalOverview from '@/components/portal/PortalOverview';
 import PortalFinancials from '@/components/portal/PortalFinancials';
 import PortalDocuments from '@/components/portal/PortalDocuments';
 import PortalAccounts from '@/components/portal/PortalAccounts';
+import { deriveKeyFromToken, decryptText } from '@/lib/crypto';
+import { hexToBytes } from '@/lib/portalShares';
 
 export interface PortalData {
   contactName: string;
@@ -28,6 +30,17 @@ interface SecurityChallenge {
   question: string;
   contactName: string;
   userName: string;
+}
+
+/**
+ * If the API returns an encrypted payload, derive the share key from the URL
+ * token and decrypt to get the plaintext PortalData JSON.
+ */
+async function decryptPortalResponse(result: any, tokenHex: string): Promise<PortalData> {
+  const tokenBytes = hexToBytes(tokenHex);
+  const shareKey = await deriveKeyFromToken(tokenBytes);
+  const plaintext = await decryptText(result.encryptedContent, result.contentIv, shareKey);
+  return JSON.parse(plaintext);
 }
 
 const Portal = () => {
@@ -55,7 +68,15 @@ const Portal = () => {
       );
       const result = await response.json();
       if (!response.ok) { setError(result.error || 'Failed to load portal'); return; }
-      if (result.requiresAuth) { setSecurityChallenge(result); } else { setPortalData(result); }
+
+      if (result.requiresAuth) {
+        setSecurityChallenge(result);
+      } else if (result.encrypted && token) {
+        const data = await decryptPortalResponse(result, token);
+        setPortalData(data);
+      } else {
+        setPortalData(result);
+      }
     } catch (err) {
       console.error('Portal fetch error:', err);
       setError('Failed to load the document portal. Please try again later.');
@@ -76,8 +97,14 @@ const Portal = () => {
       );
       const result = await response.json();
       if (!response.ok) { setAnswerError(result.error || 'Incorrect answer'); return; }
+
       setSecurityChallenge(null);
-      setPortalData(result);
+      if (result.encrypted && token) {
+        const data = await decryptPortalResponse(result, token);
+        setPortalData(data);
+      } else {
+        setPortalData(result);
+      }
     } catch {
       setAnswerError('Failed to verify answer. Please try again.');
     } finally {

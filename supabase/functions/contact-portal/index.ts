@@ -22,9 +22,26 @@ interface ContactPermissions {
   can_modify_information?: boolean;
 }
 
+// ── Token hashing (must match client-side hashToken) ─────────
+
+async function hashTokenHex(tokenHex: string): Promise<string> {
+  const bytes = new Uint8Array(tokenHex.length / 2);
+  for (let i = 0; i < tokenHex.length; i += 2) {
+    bytes[i / 2] = parseInt(tokenHex.substring(i, i + 2), 16);
+  }
+  const digest = await crypto.subtle.digest("SHA-256", bytes.buffer);
+  const arr = new Uint8Array(digest);
+  let binary = "";
+  for (let i = 0; i < arr.length; i++) {
+    binary += String.fromCharCode(arr[i]);
+  }
+  return btoa(binary);
+}
+
+// ── Permission helpers ───────────────────────────────────────
+
 function resolvePermissions(contact: any, typePermissions: any[]): ContactPermissions {
   let permissions: ContactPermissions = contact.permissions || {};
-
   if (contact.use_type_defaults) {
     const typeDefault = typePermissions.find(
       (tp: any) => tp.contact_type === contact.contact_type
@@ -36,36 +53,25 @@ function resolvePermissions(contact: any, typePermissions: any[]): ContactPermis
   return permissions;
 }
 
-function filterDocumentsByPermissions(documents: any[], permissions: ContactPermissions, contactId: string): any[] {
+function filterDocumentsByPermissions(documents: any[], permissions: ContactPermissions): any[] {
   const docPerms = permissions.legacy_documents;
   if (!docPerms) return [];
-
-  // First filter by permission categories
-  let permitted = documents;
-  if (!docPerms.all_documents) {
-    const allowedCategories = docPerms.by_category || [];
-    const specificIds = docPerms.specific_documents || [];
-    if (allowedCategories.length === 0 && specificIds.length === 0) return [];
-    permitted = documents.filter((doc: any) =>
-      allowedCategories.includes(doc.document_type) || specificIds.includes(doc.id)
-    );
-  }
-
-  // Then filter by visible_to (null = all contacts, or must include this contact)
-  // Documents don't have visible_to currently, so return all permitted
-  return permitted;
+  if (docPerms.all_documents) return documents;
+  const allowedCategories = docPerms.by_category || [];
+  const specificIds = docPerms.specific_documents || [];
+  if (allowedCategories.length === 0 && specificIds.length === 0) return [];
+  return documents.filter((doc: any) =>
+    allowedCategories.includes(doc.document_type) || specificIds.includes(doc.id)
+  );
 }
 
 function filterAccountsByPermissions(accounts: any[], permissions: ContactPermissions): any[] {
   const acctPerms = permissions.digital_accounts;
   if (!acctPerms) return [];
-
   if (acctPerms.all_accounts) return accounts;
-
   const allowedCategories = acctPerms.by_category || [];
   const specificIds = acctPerms.specific_accounts || [];
   if (allowedCategories.length === 0 && specificIds.length === 0) return [];
-
   return accounts.filter((acct: any) =>
     allowedCategories.includes(acct.account_type) || specificIds.includes(acct.id)
   );
@@ -73,10 +79,116 @@ function filterAccountsByPermissions(accounts: any[], permissions: ContactPermis
 
 function filterFinancialAssets(assets: any[], contactId: string): any[] {
   return assets.filter((a: any) => {
-    if (!a.visible_to || a.visible_to.length === 0) return true; // null/empty = all contacts
+    if (!a.visible_to || a.visible_to.length === 0) return true;
     return a.visible_to.includes(contactId);
   });
 }
+
+// ── Try encrypted shares first, fallback to legacy ───────────
+
+async function servePortalResponse(
+  supabase: any,
+  tokenData: any,
+  contact: any
+): Promise<Response> {
+  // Try encrypted shares first
+  try {
+    const tokenHash = await hashTokenHex(tokenData.token);
+    const { data: share } = await supabase
+      .from("contact_shares")
+      .select("encrypted_content, content_iv")
+      .eq("access_token_hash", tokenHash)
+      .eq("contact_id", tokenData.contact_id)
+      .single();
+
+    if (share?.encrypted_content && share?.content_iv) {
+      console.log(`Serving encrypted portal data for contact ${contact.name}`);
+      return new Response(
+        JSON.stringify({
+          encrypted: true,
+          encryptedContent: share.encrypted_content,
+          contentIv: share.content_iv,
+          contactName: contact.name,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+  } catch {
+    // No encrypted shares, fall through to legacy
+  }
+
+  // Legacy fallback: serve plaintext (pre-encryption users)
+  return await servePortalDataLegacy(supabase, tokenData, contact);
+}
+
+// ── Legacy portal data (unencrypted fallback) ────────────────
+
+async function servePortalDataLegacy(supabase: any, tokenData: any, contact: any): Promise<Response> {
+  const userId = tokenData.user_id;
+  const contactId = tokenData.contact_id;
+
+  const [profileRes, typePermissionsRes, allDocumentsRes, activationRulesRes, accountsRes, financialAssetsRes, settingsRes] = await Promise.all([
+    supabase.from("profiles").select("first_name, last_name, emergency_instructions, plan").eq("user_id", userId).single(),
+    supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
+    supabase.from("legacy_documents").select("id, title, content, document_type, description, created_at, file_path").eq("user_id", userId),
+    supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
+    supabase.from("accounts").select("*").eq("user_id", userId),
+    supabase.from("financial_assets").select("*").eq("user_id", userId),
+    supabase.from("user_settings").select("switch_triggered, switch_triggered_at").eq("user_id", userId).maybeSingle(),
+  ]);
+
+  const profile = profileRes.data;
+  const typePermissions = typePermissionsRes.data || [];
+  const allDocuments = allDocumentsRes.data || [];
+  const activationRules = activationRulesRes.data || [];
+  const allAccounts = accountsRes.data || [];
+  const allFinancialAssets = financialAssetsRes.data || [];
+  const settings = settingsRes.data;
+
+  const permissions = resolvePermissions(contact, typePermissions);
+  const userPlan = profile?.plan || "free";
+  const isFree = userPlan === "free";
+
+  const allowedDocuments = isFree ? [] : filterDocumentsByPermissions(allDocuments, permissions);
+  const allowedAccounts = isFree ? [] : filterAccountsByPermissions(allAccounts, permissions);
+  const allowedFinancialAssets = isFree ? [] : filterFinancialAssets(allFinancialAssets, contactId);
+
+  let customMessage = contact.custom_message || null;
+  if (!customMessage && activationRules) {
+    for (const rule of activationRules) {
+      if (rule.target_type === "contacts" && rule.contact_ids?.includes(contact.id)) {
+        customMessage = rule.custom_message;
+        break;
+      }
+      if (rule.target_type === "category" && rule.contact_category === contact.contact_type) {
+        customMessage = rule.custom_message;
+        break;
+      }
+    }
+  }
+
+  const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+
+  console.log(`Portal data served (legacy) for contact ${contact.name}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`);
+
+  return new Response(
+    JSON.stringify({
+      contactName: contact.name,
+      userName,
+      userPlan,
+      customMessage,
+      emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
+      switchTriggeredAt: settings?.switch_triggered_at || null,
+      documents: allowedDocuments,
+      accounts: allowedAccounts,
+      financialAssets: allowedFinancialAssets,
+      permissions,
+    }),
+    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
+
+// ── Main handler ─────────────────────────────────────────────
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -92,7 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
     const action = url.searchParams.get("action");
     const token = url.searchParams.get("token");
 
-    // Action: verify-answer
+    // ── verify-answer ──────────────────────────────────────
     if (action === "verify-answer" && req.method === "POST") {
       const body = await req.json();
       const { token: bodyToken, answer } = body;
@@ -162,10 +274,10 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      return await servePortalData(supabase, tokenData, contact);
+      return await servePortalResponse(supabase, tokenData, contact);
     }
 
-    // Action: verify token
+    // ── verify token ───────────────────────────────────────
     if (action === "verify" && token) {
       console.log(`Portal verify request for token: ${token.substring(0, 8)}...`);
 
@@ -228,6 +340,7 @@ const handler = async (req: Request): Promise<Response> => {
           JSON.stringify({
             requiresAuth: true,
             question: applicableQuestion.question,
+            hint: applicableQuestion.hint || null,
             contactName: contact.name,
             userName,
           }),
@@ -235,10 +348,10 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      return await servePortalData(supabase, tokenData, contact);
+      return await servePortalResponse(supabase, tokenData, contact);
     }
 
-    // Action: generate token (authenticated)
+    // ── generate-token ─────────────────────────────────────
     if (action === "generate-token" && req.method === "POST") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) {
@@ -287,7 +400,9 @@ const handler = async (req: Request): Promise<Response> => {
 
       const tokenArray = new Uint8Array(32);
       crypto.getRandomValues(tokenArray);
-      const newToken = Array.from(tokenArray).map(b => b.toString(16).padStart(2, '0')).join('');
+      const newToken = Array.from(tokenArray)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
 
       await supabase
         .from("contact_access_tokens")
@@ -336,87 +451,20 @@ function findApplicableQuestion(questions: any[], contact: any): any | null {
   if (!questions || questions.length === 0) return null;
 
   const contactSpecific = questions.find(
-    (q: any) => q.target_type === 'contact' && q.target_contact_id === contact.id
+    (q: any) => q.target_type === "contact" && q.target_contact_id === contact.id
   );
   if (contactSpecific) return contactSpecific;
 
   const categorySpecific = questions.find(
-    (q: any) => q.target_type === 'category' && q.target_contact_type === contact.contact_type
+    (q: any) =>
+      q.target_type === "category" && q.target_contact_type === contact.contact_type
   );
   if (categorySpecific) return categorySpecific;
 
-  const allContacts = questions.find((q: any) => q.target_type === 'all');
+  const allContacts = questions.find((q: any) => q.target_type === "all");
   if (allContacts) return allContacts;
 
   return null;
-}
-
-async function servePortalData(supabase: any, tokenData: any, contact: any): Promise<Response> {
-  const userId = tokenData.user_id;
-  const contactId = tokenData.contact_id;
-
-  // Fetch all data in parallel
-  const [profileRes, typePermissionsRes, allDocumentsRes, activationRulesRes, accountsRes, financialAssetsRes, settingsRes] = await Promise.all([
-    supabase.from("profiles").select("first_name, last_name, emergency_instructions, plan").eq("user_id", userId).single(),
-    supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
-    supabase.from("legacy_documents").select("id, title, content, document_type, description, created_at, file_path").eq("user_id", userId),
-    supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
-    supabase.from("accounts").select("*").eq("user_id", userId),
-    supabase.from("financial_assets").select("*").eq("user_id", userId),
-    supabase.from("user_settings").select("switch_triggered, switch_triggered_at").eq("user_id", userId).maybeSingle(),
-  ]);
-
-  const profile = profileRes.data;
-  const typePermissions = typePermissionsRes.data || [];
-  const allDocuments = allDocumentsRes.data || [];
-  const activationRules = activationRulesRes.data || [];
-  const allAccounts = accountsRes.data || [];
-  const allFinancialAssets = financialAssetsRes.data || [];
-  const settings = settingsRes.data;
-
-  const permissions = resolvePermissions(contact, typePermissions);
-  const userPlan = profile?.plan || 'free';
-  const isFree = userPlan === 'free';
-
-  // Free plan: only personal message + emergency instructions, no extended portal
-  const allowedDocuments = isFree ? [] : filterDocumentsByPermissions(allDocuments, permissions, contactId);
-  const allowedAccounts = isFree ? [] : filterAccountsByPermissions(allAccounts, permissions);
-  const allowedFinancialAssets = isFree ? [] : filterFinancialAssets(allFinancialAssets, contactId);
-
-  // Get custom message
-  let customMessage = contact.custom_message || null;
-  if (!customMessage && activationRules) {
-    for (const rule of activationRules) {
-      if (rule.target_type === 'contacts' && rule.contact_ids?.includes(contact.id)) {
-        customMessage = rule.custom_message;
-        break;
-      }
-      if (rule.target_type === 'category' && rule.contact_category === contact.contact_type) {
-        customMessage = rule.custom_message;
-        break;
-      }
-    }
-  }
-
-  const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
-
-  console.log(`Portal data served for contact ${contact.name}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`);
-
-  return new Response(
-    JSON.stringify({
-      contactName: contact.name,
-      userName,
-      userPlan,
-      customMessage,
-      emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
-      switchTriggeredAt: settings?.switch_triggered_at || null,
-      documents: allowedDocuments,
-      accounts: allowedAccounts,
-      financialAssets: allowedFinancialAssets,
-      permissions,
-    }),
-    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-  );
 }
 
 serve(handler);

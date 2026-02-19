@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AccountsService } from '@/services/supabaseService';
 import { useToast } from '@/hooks/use-toast';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { encryptFields, decryptFields } from '@/lib/crypto';
 
 type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'other';
 type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
@@ -21,9 +23,13 @@ interface DigitalAccount {
   updated_at?: string;
 }
 
+// Fields that get encrypted before storage
+const ENCRYPTED_FIELDS = ['account_name', 'username', 'credentials', 'website_url', 'notes', 'email', 'platform'];
+
 export const useAccounts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { vaultKey, isUnlocked } = useEncryption();
   const [accounts, setAccounts] = useState<DigitalAccount[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,18 +38,26 @@ export const useAccounts = () => {
     
     try {
       const data = await AccountsService.getAccounts(user.id);
-      // Transform the data to match our interface
-      const transformedData: DigitalAccount[] = data.map(account => ({
-        id: account.id,
-        platform: account.platform,
-        username: account.username || undefined,
-        email: account.email || undefined,
-        account_type: account.account_type as AccountType,
-        importance: account.importance as ImportanceLevel,
-        closure_action: account.closure_action as ClosureAction,
-        notes: account.notes || undefined,
-        created_at: account.created_at,
-        updated_at: account.updated_at || undefined,
+      
+      // Decrypt fields if vault is unlocked
+      const transformedData: DigitalAccount[] = await Promise.all(data.map(async (account) => {
+        let decrypted = account;
+        if (vaultKey) {
+          const decryptedValues = await decryptFields(account, ENCRYPTED_FIELDS, vaultKey);
+          decrypted = { ...account, ...decryptedValues };
+        }
+        return {
+          id: decrypted.id,
+          platform: decrypted.platform || '',
+          username: decrypted.username || undefined,
+          email: decrypted.email || undefined,
+          account_type: decrypted.account_type as AccountType,
+          importance: decrypted.importance as ImportanceLevel,
+          closure_action: decrypted.closure_action as ClosureAction,
+          notes: decrypted.notes || undefined,
+          created_at: decrypted.created_at,
+          updated_at: decrypted.updated_at || undefined,
+        };
       }));
       setAccounts(transformedData);
     } catch (error) {
@@ -62,22 +76,36 @@ export const useAccounts = () => {
     if (!user) return;
     
     try {
-      // Add account_name using platform as the name
-      const accountData = {
+      let accountData: any = {
         ...formData,
-        account_name: formData.platform, // Database requires account_name (NOT NULL)
+        account_name: formData.platform,
       };
+
+      // Encrypt fields before sending to database
+      if (vaultKey) {
+        const fieldsToEncrypt: Record<string, string | null | undefined> = {
+          account_name: formData.platform,
+          username: formData.username,
+          platform: formData.platform,
+          email: formData.email,
+          notes: formData.notes,
+        };
+        const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
+        accountData = { ...accountData, ...encrypted };
+      }
+
       const newAccount = await AccountsService.createAccount(user.id, accountData);
-      // Transform the returned data
+      
+      // Use original plaintext for local state
       const transformedAccount: DigitalAccount = {
         id: newAccount.id,
-        platform: newAccount.platform,
-        username: newAccount.username || undefined,
-        email: newAccount.email || undefined,
-        account_type: newAccount.account_type as AccountType,
-        importance: newAccount.importance as ImportanceLevel,
-        closure_action: newAccount.closure_action as ClosureAction,
-        notes: newAccount.notes || undefined,
+        platform: formData.platform,
+        username: formData.username || undefined,
+        email: formData.email || undefined,
+        account_type: formData.account_type,
+        importance: formData.importance,
+        closure_action: formData.closure_action,
+        notes: formData.notes || undefined,
         created_at: newAccount.created_at,
         updated_at: newAccount.updated_at || undefined,
       };
@@ -99,22 +127,34 @@ export const useAccounts = () => {
 
   const updateAccount = async (accountId: string, formData: Omit<DigitalAccount, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      // Add account_name using platform as the name
-      const accountData = {
+      let accountData: any = {
         ...formData,
-        account_name: formData.platform, // Database requires account_name (NOT NULL)
+        account_name: formData.platform,
       };
+
+      if (vaultKey) {
+        const fieldsToEncrypt: Record<string, string | null | undefined> = {
+          account_name: formData.platform,
+          username: formData.username,
+          platform: formData.platform,
+          email: formData.email,
+          notes: formData.notes,
+        };
+        const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
+        accountData = { ...accountData, ...encrypted };
+      }
+
       const updatedAccount = await AccountsService.updateAccount(accountId, accountData);
-      // Transform the returned data
+      
       const transformedAccount: DigitalAccount = {
         id: updatedAccount.id,
-        platform: updatedAccount.platform,
-        username: updatedAccount.username || undefined,
-        email: updatedAccount.email || undefined,
-        account_type: updatedAccount.account_type as AccountType,
-        importance: updatedAccount.importance as ImportanceLevel,
-        closure_action: updatedAccount.closure_action as ClosureAction,
-        notes: updatedAccount.notes || undefined,
+        platform: formData.platform,
+        username: formData.username || undefined,
+        email: formData.email || undefined,
+        account_type: formData.account_type,
+        importance: formData.importance,
+        closure_action: formData.closure_action,
+        notes: formData.notes || undefined,
         created_at: updatedAccount.created_at,
         updated_at: updatedAccount.updated_at || undefined,
       };
@@ -161,7 +201,7 @@ export const useAccounts = () => {
     if (user) {
       fetchAccounts();
     }
-  }, [user]);
+  }, [user, vaultKey]);
 
   return {
     accounts,

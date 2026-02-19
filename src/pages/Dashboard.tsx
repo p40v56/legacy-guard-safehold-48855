@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import { useToast } from '@/hooks/use-toast';
 import { Users, CreditCard, FileText, Shield, Timer, ArrowRight, Check, AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react';
+import SecurityBadge from '@/components/dashboard/SecurityBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DashboardStats } from '@/types/common';
@@ -185,8 +186,8 @@ const Dashboard = () => {
 
   const securityItems = [
     { label: 'Two-Factor Auth', enabled: true, explanation: 'Your account is protected by two-factor authentication.' },
-    { label: 'Data Encryption', enabled: true, explanation: 'All your data is encrypted in transit (TLS) and at rest (AES-256). Your documents are securely stored in our infrastructure.' },
-    { label: 'Backup Status', enabled: true, explanation: 'Your data is automatically backed up and replicated across multiple zones.' },
+    { label: 'Data Encryption', enabled: true, explanation: 'All data is encrypted client-side with AES-256-GCM before reaching our servers. We operate on a zero-knowledge basis.' },
+    { label: 'Backup Status', enabled: true, explanation: 'Your encrypted data is automatically backed up and replicated across multiple zones.' },
     { label: 'Emergency Contacts', enabled: stats.contactsCount > 0, explanation: `You have configured ${stats.contactsCount} trusted contact${stats.contactsCount !== 1 ? 's' : ''}.` },
   ];
 
@@ -205,7 +206,10 @@ const Dashboard = () => {
               </Badge>
             )}
           </div>
-          <p className="text-muted-foreground">Welcome to your digital legacy dashboard</p>
+          <div className="flex items-center gap-3">
+            <p className="text-muted-foreground">Welcome to your digital legacy dashboard</p>
+            <SecurityBadge />
+          </div>
         </div>
 
         {/* Setup Wizard */}

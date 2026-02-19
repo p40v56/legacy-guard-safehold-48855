@@ -4,6 +4,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useContacts } from '@/hooks/useContacts';
 import { usePlan } from '@/hooks/usePlan';
 import { supabase } from '@/integrations/supabase/client';
+import { useEncryption } from '@/contexts/EncryptionContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ const contactTypeLabels: Record<ContactCategory, string> = {
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { rewrapVaultKey } = useEncryption();
   const { plan, planExpiresAt, isExpired, rawPlan } = usePlan();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'profile';
@@ -108,6 +110,12 @@ const Settings = () => {
       }
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
       if (updateError) throw updateError;
+      
+      // Re-wrap the vault key with the new password
+      if (user.id) {
+        await rewrapVaultKey(newPassword, user.id);
+      }
+      
       toast({ title: "Success", description: "Password updated successfully" });
       setCurrentPassword('');
       setNewPassword('');

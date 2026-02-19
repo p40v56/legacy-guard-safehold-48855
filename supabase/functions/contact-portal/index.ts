@@ -102,13 +102,13 @@ async function servePortalResponse(
       .single();
 
     if (share?.encrypted_content && share?.content_iv) {
-      console.log(`Serving encrypted portal data for contact ${contact.name}`);
+      console.log(`Serving encrypted portal data for contact ${contact.email || contact.id}`);
       return new Response(
         JSON.stringify({
           encrypted: true,
           encryptedContent: share.encrypted_content,
           contentIv: share.content_iv,
-          contactName: contact.name,
+          // contactName is omitted here — it will be recovered from the decrypted payload client-side
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
@@ -167,14 +167,16 @@ async function servePortalDataLegacy(supabase: any, tokenData: any, contact: any
     }
   }
 
-  const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+  // Names are encrypted server-side — use email as safe fallback for display
+  const contactDisplayName = contact.email || "Trusted Contact";
+  const userDisplayName = "the vault owner";
 
-  console.log(`Portal data served (legacy) for contact ${contact.name}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`);
+  console.log(`Portal data served (legacy) for contact ${contact.email || contact.id}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`);
 
   return new Response(
     JSON.stringify({
-      contactName: contact.name,
-      userName,
+      contactName: contactDisplayName,
+      userName: userDisplayName,
       userPlan,
       customMessage,
       emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
@@ -328,21 +330,16 @@ const handler = async (req: Request): Promise<Response> => {
       const applicableQuestion = findApplicableQuestion(questions || [], contact);
 
       if (applicableQuestion) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, last_name")
-          .eq("user_id", tokenData.user_id)
-          .single();
-
-        const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+        // Note: contact.name and profile names are encrypted; use email as fallback display name
+        const contactDisplayName = contact.email || "Trusted Contact";
 
         return new Response(
           JSON.stringify({
             requiresAuth: true,
             question: applicableQuestion.question,
             hint: applicableQuestion.hint || null,
-            contactName: contact.name,
-            userName,
+            contactName: contactDisplayName,
+            userName: "the vault owner",
           }),
           { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );

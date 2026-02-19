@@ -10,10 +10,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { encryptFields } from '@/lib/crypto';
 
 const ACCOUNT_FIELDS = ['account_name', 'username', 'credentials', 'website_url', 'notes', 'email', 'platform'];
-const CONTACT_FIELDS = ['phone', 'relationship', 'notes', 'custom_message'];
+const CONTACT_FIELDS = ['name', 'phone', 'relationship', 'notes', 'custom_message'];
 const DOCUMENT_FIELDS = ['title', 'description', 'content'];
 const FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email'];
 const ACTIVATION_RULE_FIELDS = ['custom_message'];
+const PROFILE_FIELDS = ['first_name', 'last_name'];
 
 function needsEncryption(record: any, fields: string[]): boolean {
   // A record needs encryption if at least one field has a value but NO corresponding _iv
@@ -68,7 +69,46 @@ export interface MigrationResult {
   documents: number;
   financialAssets: number;
   activationRules: number;
+  profiles: number;
   total: number;
+}
+
+async function encryptProfileTable(
+  userId: string,
+  fields: string[],
+  vaultKey: CryptoKey
+): Promise<number> {
+  const { data: records, error } = await (supabase
+    .from('profiles' as any)
+    .select('*') as any)
+    .eq('user_id', userId);
+
+  if (error || !records) return 0;
+
+  let migrated = 0;
+  for (const record of records) {
+    if (!needsEncryption(record, fields)) continue;
+
+    const plainValues: Record<string, string | null | undefined> = {};
+    for (const field of fields) {
+      if (record[field] && !record[`${field}_iv`]) {
+        plainValues[field] = record[field];
+      }
+    }
+
+    if (Object.keys(plainValues).length === 0) continue;
+
+    const encrypted = await encryptFields(plainValues, vaultKey);
+
+    const { error: updateError } = await (supabase
+      .from('profiles' as any)
+      .update(encrypted) as any)
+      .eq('user_id', record.user_id);
+
+    if (!updateError) migrated++;
+  }
+
+  return migrated;
 }
 
 /**
@@ -79,12 +119,13 @@ export async function migrateUserData(
   userId: string,
   vaultKey: CryptoKey
 ): Promise<MigrationResult> {
-  const [accounts, contacts, documents, financialAssets, activationRules] = await Promise.all([
+  const [accounts, contacts, documents, financialAssets, activationRules, profiles] = await Promise.all([
     encryptTable('accounts', userId, ACCOUNT_FIELDS, vaultKey),
     encryptTable('contacts', userId, CONTACT_FIELDS, vaultKey),
     encryptTable('legacy_documents', userId, DOCUMENT_FIELDS, vaultKey),
     encryptTable('financial_assets', userId, FINANCIAL_FIELDS, vaultKey),
     encryptTable('activation_rules', userId, ACTIVATION_RULE_FIELDS, vaultKey),
+    encryptProfileTable(userId, PROFILE_FIELDS, vaultKey),
   ]);
 
   return {
@@ -93,6 +134,7 @@ export async function migrateUserData(
     documents,
     financialAssets,
     activationRules,
-    total: accounts + contacts + documents + financialAssets + activationRules,
+    profiles,
+    total: accounts + contacts + documents + financialAssets + activationRules + profiles,
   };
 }

@@ -6,8 +6,8 @@ import { useEncryption } from '@/contexts/EncryptionContext';
 import { encryptFields, decryptFields } from '@/lib/crypto';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 
-// Contact fields that get encrypted (name and email stay plaintext for notifications)
-const ENCRYPTED_CONTACT_FIELDS = ['phone', 'relationship', 'notes', 'custom_message'];
+// Contact fields that get encrypted (email stays plaintext for notifications)
+const ENCRYPTED_CONTACT_FIELDS = ['name', 'phone', 'relationship', 'notes', 'custom_message'];
 
 export const useContacts = () => {
   const { user } = useAuth();
@@ -69,6 +69,7 @@ export const useContacts = () => {
 
       if (vaultKey) {
         const fieldsToEncrypt: Record<string, string | null | undefined> = {
+          name: formData.name,
           phone: formData.phone,
           relationship: formData.relationship,
           notes: (formData as any).notes,
@@ -115,6 +116,7 @@ export const useContacts = () => {
 
       if (vaultKey) {
         const fieldsToEncrypt: Record<string, string | null | undefined> = {
+          name: formData.name,
           phone: formData.phone,
           relationship: formData.relationship,
           notes: (formData as any).notes,

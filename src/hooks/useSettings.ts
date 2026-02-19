@@ -87,10 +87,21 @@ export const useSettings = () => {
         ContactTypePermissionsService.getContactTypePermissions(user.id),
       ]);
 
+      // Decrypt first_name and last_name if vault is unlocked
+      let firstName = profileData.first_name || '';
+      let lastName = profileData.last_name || '';
+      if (vaultKey) {
+        try {
+          const decrypted = await decryptFields(profileData as any, ['first_name', 'last_name'], vaultKey);
+          firstName = decrypted.first_name || firstName;
+          lastName = decrypted.last_name || lastName;
+        } catch { /* use raw */ }
+      }
+
       setProfile({
         id: profileData.id,
-        first_name: profileData.first_name || '',
-        last_name: profileData.last_name || '',
+        first_name: firstName,
+        last_name: lastName,
         email: user.email || '',
         phone: profileData.phone || '',
         bio: profileData.bio || '',
@@ -152,13 +163,23 @@ export const useSettings = () => {
     
     setSaving(true);
     try {
-      await ProfileService.updateProfile(user.id, {
+      let profileUpdate: any = {
         first_name: profile.first_name,
         last_name: profile.last_name,
         phone: profile.phone,
         bio: profile.bio,
         emergency_instructions: profile.emergency_instructions,
-      });
+      };
+
+      if (vaultKey) {
+        const encrypted = await encryptFields({
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+        }, vaultKey);
+        profileUpdate = { ...profileUpdate, ...encrypted };
+      }
+
+      await ProfileService.updateProfile(user.id, profileUpdate);
       
       toast({
         title: "Success",

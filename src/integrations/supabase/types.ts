@@ -326,6 +326,7 @@ export type Database = {
           email: string | null
           id: string
           name: string
+          name_iv: string | null
           notes: string | null
           notes_iv: string | null
           permissions: Json | null
@@ -347,6 +348,7 @@ export type Database = {
           email?: string | null
           id?: string
           name: string
+          name_iv?: string | null
           notes?: string | null
           notes_iv?: string | null
           permissions?: Json | null
@@ -368,6 +370,7 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
+          name_iv?: string | null
           notes?: string | null
           notes_iv?: string | null
           permissions?: Json | null
@@ -562,8 +565,10 @@ export type Database = {
           emergency_instructions: string | null
           encrypted_vault_key: string | null
           first_name: string | null
+          first_name_iv: string | null
           id: string
           last_name: string | null
+          last_name_iv: string | null
           last_test_email_sent_at: string | null
           phone: string | null
           plan: string
@@ -588,8 +593,10 @@ export type Database = {
           emergency_instructions?: string | null
           encrypted_vault_key?: string | null
           first_name?: string | null
+          first_name_iv?: string | null
           id?: string
           last_name?: string | null
+          last_name_iv?: string | null
           last_test_email_sent_at?: string | null
           phone?: string | null
           plan?: string
@@ -614,8 +621,10 @@ export type Database = {
           emergency_instructions?: string | null
           encrypted_vault_key?: string | null
           first_name?: string | null
+          first_name_iv?: string | null
           id?: string
           last_name?: string | null
+          last_name_iv?: string | null
           last_test_email_sent_at?: string | null
           phone?: string | null
           plan?: string
@@ -819,8 +828,10 @@ export type Database = {
           emergency_instructions: string | null
           encrypted_vault_key: string | null
           first_name: string | null
+          first_name_iv: string | null
           id: string
           last_name: string | null
+          last_name_iv: string | null
           last_test_email_sent_at: string | null
           phone: string | null
           plan: string

@@ -154,7 +154,7 @@ const Index = () => {
         <div className="max-w-5xl mx-auto">
           <FadeUp className="text-center mb-16">
             <span className="text-white/50 text-sm font-semibold uppercase tracking-[0.2em]">How it works</span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-white mt-4">Set up in under 10 minutes.</h2>
+            <h2 className="text-4xl md:text-5xl font-semibold text-white mt-4">Simple. Automatic. Secure.</h2>
           </FadeUp>
           <div className="relative">
             {/* Connecting line */}
@@ -180,39 +180,13 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ─── 5. SOCIAL PROOF ─── */}
-      <section id="testimonials" className="py-32 px-6 bg-[#0D1B2A]">
-        <div className="max-w-4xl mx-auto text-center">
-          <FadeUp className="mb-12">
-            <span className="text-[#1A9BD7] text-sm font-semibold uppercase tracking-[0.2em]">From our users</span>
-          </FadeUp>
-          <FadeUp delay={0.15}>
-            <div className="relative">
-              <span className="text-[#1A9BD7]/30 text-[120px] font-serif leading-none absolute -top-8 left-1/2 -translate-x-1/2 select-none">"</span>
-              <p className="text-2xl md:text-3xl text-white/90 font-light leading-relaxed max-w-3xl mx-auto relative z-10 pt-16">
-                LegacyVault gave me peace of mind knowing my family will always have access to everything important.
-              </p>
-            </div>
-          </FadeUp>
-          <FadeUp delay={0.3} className="mt-10 flex items-center justify-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#1A9BD7] to-[#0D6EA8] rounded-full flex items-center justify-center text-white font-semibold">DM</div>
-            <div className="text-left">
-              <div className="text-white font-medium">David M.</div>
-              <div className="text-white/40 text-sm">Business Owner</div>
-            </div>
-          </FadeUp>
-          <FadeUp delay={0.4} className="mt-6">
-            <p className="text-white/40 text-sm">Rated 4.8 on the App Store · <a href="#" className="text-[#1A9BD7] hover:underline">[REPLACE WITH VERIFIED RATING]</a></p>
-          </FadeUp>
-        </div>
-      </section>
 
-      {/* ─── 6. FINAL CTA ─── */}
+      {/* ─── 5. FINAL CTA ─── */}
       <section className="py-32 px-6 relative" style={{ background: 'linear-gradient(135deg, #1A9BD7, #0D6EA8)' }}>
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <FadeUp>
             <h2 className="text-4xl md:text-5xl font-semibold text-white mb-6">
-              Set up in 10 minutes.<br />Nothing to manage after.
+              Protect what matters most.
             </h2>
           </FadeUp>
           <FadeUp delay={0.15}>

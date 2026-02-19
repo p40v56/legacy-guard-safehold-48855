@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw } from 'lucide-react';
 
 /* ─── Constants ─── */
-const STEPS = ['Setup', 'Switch activated', 'Grace period', 'Notifications', 'Portal', 'Complete'];
+const STEPS = ['Setup', 'Switch Activated', 'Grace Period', 'Notifications', 'Portal', 'Complete'];
 const CIRC = 2 * Math.PI * 86; // ~540.35
 
 const fmt = (totalSec: number) => {
@@ -13,40 +12,6 @@ const fmt = (totalSec: number) => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
-/* ─── Step dots ─── */
-const StepDots = ({ current }: { current: number }) => (
-  <div className="flex items-center gap-1.5">
-    {STEPS.map((_, i) => (
-      <div
-        key={i}
-        className="h-[5px] rounded-full transition-all duration-350"
-        style={{
-          width: i === current ? 16 : 5,
-          background: i < current ? 'rgba(26,155,215,0.38)' : i === current ? '#1A9BD7' : 'rgba(255,255,255,0.16)',
-        }}
-      />
-    ))}
-  </div>
-);
-
-/* ─── Shared fade wrapper ─── */
-const Act = ({ visible, children }: { visible: boolean; children: React.ReactNode }) => (
-  <AnimatePresence mode="wait">
-    {visible && (
-      <motion.div
-        key="act"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.45 }}
-        className="absolute inset-0 flex flex-col items-center justify-center p-6 sm:p-12 z-[1]"
-      >
-        {children}
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
-
 const Tag = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[10px] tracking-[2.5px] text-white/[0.38] uppercase mb-9 flex items-center gap-2.5">
     <span className="w-7 h-px bg-white/[0.08]" />
@@ -55,20 +20,26 @@ const Tag = ({ children }: { children: React.ReactNode }) => (
   </p>
 );
 
-/* ────────────────────────────────────────────────────── */
 /* ─── STEP 0: Setup ─── */
-const SetupStep = ({ onDone }: { onDone: () => void }) => {
-  const [deadline, setDeadline] = useState<number | null>(null);
-  const [grace, setGrace] = useState<number | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
+const SetupStep = ({ onDone, instant }: { onDone: () => void; instant?: boolean }) => {
+  const [deadline, setDeadline] = useState<number | null>(instant ? 30 : null);
+  const [grace, setGrace] = useState<number | null>(instant ? 48 : null);
+  const [showConfirm, setShowConfirm] = useState(instant ?? false);
 
   useEffect(() => {
+    if (instant) return;
     const t1 = setTimeout(() => setDeadline(30), 1000);
     const t2 = setTimeout(() => setGrace(48), 2000);
     const t3 = setTimeout(() => setShowConfirm(true), 2900);
     const t4 = setTimeout(onDone, 5200);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [onDone]);
+  }, [onDone, instant]);
+
+  useEffect(() => {
+    if (!instant) return;
+    const t = setTimeout(onDone, 5200);
+    return () => clearTimeout(t);
+  }, [instant, onDone]);
 
   const Chip = ({ selected, label }: { selected: boolean; label: string }) => (
     <span
@@ -112,14 +83,18 @@ const SetupStep = ({ onDone }: { onDone: () => void }) => {
 };
 
 /* ─── STEP 1: Timer ─── */
-const TimerStep = ({ onDone }: { onDone: () => void }) => {
-  const [showBanner, setShowBanner] = useState(false);
-  const [showRing, setShowRing] = useState(false);
-  const [showCaption, setShowCaption] = useState(false);
-  const [progress, setProgress] = useState(0);
+const TimerStep = ({ onDone, instant }: { onDone: () => void; instant?: boolean }) => {
+  const [showBanner, setShowBanner] = useState(instant ?? false);
+  const [showRing, setShowRing] = useState(instant ?? false);
+  const [showCaption, setShowCaption] = useState(instant ?? false);
+  const [progress, setProgress] = useState(instant ? 0.72 : 0);
   const rafRef = useRef<number>();
 
   useEffect(() => {
+    if (instant) {
+      const t = setTimeout(onDone, 5200);
+      return () => clearTimeout(t);
+    }
     const t1 = setTimeout(() => setShowBanner(true), 300);
     const t2 = setTimeout(() => setShowRing(true), 1800);
     const t3 = setTimeout(() => setShowCaption(true), 2600);
@@ -134,14 +109,14 @@ const TimerStep = ({ onDone }: { onDone: () => void }) => {
       rafRef.current = requestAnimationFrame(frame);
     }, 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, []);
+  }, [instant, onDone]);
 
   useEffect(() => {
-    if (progress >= 1) {
+    if (!instant && progress >= 1) {
       const t = setTimeout(onDone, 1500);
       return () => clearTimeout(t);
     }
-  }, [progress, onDone]);
+  }, [progress, onDone, instant]);
 
   const strokeColor = progress < 0.6 ? '#1A9BD7' : progress < 0.85 ? '#F59E0B' : '#EF4444';
   const numColor = progress < 0.6 ? 'white' : progress < 0.85 ? '#F59E0B' : '#EF4444';
@@ -195,12 +170,16 @@ const TimerStep = ({ onDone }: { onDone: () => void }) => {
 };
 
 /* ─── STEP 2: Grace Period ─── */
-const GraceStep = ({ onDone }: { onDone: () => void }) => {
-  const [progress, setProgress] = useState(0);
-  const [events, setEvents] = useState([false, false, false]);
+const GraceStep = ({ onDone, instant }: { onDone: () => void; instant?: boolean }) => {
+  const [progress, setProgress] = useState(instant ? 1 : 0);
+  const [events, setEvents] = useState(instant ? [true, true, true] : [false, false, false]);
   const rafRef = useRef<number>();
 
   useEffect(() => {
+    if (instant) {
+      const t = setTimeout(onDone, 2000);
+      return () => clearTimeout(t);
+    }
     const t0 = performance.now();
     const dur = 5000;
     const frame = (now: number) => {
@@ -211,14 +190,14 @@ const GraceStep = ({ onDone }: { onDone: () => void }) => {
     };
     rafRef.current = requestAnimationFrame(frame);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, []);
+  }, [instant, onDone]);
 
   useEffect(() => {
-    if (progress >= 1) {
+    if (!instant && progress >= 1) {
       const t = setTimeout(onDone, 1800);
       return () => clearTimeout(t);
     }
-  }, [progress, onDone]);
+  }, [progress, onDone, instant]);
 
   const rem = 1 - progress;
   const clockColor = progress < 0.55 ? '#F59E0B' : '#EF4444';
@@ -263,11 +242,15 @@ const GraceStep = ({ onDone }: { onDone: () => void }) => {
 };
 
 /* ─── STEP 3: Emails ─── */
-const EmailsStep = ({ onDone }: { onDone: () => void }) => {
-  const [shown, setShown] = useState([false, false, false]);
-  const [delivered, setDelivered] = useState([false, false, false]);
+const EmailsStep = ({ onDone, instant }: { onDone: () => void; instant?: boolean }) => {
+  const [shown, setShown] = useState(instant ? [true, true, true] : [false, false, false]);
+  const [delivered, setDelivered] = useState(instant ? [true, true, true] : [false, false, false]);
 
   useEffect(() => {
+    if (instant) {
+      const t = setTimeout(onDone, 5200);
+      return () => clearTimeout(t);
+    }
     const timers = [
       setTimeout(() => setShown(s => { const n = [...s]; n[0] = true; return n; }), 300),
       setTimeout(() => { setDelivered(s => { const n = [...s]; n[0] = true; return n; }); setShown(s => { const n = [...s]; n[1] = true; return n; }); }, 1100),
@@ -276,7 +259,7 @@ const EmailsStep = ({ onDone }: { onDone: () => void }) => {
       setTimeout(onDone, 5200),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [onDone]);
+  }, [onDone, instant]);
 
   const contacts = [
     { initial: 'S', role: 'Partner', name: 'Sarah', msg: '"You have been granted access to James\'s vault."' },
@@ -316,11 +299,15 @@ const EmailsStep = ({ onDone }: { onDone: () => void }) => {
 };
 
 /* ─── STEP 4: Portal ─── */
-const PortalStep = ({ onDone }: { onDone: () => void }) => {
-  const [showBrowser, setShowBrowser] = useState(false);
-  const [docs, setDocs] = useState([false, false, false]);
+const PortalStep = ({ onDone, instant }: { onDone: () => void; instant?: boolean }) => {
+  const [showBrowser, setShowBrowser] = useState(instant ?? false);
+  const [docs, setDocs] = useState(instant ? [true, true, true] : [false, false, false]);
 
   useEffect(() => {
+    if (instant) {
+      const t = setTimeout(onDone, 5800);
+      return () => clearTimeout(t);
+    }
     const timers = [
       setTimeout(() => setShowBrowser(true), 400),
       setTimeout(() => setDocs(s => { const n = [...s]; n[0] = true; return n; }), 1400),
@@ -329,7 +316,7 @@ const PortalStep = ({ onDone }: { onDone: () => void }) => {
       setTimeout(onDone, 5800),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [onDone]);
+  }, [onDone, instant]);
 
   const docList = [
     { icon: '📄', name: 'Property Deeds' },
@@ -347,7 +334,6 @@ const PortalStep = ({ onDone }: { onDone: () => void }) => {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="w-full bg-[#0d1a27] border border-white/[0.08] rounded-[14px] overflow-hidden"
         >
-          {/* Browser bar */}
           <div className="bg-white/[0.04] py-2.5 px-4 flex items-center gap-2.5 border-b border-white/[0.08]">
             <div className="flex gap-[5px]">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
@@ -357,16 +343,13 @@ const PortalStep = ({ onDone }: { onDone: () => void }) => {
             <div className="flex-1 bg-white/[0.05] rounded-md py-1 px-2.5 text-[11.5px] text-white/40 font-mono">vault.legacyvault.com/sarah</div>
             <span className="text-[10.5px] text-emerald-500 flex items-center gap-1 whitespace-nowrap">🔒 Secure</span>
           </div>
-          {/* Body */}
           <div className="flex min-h-[230px]">
-            {/* Sidebar */}
             <div className="w-[136px] border-r border-white/[0.08] bg-white/[0.02] p-5 flex flex-col items-center gap-1.5 flex-shrink-0">
               <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#1A9BD7] to-[#0a5e93] flex items-center justify-center text-base font-semibold text-white mb-1">S</div>
               <div className="text-[13.5px] font-medium text-white">Sarah</div>
               <div className="text-[10px] text-white/[0.38] tracking-wider">Partner</div>
               <div className="mt-3 text-[10px] py-0.5 px-2.5 rounded-full bg-emerald-500/[0.12] text-emerald-500 border border-emerald-500/[0.22]">● Active</div>
             </div>
-            {/* Main */}
             <div className="flex-1 p-5 flex flex-col gap-2.5">
               <div className="text-[10px] tracking-[2px] text-white/[0.38] uppercase mb-1">Your documents</div>
               {docList.map((d, i) => (
@@ -391,12 +374,13 @@ const PortalStep = ({ onDone }: { onDone: () => void }) => {
 };
 
 /* ─── STEP 5: Complete ─── */
-const CompleteStep = ({ onGetStarted }: { onGetStarted: () => void }) => {
-  const [cards, setCards] = useState([false, false, false]);
-  const [showMsg, setShowMsg] = useState(false);
-  const [showCta, setShowCta] = useState(false);
+const CompleteStep = ({ onGetStarted, instant }: { onGetStarted: () => void; instant?: boolean }) => {
+  const [cards, setCards] = useState(instant ? [true, true, true] : [false, false, false]);
+  const [showMsg, setShowMsg] = useState(instant ?? false);
+  const [showCta, setShowCta] = useState(instant ?? false);
 
   useEffect(() => {
+    if (instant) return;
     const timers = [
       setTimeout(() => setCards(s => { const n = [...s]; n[0] = true; return n; }), 300),
       setTimeout(() => setCards(s => { const n = [...s]; n[1] = true; return n; }), 700),
@@ -405,7 +389,7 @@ const CompleteStep = ({ onGetStarted }: { onGetStarted: () => void }) => {
       setTimeout(() => setShowCta(true), 3000),
     ];
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [instant]);
 
   const contacts = [
     { initial: 'S', name: 'Sarah', role: 'Partner' },
@@ -455,19 +439,139 @@ const CompleteStep = ({ onGetStarted }: { onGetStarted: () => void }) => {
   );
 };
 
+/* ─── Shared fade wrapper (now not absolute positioned) ─── */
+const Act = ({ visible, children }: { visible: boolean; children: React.ReactNode }) => (
+  <AnimatePresence mode="wait">
+    {visible && (
+      <motion.div
+        key="act"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.55 }}
+        className="w-full flex flex-col items-center py-[80px] px-6"
+      >
+        <div className="w-full max-w-[900px] flex flex-col items-center">
+          {children}
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+/* ─── Step nav pills ─── */
+const StepNav = ({
+  current,
+  onSelect,
+  onReplay,
+}: {
+  current: number;
+  onSelect: (i: number) => void;
+  onReplay: () => void;
+}) => (
+  <div className="flex items-center gap-2 flex-wrap justify-center mt-8 px-4">
+    {STEPS.map((label, i) => {
+      const isActive = i === current;
+      const isPast = i < current;
+      return (
+        <button
+          key={i}
+          onClick={() => onSelect(i)}
+          className="py-1.5 px-4 rounded-full text-[12px] font-medium transition-all duration-200 cursor-pointer border"
+          style={{
+            background: isActive
+              ? '#1A9BD7'
+              : isPast
+              ? 'rgba(26,155,215,0.35)'
+              : 'transparent',
+            borderColor: isActive
+              ? '#1A9BD7'
+              : isPast
+              ? 'rgba(26,155,215,0.35)'
+              : 'rgba(255,255,255,0.15)',
+            color: isActive ? 'white' : isPast ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
+          }}
+        >
+          {label}
+        </button>
+      );
+    })}
+    <button
+      onClick={onReplay}
+      className="ml-2 text-[12px] bg-transparent border-none cursor-pointer transition-colors hover:opacity-70"
+      style={{ color: 'rgba(255,255,255,0.35)' }}
+    >
+      ↺ Replay all
+    </button>
+  </div>
+);
+
 /* ════════════════════════════════════════════════ */
 /* ─── MAIN COMPONENT ─── */
 /* ════════════════════════════════════════════════ */
 const DeadMansSwitchDemo = () => {
   const [step, setStep] = useState(0);
-  const [key, setKey] = useState(0); // for replay
-  
+  const [stepKey, setStepKey] = useState(0); // remounts current step component
+  const [isInView, setIsInView] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [instantStep, setInstantStep] = useState<number | null>(null); // which step to show instantly
+  const sectionRef = useRef<HTMLElement>(null);
+  // Track paused/resumed state via a "paused" flag — we re-mount steps when resumed
+  const pausedStepRef = useRef<number>(0);
 
-  const next = useCallback(() => setStep(s => s + 1), []);
+  // IntersectionObserver — start/pause/resume based on visibility
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const threshold = window.innerWidth < 768 ? 0.15 : 0.3;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            if (!hasStarted) {
+              setHasStarted(true);
+            }
+          } else {
+            setIsInView(false);
+          }
+        });
+      },
+      { threshold }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasStarted]);
+
+  const next = useCallback(() => {
+    setInstantStep(null);
+    setStep(s => {
+      const next = s + 1;
+      pausedStepRef.current = next;
+      return next;
+    });
+    setStepKey(k => k + 1);
+  }, []);
 
   const replay = () => {
+    setInstantStep(null);
     setStep(0);
-    setKey(k => k + 1);
+    setStepKey(k => k + 1);
+    pausedStepRef.current = 0;
+    setHasStarted(true);
+    setIsInView(true);
+  };
+
+  const handleSelectStep = (i: number) => {
+    // Jumping to a future step: show it instantly (complete state)
+    // Jumping to past or current: replay from beginning
+    setInstantStep(i > step ? i : null);
+    setStep(i);
+    setStepKey(k => k + 1);
+    pausedStepRef.current = i;
   };
 
   const handleGetStarted = () => {
@@ -475,41 +579,58 @@ const DeadMansSwitchDemo = () => {
     el?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Only render animation if in view or if user manually navigated
+  const shouldRender = hasStarted;
+
+  const stepProps = { onDone: next, instant: instantStep !== null && instantStep === step };
+
   return (
-    <section className="py-[120px] px-6 bg-[#0D1B2A] flex flex-col items-center">
-      <p className="text-[10.5px] font-semibold tracking-[3.5px] text-[#1A9BD7] uppercase text-center mb-4">The Dead Man's Switch</p>
-      <h2 className="text-[clamp(30px,4vw,50px)] font-normal text-center leading-[1.15] mb-3 text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>
-        What happens when you<br /><em>stop checking in.</em>
-      </h2>
-      <p className="text-white/[0.38] text-center text-[15px] font-light mb-[52px]">Everything below is automatic. You configure it once.</p>
-
-      {/* Stage */}
-      <div
-        key={key}
-        className="w-full max-w-[820px] h-[580px] bg-[#0e1e2e] border border-white/[0.08] rounded-3xl relative overflow-hidden"
-      >
-        {/* Subtle glow */}
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse, rgba(26,155,215,0.07) 0%, transparent 65%)' }} />
-
-        <Act visible={step === 0}><SetupStep onDone={next} /></Act>
-        <Act visible={step === 1}><TimerStep onDone={next} /></Act>
-        <Act visible={step === 2}><GraceStep onDone={next} /></Act>
-        <Act visible={step === 3}><EmailsStep onDone={next} /></Act>
-        <Act visible={step === 4}><PortalStep onDone={next} /></Act>
-        <Act visible={step === 5}><CompleteStep onGetStarted={handleGetStarted} /></Act>
+    <section ref={sectionRef} className="bg-[#0D1B2A] flex flex-col items-center">
+      {/* Section header */}
+      <div className="w-full max-w-[900px] mx-auto px-6 pt-[120px] pb-[52px] flex flex-col items-center">
+        <p className="text-[10.5px] font-semibold tracking-[3.5px] text-[#1A9BD7] uppercase text-center mb-4">The Dead Man's Switch</p>
+        <h2 className="text-[clamp(30px,4vw,50px)] font-normal text-center leading-[1.15] mb-3 text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          What happens when you<br /><em>stop checking in.</em>
+        </h2>
+        <p className="text-white/[0.38] text-center text-[15px] font-light">Everything below is automatic. You configure it once.</p>
       </div>
 
-      {/* Controls */}
-      <div className="mt-8 flex items-center gap-5 flex-wrap justify-center">
-        <StepDots current={step} />
-        <span className="text-[11.5px] text-white/[0.38] min-w-[110px] text-center">{STEPS[step]}</span>
-        <button
-          onClick={replay}
-          className="bg-transparent border border-white/[0.08] text-white/[0.38] py-1.5 px-4 rounded-full text-[11.5px] cursor-pointer tracking-wide hover:text-white/60 hover:border-white/20 transition-colors flex items-center gap-1.5"
-        >
-          <RotateCcw className="w-3 h-3" /> Replay
-        </button>
+      {/* Stage — full width, no border/bg/radius, content centered with max-w-900 */}
+      <div className="w-full relative overflow-hidden" key={stepKey}>
+        {/* Subtle glow behind content */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse, rgba(26,155,215,0.06) 0%, transparent 65%)' }} />
+
+        {shouldRender && isInView ? (
+          <>
+            <Act visible={step === 0}><SetupStep {...stepProps} /></Act>
+            <Act visible={step === 1}><TimerStep {...stepProps} /></Act>
+            <Act visible={step === 2}><GraceStep {...stepProps} /></Act>
+            <Act visible={step === 3}><EmailsStep {...stepProps} /></Act>
+            <Act visible={step === 4}><PortalStep {...stepProps} /></Act>
+            <Act visible={step === 5}><CompleteStep onGetStarted={handleGetStarted} instant={instantStep === 5} /></Act>
+          </>
+        ) : shouldRender ? (
+          /* Paused: show current step frozen (instant mode) */
+          <>
+            <Act visible={step === 0}><SetupStep onDone={next} instant /></Act>
+            <Act visible={step === 1}><TimerStep onDone={next} instant /></Act>
+            <Act visible={step === 2}><GraceStep onDone={next} instant /></Act>
+            <Act visible={step === 3}><EmailsStep onDone={next} instant /></Act>
+            <Act visible={step === 4}><PortalStep onDone={next} instant /></Act>
+            <Act visible={step === 5}><CompleteStep onGetStarted={handleGetStarted} instant /></Act>
+          </>
+        ) : (
+          /* Not started yet: empty placeholder with height */
+          <div className="py-[80px]" />
+        )}
       </div>
+
+      {/* Step nav */}
+      {shouldRender && (
+        <div className="pb-[80px]">
+          <StepNav current={step} onSelect={handleSelectStep} onReplay={replay} />
+        </div>
+      )}
     </section>
   );
 };

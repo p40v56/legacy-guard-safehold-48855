@@ -28,8 +28,6 @@ const App = () => (
       <EncryptionProvider>
          <ErrorBoundary>
           <TooltipProvider>
-            <Toaster />
-          <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -96,6 +94,8 @@ const App = () => (
             </Routes>
           </BrowserRouter>
           </TooltipProvider>
+          <Toaster />
+          <Sonner />
         </ErrorBoundary>
       </EncryptionProvider>
     </AuthProvider>

@@ -3,10 +3,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const ALLOWED_ORIGINS = [
+  "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  };
+}
 
 function resolveTemplate(text: string, vars: Record<string, string>): string {
   let result = text;
@@ -25,6 +37,8 @@ function formatDateTime(isoString: string): string {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,7 +47,6 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Get auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -51,21 +64,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { templateType } = await req.json();
 
-    // Get profile
     const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
-    const userName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User";
+    // Names are encrypted — use generic placeholder for test emails
+    const userName = "the vault owner";
     const userEmail = user.email;
 
     if (!userEmail) {
       return new Response(JSON.stringify({ error: "No email found" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const vars = {
-      userName,
-      contactName: "Test Contact",
-      triggerDate: formatDateTime(new Date().toISOString()),
-      gracePeriodHours: "24",
-    };
+    const vars = { userName, contactName: "Test Contact", triggerDate: formatDateTime(new Date().toISOString()), gracePeriodHours: "24" };
 
     let subject: string;
     let html: string;
@@ -73,48 +81,14 @@ const handler = async (req: Request): Promise<Response> => {
     if (templateType === "grace_period") {
       subject = resolveTemplate(profile?.email_grace_subject || "⚠️ Grace Period Started - Check In Required", vars);
       const intro = resolveTemplate(profile?.email_grace_intro || "Your Dead Man's Switch has detected that you did not check in by your scheduled deadline.", vars);
-      html = `
-        <!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
-            <h1 style="margin:0; font-size:24px;">⚠️ Grace Period Started</h1>
-            <p style="margin:12px 0 0; opacity:0.9; font-size:14px;">Dead Man's Switch Warning — TEST EMAIL</p>
-          </div>
-          <div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-            <p>Hello <strong>${userName}</strong>,</p>
-            <p style="color:#4b5563;">${intro} A <strong>24-hour grace period</strong> has now started.</p>
-            <div style="background:#fee2e2; border:2px solid #ef4444; padding:20px; border-radius:8px; text-align:center; margin:24px 0;">
-              <p style="color:#991b1b; font-weight:600;">⏰ GRACE PERIOD ENDS:</p>
-              <p style="color:#dc2626; font-size:18px; font-weight:700;">${formatDateTime(new Date(Date.now() + 24*60*60*1000).toISOString())}</p>
-            </div>
-            <hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;">
-            <p style="font-size:13px; color:#9ca3af; text-align:center;">🧪 This is a test email. No action is required.</p>
-          </div>
-        </body></html>
-      `;
+      html = `<!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin:0; font-size:24px;">⚠️ Grace Period Started</h1><p style="margin:12px 0 0; opacity:0.9; font-size:14px;">Dead Man's Switch Warning — TEST EMAIL</p></div><div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p>Hello <strong>${userName}</strong>,</p><p style="color:#4b5563;">${intro} A <strong>24-hour grace period</strong> has now started.</p><div style="background:#fee2e2; border:2px solid #ef4444; padding:20px; border-radius:8px; text-align:center; margin:24px 0;"><p style="color:#991b1b; font-weight:600;">⏰ GRACE PERIOD ENDS:</p><p style="color:#dc2626; font-size:18px; font-weight:700;">${formatDateTime(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())}</p></div><hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;"><p style="font-size:13px; color:#9ca3af; text-align:center;">🧪 This is a test email. No action is required.</p></div></body></html>`;
     } else {
       subject = resolveTemplate(profile?.email_subject || "🚨 Important: Message from {userName}'s Dead Man's Switch", vars);
       const headerTitle = profile?.email_header_title || "🚨 Important Notification";
       const headerSubtitle = profile?.email_header_subtitle || "Dead Man's Switch Activated";
       const introMessage = resolveTemplate(profile?.email_intro_message || "This is an automated message from {userName}'s Dead Man's Switch system.", vars);
       const footerMessage = profile?.email_footer_message || "This is an automated message. Please keep this information confidential.";
-      html = `
-        <!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #dc2626, #991b1b); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
-            <h1 style="margin:0; font-size:24px;">${headerTitle}</h1>
-            <p style="margin:12px 0 0; opacity:0.9; font-size:14px;">${headerSubtitle} — TEST EMAIL</p>
-          </div>
-          <div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-            <p>Dear <strong>Test Contact</strong>,</p>
-            <p style="color:#4b5563;">${introMessage}</p>
-            <div style="background:#f3f4f6; padding:24px; text-align:center; border-radius:8px; margin:20px 0;">
-              <p style="color:#6b7280;">📄 Your shared documents and messages would appear here.</p>
-            </div>
-            <hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;">
-            <p style="font-size:13px; color:#9ca3af; text-align:center;">${footerMessage}</p>
-            <p style="font-size:13px; color:#9ca3af; text-align:center;">🧪 This is a test email. No action is required.</p>
-          </div>
-        </body></html>
-      `;
+      html = `<!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #dc2626, #991b1b); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin:0; font-size:24px;">${headerTitle}</h1><p style="margin:12px 0 0; opacity:0.9; font-size:14px;">${headerSubtitle} — TEST EMAIL</p></div><div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p>Dear <strong>Test Contact</strong>,</p><p style="color:#4b5563;">${introMessage}</p><div style="background:#f3f4f6; padding:24px; text-align:center; border-radius:8px; margin:20px 0;"><p style="color:#6b7280;">📄 Your shared documents and messages would appear here.</p></div><hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;"><p style="font-size:13px; color:#9ca3af; text-align:center;">${footerMessage}</p><p style="font-size:13px; color:#9ca3af; text-align:center;">🧪 This is a test email. No action is required.</p></div></body></html>`;
     }
 
     subject = `[TEST] ${subject}`;
@@ -122,25 +96,19 @@ const handler = async (req: Request): Promise<Response> => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-      body: JSON.stringify({
-        from: "Dead Man's Switch <onboarding@resend.dev>",
-        to: [userEmail],
-        subject,
-        html,
-      }),
+      body: JSON.stringify({ from: "Dead Man's Switch <onboarding@resend.dev>", to: [userEmail], subject, html }),
     });
 
     const emailResponse = await res.json();
     if (!res.ok) throw new Error(emailResponse.message || "Failed to send email");
 
-    // Update last_test_email_sent_at
     await supabase.from("profiles").update({ last_test_email_sent_at: new Date().toISOString() }).eq("user_id", user.id);
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in send-test-email:", msg);
-    return new Response(JSON.stringify({ success: false, error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: false, error: msg }), { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
   }
 };
 

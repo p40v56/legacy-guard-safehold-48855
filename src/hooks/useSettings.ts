@@ -98,6 +98,15 @@ export const useSettings = () => {
         } catch { /* use raw */ }
       }
 
+      // Decrypt emergency_instructions if vault is unlocked
+      let emergencyInstructions = profileData.emergency_instructions || '';
+      if (vaultKey && (profileData as any).emergency_instructions_iv) {
+        try {
+          const decrypted = await decryptFields(profileData as any, ['emergency_instructions'], vaultKey);
+          emergencyInstructions = decrypted.emergency_instructions || emergencyInstructions;
+        } catch { /* use raw */ }
+      }
+
       setProfile({
         id: profileData.id,
         first_name: firstName,
@@ -105,7 +114,7 @@ export const useSettings = () => {
         email: user.email || '',
         phone: profileData.phone || '',
         bio: profileData.bio || '',
-        emergency_instructions: profileData.emergency_instructions || ''
+        emergency_instructions: emergencyInstructions
       });
 
       // Load email template from profile data
@@ -175,6 +184,7 @@ export const useSettings = () => {
         const encrypted = await encryptFields({
           first_name: profile.first_name,
           last_name: profile.last_name,
+          emergency_instructions: profile.emergency_instructions,
         }, vaultKey);
         profileUpdate = { ...profileUpdate, ...encrypted };
       }

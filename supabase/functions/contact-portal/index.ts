@@ -1,10 +1,51 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+// ── CORS — locked to known origins ──────────────────────────
+const ALLOWED_ORIGINS = [
+  "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  };
+}
+
+// ── Crypto helpers ──────────────────────────────────────────
+
+async function hashTokenForStorage(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(token));
+  const arr = new Uint8Array(digest);
+  let binary = "";
+  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+  return btoa(binary);
+}
+
+// Must match client-side hashTokenString in portalShares.ts
+const hashTokenString = hashTokenForStorage;
+
+async function hashAnswer(answer: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(answer.trim().toLowerCase())
+  );
+  const arr = new Uint8Array(digest);
+  let binary = "";
+  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+  return btoa(binary);
+}
+
+// ── Permission helpers ───────────────────────────────────────
 
 interface ContactPermissions {
   digital_accounts?: {
@@ -21,20 +62,6 @@ interface ContactPermissions {
   emergency_instructions?: boolean;
   can_modify_information?: boolean;
 }
-
-// ── Token hashing — must match client-side hashTokenString in portalShares.ts ──
-// Hashes the raw token *string* (not its hex bytes) via SHA-256 → base64
-
-async function hashTokenString(rawToken: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(rawToken));
-  const arr = new Uint8Array(digest);
-  let binary = "";
-  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
-  return btoa(binary);
-}
-
-// ── Permission helpers ───────────────────────────────────────
 
 function resolvePermissions(contact: any, typePermissions: any[]): ContactPermissions {
   let permissions: ContactPermissions = contact.permissions || {};
@@ -56,8 +83,8 @@ function filterDocumentsByPermissions(documents: any[], permissions: ContactPerm
   const allowedCategories = docPerms.by_category || [];
   const specificIds = docPerms.specific_documents || [];
   if (allowedCategories.length === 0 && specificIds.length === 0) return [];
-  return documents.filter((doc: any) =>
-    allowedCategories.includes(doc.document_type) || specificIds.includes(doc.id)
+  return documents.filter(
+    (doc: any) => allowedCategories.includes(doc.document_type) || specificIds.includes(doc.id)
   );
 }
 
@@ -68,8 +95,8 @@ function filterAccountsByPermissions(accounts: any[], permissions: ContactPermis
   const allowedCategories = acctPerms.by_category || [];
   const specificIds = acctPerms.specific_accounts || [];
   if (allowedCategories.length === 0 && specificIds.length === 0) return [];
-  return accounts.filter((acct: any) =>
-    allowedCategories.includes(acct.account_type) || specificIds.includes(acct.id)
+  return accounts.filter(
+    (acct: any) => allowedCategories.includes(acct.account_type) || specificIds.includes(acct.id)
   );
 }
 
@@ -80,16 +107,85 @@ function filterFinancialAssets(assets: any[], contactId: string): any[] {
   });
 }
 
-// ── Try encrypted shares first, fallback to legacy ───────────
+// ── Token lookup with migration path ─────────────────────────
+// Existing tokens were stored as raw hex. New tokens are stored as SHA-256 hashes.
+// This function first tries hash lookup, then falls back to raw lookup and migrates.
+
+async function lookupToken(
+  supabase: any,
+  rawToken: string
+): Promise<{ data: any; error: any }> {
+  const tokenHash = await hashTokenForStorage(rawToken);
+
+  // Try hash lookup first
+  const { data, error } = await supabase
+    .from("contact_access_tokens")
+    .select("*")
+    .eq("token", tokenHash)
+    .eq("is_active", true)
+    .single();
+
+  if (data) return { data, error: null };
+
+  // Fallback: raw token lookup (migration path for pre-hash tokens)
+  const { data: legacyData, error: legacyError } = await supabase
+    .from("contact_access_tokens")
+    .select("*")
+    .eq("token", rawToken)
+    .eq("is_active", true)
+    .single();
+
+  if (legacyData) {
+    // Migrate: replace raw token with hash
+    await supabase
+      .from("contact_access_tokens")
+      .update({ token: tokenHash })
+      .eq("id", legacyData.id);
+    console.log(`Migrated token ${rawToken.substring(0, 8)}... to hash storage`);
+    return { data: legacyData, error: null };
+  }
+
+  return { data: null, error: legacyError || error };
+}
+
+// ── Rate limiting helper ─────────────────────────────────────
+
+async function checkRateLimit(
+  supabase: any,
+  tokenHash: string,
+  corsHeaders: Record<string, string>
+): Promise<Response | null> {
+  const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from("portal_access_attempts")
+    .select("*", { count: "exact", head: true })
+    .eq("token_hash", tokenHash)
+    .eq("success", false)
+    .gte("attempted_at", cutoff);
+
+  if ((count || 0) >= 5) {
+    return new Response(
+      JSON.stringify({
+        error: "Too many failed attempts. Please wait 15 minutes before trying again.",
+      }),
+      { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+  return null;
+}
+
+// ── Encrypted shares ─────────────────────────────────────────
 
 async function servePortalResponse(
   supabase: any,
   tokenData: any,
-  contact: any
+  contact: any,
+  rawToken: string,
+  corsHeaders: Record<string, string>
 ): Promise<Response> {
   // Try encrypted shares first
   try {
-    const tokenHash = await hashTokenString(tokenData.token);
+    const tokenHash = await hashTokenString(rawToken);
     const { data: share } = await supabase
       .from("contact_shares")
       .select("encrypted_content, content_iv")
@@ -104,17 +200,15 @@ async function servePortalResponse(
           encrypted: true,
           encryptedContent: share.encrypted_content,
           contentIv: share.content_iv,
-          // contactName is omitted here — it will be recovered from the decrypted payload client-side
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
   } catch {
-    // No encrypted shares, fall through to legacy
+    // No encrypted shares, fall through
   }
 
-  // No encrypted shares found — check if user data is encrypted
-  // If the user has encryption set up (salt exists), we cannot serve data server-side
+  // Check if user has encryption enabled
   const { data: ownerProfile } = await supabase
     .from("profiles")
     .select("salt")
@@ -122,33 +216,43 @@ async function servePortalResponse(
     .single();
 
   if (ownerProfile?.salt) {
-    // User has encryption enabled but no portal shares exist — shares were never created
-    console.error(`No portal shares found for contact ${contact.id}, but user has encryption enabled. Portal link must be regenerated.`);
+    console.error(
+      `No portal shares found for contact ${contact.id}, but user has encryption enabled. Portal link must be regenerated.`
+    );
     return new Response(
-      JSON.stringify({ error: "This portal link needs to be regenerated by the vault owner. Please contact them." }),
+      JSON.stringify({
+        error:
+          "This portal link needs to be regenerated by the vault owner. Please contact them.",
+      }),
       { status: 410, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 
-  // Legacy fallback: only for pre-encryption users whose data is actually plaintext
-  return await servePortalDataLegacy(supabase, tokenData, contact);
+  // Legacy fallback: only for pre-encryption users
+  return await servePortalDataLegacy(supabase, tokenData, contact, corsHeaders);
 }
 
 // ── Legacy portal data (unencrypted fallback) ────────────────
 
-async function servePortalDataLegacy(supabase: any, tokenData: any, contact: any): Promise<Response> {
+async function servePortalDataLegacy(
+  supabase: any,
+  tokenData: any,
+  contact: any,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
   const userId = tokenData.user_id;
   const contactId = tokenData.contact_id;
 
-  const [profileRes, typePermissionsRes, allDocumentsRes, activationRulesRes, accountsRes, financialAssetsRes, settingsRes] = await Promise.all([
-    supabase.from("profiles").select("first_name, last_name, emergency_instructions, plan").eq("user_id", userId).single(),
-    supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
-    supabase.from("legacy_documents").select("id, title, content, document_type, description, created_at, file_path").eq("user_id", userId),
-    supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
-    supabase.from("accounts").select("*").eq("user_id", userId),
-    supabase.from("financial_assets").select("*").eq("user_id", userId),
-    supabase.from("user_settings").select("switch_triggered, switch_triggered_at").eq("user_id", userId).maybeSingle(),
-  ]);
+  const [profileRes, typePermissionsRes, allDocumentsRes, activationRulesRes, accountsRes, financialAssetsRes, settingsRes] =
+    await Promise.all([
+      supabase.from("profiles").select("first_name, last_name, emergency_instructions, plan").eq("user_id", userId).single(),
+      supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
+      supabase.from("legacy_documents").select("id, title, content, document_type, description, created_at, file_path").eq("user_id", userId),
+      supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
+      supabase.from("accounts").select("*").eq("user_id", userId),
+      supabase.from("financial_assets").select("*").eq("user_id", userId),
+      supabase.from("user_settings").select("switch_triggered, switch_triggered_at").eq("user_id", userId).maybeSingle(),
+    ]);
 
   const profile = profileRes.data;
   const typePermissions = typePermissionsRes.data || [];
@@ -180,11 +284,12 @@ async function servePortalDataLegacy(supabase: any, tokenData: any, contact: any
     }
   }
 
-  // Names are encrypted server-side — use email as safe fallback for display
   const contactDisplayName = contact.email || "Trusted Contact";
   const userDisplayName = "the vault owner";
 
-  console.log(`Portal data served (legacy) for contact ${contact.email || contact.id}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`);
+  console.log(
+    `Portal data served (legacy) for contact ${contact.email || contact.id}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`
+  );
 
   return new Response(
     JSON.stringify({
@@ -206,6 +311,8 @@ async function servePortalDataLegacy(supabase: any, tokenData: any, contact: any
 // ── Main handler ─────────────────────────────────────────────
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -231,12 +338,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      const { data: tokenData, error: tokenError } = await supabase
-        .from("contact_access_tokens")
-        .select("*")
-        .eq("token", bodyToken)
-        .eq("is_active", true)
-        .single();
+      const { data: tokenData, error: tokenError } = await lookupToken(supabase, bodyToken);
 
       if (tokenError || !tokenData) {
         return new Response(
@@ -251,6 +353,11 @@ const handler = async (req: Request): Promise<Response> => {
           { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
+
+      // Rate limiting
+      const tokenHashForLimit = await hashTokenForStorage(bodyToken);
+      const rateLimitResponse = await checkRateLimit(supabase, tokenHashForLimit, corsHeaders);
+      if (rateLimitResponse) return rateLimitResponse;
 
       const { data: contact } = await supabase
         .from("contacts")
@@ -279,29 +386,44 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      const normalizedAnswer = answer.trim().toLowerCase();
-      const storedAnswer = applicableQuestion.answer_hash.trim().toLowerCase();
+      // Compare hashes — supports both legacy plaintext and new SHA-256 hashes
+      const submittedHash = await hashAnswer(answer);
+      const storedAnswer = applicableQuestion.answer_hash;
+      const isLegacyPlaintext = storedAnswer.length !== 44; // SHA-256 base64 is always 44 chars
 
-      if (normalizedAnswer !== storedAnswer) {
+      let isCorrect = false;
+      if (isLegacyPlaintext) {
+        // Legacy plaintext comparison
+        isCorrect = answer.trim().toLowerCase() === storedAnswer.trim().toLowerCase();
+      } else {
+        isCorrect = submittedHash === storedAnswer;
+      }
+
+      if (!isCorrect) {
+        // Record failed attempt
+        await supabase
+          .from("portal_access_attempts")
+          .insert({ token_hash: tokenHashForLimit, success: false });
+
         return new Response(
           JSON.stringify({ error: "Incorrect answer. Please try again." }),
           { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
-      return await servePortalResponse(supabase, tokenData, contact);
+      // Record successful attempt
+      await supabase
+        .from("portal_access_attempts")
+        .insert({ token_hash: tokenHashForLimit, success: true });
+
+      return await servePortalResponse(supabase, tokenData, contact, bodyToken, corsHeaders);
     }
 
     // ── verify token ───────────────────────────────────────
     if (action === "verify" && token) {
       console.log(`Portal verify request for token: ${token.substring(0, 8)}...`);
 
-      const { data: tokenData, error: tokenError } = await supabase
-        .from("contact_access_tokens")
-        .select("*")
-        .eq("token", token)
-        .eq("is_active", true)
-        .single();
+      const { data: tokenData, error: tokenError } = await lookupToken(supabase, token);
 
       if (tokenError || !tokenData) {
         return new Response(
@@ -343,9 +465,7 @@ const handler = async (req: Request): Promise<Response> => {
       const applicableQuestion = findApplicableQuestion(questions || [], contact);
 
       if (applicableQuestion) {
-        // Note: contact.name and profile names are encrypted; use email as fallback display name
         const contactDisplayName = contact.email || "Trusted Contact";
-
         return new Response(
           JSON.stringify({
             requiresAuth: true,
@@ -358,7 +478,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      return await servePortalResponse(supabase, tokenData, contact);
+      return await servePortalResponse(supabase, tokenData, contact, token, corsHeaders);
     }
 
     // ── generate-token ─────────────────────────────────────
@@ -408,11 +528,15 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
+      // Generate raw token
       const tokenArray = new Uint8Array(32);
       crypto.getRandomValues(tokenArray);
       const newToken = Array.from(tokenArray)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
+
+      // Store ONLY the hash
+      const tokenHash = await hashTokenForStorage(newToken);
 
       await supabase
         .from("contact_access_tokens")
@@ -425,7 +549,7 @@ const handler = async (req: Request): Promise<Response> => {
         .insert({
           contact_id: contactId,
           user_id: claims.user.id,
-          token: newToken,
+          token: tokenHash,
           is_active: true,
         });
 
@@ -437,6 +561,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
+      // Return raw token to client (only time it exists in plaintext)
       return new Response(
         JSON.stringify({ token: newToken }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -452,7 +577,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in contact-portal:", errorMessage);
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 500, headers: { "Content-Type": "application/json", ...getCorsHeaders(req) } }
     );
   }
 };

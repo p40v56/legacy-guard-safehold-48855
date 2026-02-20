@@ -32,7 +32,7 @@ const ENCRYPTED_DOC_FIELDS = ['title', 'description', 'content'];
 const ENCRYPTED_ACCOUNT_FIELDS = ['account_name', 'username', 'credentials', 'website_url', 'notes', 'email', 'platform'];
 const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email'];
 const ENCRYPTED_CONTACT_FIELDS = ['name', 'phone', 'relationship', 'notes', 'custom_message'];
-const ENCRYPTED_PROFILE_FIELDS = ['first_name', 'last_name'];
+const ENCRYPTED_PROFILE_FIELDS = ['first_name', 'last_name', 'emergency_instructions'];
 
 interface ContactPermissions {
   digital_accounts?: {
@@ -87,7 +87,7 @@ export async function createPortalShares(
 
   // Fetch all user data in parallel
   const [profileRes, docsRes, accountsRes, financialsRes, settingsRes, rulesRes] = await Promise.all([
-    supabase.from('profiles').select('first_name, first_name_iv, last_name, last_name_iv, emergency_instructions, plan').eq('user_id', userId).single(),
+    supabase.from('profiles').select('first_name, first_name_iv, last_name, last_name_iv, emergency_instructions, emergency_instructions_iv, plan').eq('user_id', userId).single(),
     supabase.from('legacy_documents').select('*').eq('user_id', userId),
     supabase.from('accounts').select('*').eq('user_id', userId),
     supabase.from('financial_assets').select('*').eq('user_id', userId),
@@ -203,7 +203,7 @@ export async function createPortalShares(
     userName,
     userPlan,
     customMessage,
-    emergencyInstructions: permissions.emergency_instructions ? profile?.emergency_instructions : null,
+    emergencyInstructions: permissions.emergency_instructions ? decryptedProfile?.emergency_instructions : null,
     switchTriggeredAt: settingsRes.data?.switch_triggered_at || null,
     documents: documents.map((d) => ({
       id: d.id, title: d.title, content: d.content, document_type: d.document_type,

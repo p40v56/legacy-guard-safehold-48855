@@ -86,11 +86,23 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       setReauthPassword('');
       setReauthError('');
 
-      // Auto-migrate plaintext data on first unlock
+      // Auto-migrate plaintext data on first unlock (skip if already done)
       try {
-        const result = await migrateUserData(userId, decryptedVaultKey);
-        if (result.total > 0) {
-          console.log(`Encrypted ${result.total} existing records`);
+        const { data: migrationCheck } = await supabase
+          .from('profiles')
+          .select('migration_complete')
+          .eq('user_id', userId)
+          .single();
+
+        if (!migrationCheck?.migration_complete) {
+          const result = await migrateUserData(userId, decryptedVaultKey);
+          if (result.total > 0) {
+            console.log(`Encrypted ${result.total} existing records`);
+          }
+          await supabase
+            .from('profiles')
+            .update({ migration_complete: true } as any)
+            .eq('user_id', userId);
         }
       } catch (e) {
         console.error('Data migration error:', e);

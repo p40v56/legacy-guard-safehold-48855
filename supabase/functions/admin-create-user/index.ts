@@ -1,9 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Set APP_BASE_URL in Supabase Edge Function secrets for production.
 const ALLOWED_ORIGINS = [
-  'https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
+  Deno.env.get("APP_BASE_URL") || "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {

@@ -170,18 +170,18 @@ async function startGracePeriod(
   }
 
   const userEmail = await getUserEmail(supabase, userId);
-  if (!userEmail) {
-    console.log(`No email found for user ${userId}, skipping warning email`);
-    return { success: true };
-  }
-
-  const userName = "the vault owner";
+  const userName = userEmail || "the vault owner";
   const emailTemplate = profile
     ? {
         email_grace_subject: profile.email_grace_subject,
         email_grace_intro: profile.email_grace_intro,
       }
     : {};
+
+  if (!userEmail) {
+    console.log(`No email found for user ${userId}, skipping warning email`);
+    return { success: true };
+  }
 
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
@@ -257,6 +257,9 @@ async function triggerSwitch(
 
   console.log(`TRIGGERING SWITCH for user ${userId}`);
 
+  const authEmail = await getUserEmail(supabase, userId);
+  const userName = authEmail || "the vault owner";
+
   const { error: updateError } = await supabase
     .from("user_settings")
     .update({
@@ -307,10 +310,10 @@ async function triggerSwitch(
     const notificationPayload = {
       notificationType: "switch_triggered",
       contactId: contact.id,
-      contactName: contact.email || "Trusted Contact",
+      contactName: "Trusted Contact",
       contactEmail: contact.email,
       contactType: contact.contact_type,
-      userName: "the vault owner",
+      userName,
       emergencyInstructions: null,
       customMessage: null,
       documents: [],

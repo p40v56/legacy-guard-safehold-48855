@@ -72,14 +72,12 @@ const ContactCard: React.FC<ContactCardProps> = ({
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
 
-      // Create encrypted portal shares if vault is unlocked
-      if (vaultKey && user) {
-        try {
-          await createPortalShares(user.id, contact.id, result.token, vaultKey);
-        } catch (err) {
-          console.error('Failed to create portal shares:', err);
-        }
+      // Create encrypted portal shares — required for portal decryption
+      if (!vaultKey || !user) {
+        toast({ title: "Vault locked", description: "Unlock your vault before generating portal links.", variant: "destructive" });
+        return;
       }
+      await createPortalShares(user.id, contact.id, result.token, vaultKey);
 
       const link = `${window.location.origin}/portal/${result.token}`;
       setPortalLink(link);

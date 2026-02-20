@@ -356,6 +356,13 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Rate limiting
       const tokenHashForLimit = await hashTokenForStorage(bodyToken);
+
+      // Clean up old attempts (TTL: 24 hours)
+      await supabase
+        .from("portal_access_attempts")
+        .delete()
+        .lt("attempted_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
       const rateLimitResponse = await checkRateLimit(supabase, tokenHashForLimit, corsHeaders);
       if (rateLimitResponse) return rateLimitResponse;
 

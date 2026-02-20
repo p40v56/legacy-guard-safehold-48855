@@ -243,6 +243,7 @@ export type Database = {
           encrypted_share_key: string | null
           id: string
           share_key_iv: string | null
+          shared_document_ids: string[] | null
           updated_at: string
           user_id: string
         }
@@ -256,6 +257,7 @@ export type Database = {
           encrypted_share_key?: string | null
           id?: string
           share_key_iv?: string | null
+          shared_document_ids?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -269,6 +271,7 @@ export type Database = {
           encrypted_share_key?: string | null
           id?: string
           share_key_iv?: string | null
+          shared_document_ids?: string[] | null
           updated_at?: string
           user_id?: string
         }

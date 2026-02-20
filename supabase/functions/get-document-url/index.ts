@@ -80,7 +80,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify the document belongs to this user and is shared with this contact
+    // Verify the document belongs to this user
     const { data: doc } = await supabase
       .from("legacy_documents")
       .select("id, file_path, user_id")
@@ -91,6 +91,30 @@ const handler = async (req: Request): Promise<Response> => {
     if (!doc || doc.file_path !== filePath) {
       return new Response(
         JSON.stringify({ error: "Document not found or access denied" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Verify this specific document was shared with this contact via contact_shares
+    const { data: share } = await supabase
+      .from("contact_shares")
+      .select("shared_document_ids")
+      .eq("contact_id", tokenData.contact_id)
+      .eq("user_id", tokenData.user_id)
+      .single();
+
+    if (!share) {
+      return new Response(
+        JSON.stringify({ error: "No portal share found for this contact" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Check if this document ID is in the shared list
+    const sharedIds: string[] = share.shared_document_ids || [];
+    if (sharedIds.length > 0 && !sharedIds.includes(documentId)) {
+      return new Response(
+        JSON.stringify({ error: "This document was not shared with you" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

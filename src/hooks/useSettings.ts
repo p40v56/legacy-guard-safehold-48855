@@ -170,24 +170,28 @@ export const useSettings = () => {
   const saveProfile = async () => {
     if (!user) return;
     
+    if (!vaultKey) {
+      toast({
+        title: "Vault Locked",
+        description: "Your vault must be unlocked to save profile changes.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       let profileUpdate: any = {
-        first_name: profile.first_name,
-        last_name: profile.last_name,
         phone: profile.phone,
         bio: profile.bio,
-        emergency_instructions: profile.emergency_instructions,
       };
 
-      if (vaultKey) {
-        const encrypted = await encryptFields({
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          emergency_instructions: profile.emergency_instructions,
-        }, vaultKey);
-        profileUpdate = { ...profileUpdate, ...encrypted };
-      }
+      const encrypted = await encryptFields({
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        emergency_instructions: profile.emergency_instructions,
+      }, vaultKey);
+      profileUpdate = { ...profileUpdate, ...encrypted };
 
       await ProfileService.updateProfile(user.id, profileUpdate);
       

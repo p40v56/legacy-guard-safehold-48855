@@ -226,6 +226,9 @@ export async function createPortalShares(
   // Encrypt with share key
   const { ciphertext, iv } = await encryptText(JSON.stringify(portalData), shareKey);
 
+  // Collect shared document IDs for access verification
+  const sharedDocumentIds = documents.map((d: any) => d.id);
+
   // Replace existing shares for this contact
   await supabase
     .from('contact_shares')
@@ -241,5 +244,6 @@ export async function createPortalShares(
       encrypted_content: ciphertext,
       content_iv: iv,
       access_token_hash: tokenHash,
-    });
+      shared_document_ids: sharedDocumentIds,
+    } as any);
 }

@@ -95,7 +95,7 @@ interface ContactTypePermission {
   default_permissions: any;
 }
 
-const APP_BASE_URL = "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app";
+const APP_BASE_URL = Deno.env.get("APP_BASE_URL") || "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app";
 
 async function getUserEmail(supabase: any, userId: string): Promise<string | null> {
   const { data, error } = await supabase.auth.admin.getUserById(userId);

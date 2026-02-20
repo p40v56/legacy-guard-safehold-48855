@@ -312,7 +312,8 @@ export async function decryptFields(
       try {
         result[fieldName] = await decryptText(ciphertext, iv, key);
       } catch {
-        result[fieldName] = ciphertext;
+        // Return null on decrypt failure — never expose ciphertext to UI
+        result[fieldName] = null;
       }
     }
   }

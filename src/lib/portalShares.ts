@@ -18,14 +18,6 @@ import {
   decryptFields,
 } from '@/lib/crypto';
 
-export function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes;
-}
-
 /** Hash the raw token string (not bytes) for DB lookup — must match portal side */
 async function hashTokenString(rawToken: string): Promise<string> {
   const encoder = new TextEncoder();

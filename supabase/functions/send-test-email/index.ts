@@ -3,8 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
+// Set APP_BASE_URL in Supabase Edge Function secrets for production.
 const ALLOWED_ORIGINS = [
-  "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
+  Deno.env.get("APP_BASE_URL") || "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
   "http://localhost:5173",
   "http://localhost:3000",
 ];

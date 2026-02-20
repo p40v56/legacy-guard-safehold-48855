@@ -14,7 +14,7 @@ const CONTACT_FIELDS = ['name', 'phone', 'relationship', 'notes', 'custom_messag
 const DOCUMENT_FIELDS = ['title', 'description', 'content'];
 const FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email'];
 const ACTIVATION_RULE_FIELDS = ['custom_message'];
-const PROFILE_FIELDS = ['first_name', 'last_name'];
+const PROFILE_FIELDS = ['first_name', 'last_name', 'emergency_instructions'];
 
 function needsEncryption(record: any, fields: string[]): boolean {
   // A record needs encryption if at least one field has a value but NO corresponding _iv

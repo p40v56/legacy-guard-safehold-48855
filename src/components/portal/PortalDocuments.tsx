@@ -60,7 +60,26 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
                   {new Date(doc.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
                 {doc.file_path && (
-                  <button className="inline-flex items-center gap-1.5 text-blue-600 text-xs hover:underline">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+                        const response = await fetch(`${supabaseUrl}/functions/v1/get-document-url`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+                          body: JSON.stringify({ token, documentId: doc.id, filePath: doc.file_path }),
+                        });
+                        const result = await response.json();
+                        if (result.signedUrl) {
+                          window.open(result.signedUrl, '_blank');
+                        }
+                      } catch (err) {
+                        console.error('Failed to get download URL:', err);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 text-blue-600 text-xs hover:underline"
+                  >
                     <Download className="w-3 h-3" />Download
                   </button>
                 )}

@@ -1,11 +1,24 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') || '';
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  };
+}
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -14,8 +27,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -28,34 +40,26 @@ Deno.serve(async (req) => {
     const { data: { user: caller } } = await callerClient.auth.getUser();
     if (!caller) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const { data: roles } = await adminClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', caller.id)
-      .eq('role', 'admin');
+    const { data: roles } = await adminClient.from('user_roles').select('role').eq('user_id', caller.id).eq('role', 'admin');
 
     if (!roles || roles.length === 0) {
       return new Response(JSON.stringify({ error: 'Forbidden: admin role required' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const { userId } = await req.json();
     if (!userId) {
       return new Response(JSON.stringify({ error: 'userId required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Delete all user data from public tables
     const tables = ['contacts', 'accounts', 'legacy_documents', 'activation_rules',
       'notification_settings', 'user_settings', 'check_in_history', 'check_in_tokens',
       'contact_access_tokens', 'contact_type_permissions', 'security_questions',
@@ -65,7 +69,6 @@ Deno.serve(async (req) => {
       await adminClient.from(table).delete().eq('user_id', userId);
     }
 
-    // Delete auth user
     const { error } = await adminClient.auth.admin.deleteUser(userId);
     if (error) throw error;
 
@@ -74,8 +77,7 @@ Deno.serve(async (req) => {
     });
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

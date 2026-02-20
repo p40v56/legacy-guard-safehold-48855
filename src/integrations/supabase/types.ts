@@ -550,6 +550,27 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_access_attempts: {
+        Row: {
+          attempted_at: string | null
+          id: string
+          success: boolean | null
+          token_hash: string
+        }
+        Insert: {
+          attempted_at?: string | null
+          id?: string
+          success?: boolean | null
+          token_hash: string
+        }
+        Update: {
+          attempted_at?: string | null
+          id?: string
+          success?: boolean | null
+          token_hash?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bio: string | null
@@ -563,6 +584,7 @@ export type Database = {
           email_intro_message: string | null
           email_subject: string | null
           emergency_instructions: string | null
+          emergency_instructions_iv: string | null
           encrypted_vault_key: string | null
           first_name: string | null
           first_name_iv: string | null
@@ -570,6 +592,7 @@ export type Database = {
           last_name: string | null
           last_name_iv: string | null
           last_test_email_sent_at: string | null
+          migration_complete: boolean | null
           phone: string | null
           plan: string
           plan_expires_at: string | null
@@ -591,6 +614,7 @@ export type Database = {
           email_intro_message?: string | null
           email_subject?: string | null
           emergency_instructions?: string | null
+          emergency_instructions_iv?: string | null
           encrypted_vault_key?: string | null
           first_name?: string | null
           first_name_iv?: string | null
@@ -598,6 +622,7 @@ export type Database = {
           last_name?: string | null
           last_name_iv?: string | null
           last_test_email_sent_at?: string | null
+          migration_complete?: boolean | null
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null
@@ -619,6 +644,7 @@ export type Database = {
           email_intro_message?: string | null
           email_subject?: string | null
           emergency_instructions?: string | null
+          emergency_instructions_iv?: string | null
           encrypted_vault_key?: string | null
           first_name?: string | null
           first_name_iv?: string | null
@@ -626,6 +652,7 @@ export type Database = {
           last_name?: string | null
           last_name_iv?: string | null
           last_test_email_sent_at?: string | null
+          migration_complete?: boolean | null
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null
@@ -826,6 +853,7 @@ export type Database = {
           email_intro_message: string | null
           email_subject: string | null
           emergency_instructions: string | null
+          emergency_instructions_iv: string | null
           encrypted_vault_key: string | null
           first_name: string | null
           first_name_iv: string | null
@@ -833,6 +861,7 @@ export type Database = {
           last_name: string | null
           last_name_iv: string | null
           last_test_email_sent_at: string | null
+          migration_complete: boolean | null
           phone: string | null
           plan: string
           plan_expires_at: string | null

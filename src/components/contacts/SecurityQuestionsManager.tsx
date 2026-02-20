@@ -5,11 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Plus, Trash2, Shield, Pencil, Eye, EyeOff, X, Check } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Shield, Pencil, Eye, EyeOff, X, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { ContactType, EmergencyContact } from '@/types/access-control';
+
+async function hashAnswer(answer: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(answer.trim().toLowerCase()));
+  const arr = new Uint8Array(digest);
+  let binary = '';
+  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+  return btoa(binary);
+}
 
 interface SecurityQuestion {
   id: string;
@@ -77,10 +86,11 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
     setSaving(true);
 
     try {
+      const answerHash = await hashAnswer(newAnswer);
       const payload: any = {
         user_id: user.id,
         question: newQuestion.trim(),
-        answer_hash: newAnswer.trim(),
+        answer_hash: answerHash,
         hint: newHint.trim() || null,
         target_type: newTargetType,
         target_contact_type: newTargetType === 'category' ? newTargetContactType : null,
@@ -115,7 +125,7 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
   const startEdit = (q: SecurityQuestion) => {
     setEditingId(q.id);
     setEditQuestion(q.question);
-    setEditAnswer(q.answer_hash);
+    setEditAnswer(''); // Must re-enter — stored as hash
     setEditHint(q.hint || '');
     setEditTargetType(q.target_type);
     setEditTargetContactType(q.target_contact_type || '');
@@ -133,9 +143,10 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
     setEditSaving(true);
 
     try {
+      const answerHash = await hashAnswer(editAnswer);
       const payload: any = {
         question: editQuestion.trim(),
-        answer_hash: editAnswer.trim(),
+        answer_hash: answerHash,
         hint: editHint.trim() || null,
         target_type: editTargetType,
         target_contact_type: editTargetType === 'category' ? editTargetContactType : null,
@@ -190,7 +201,8 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
     return 'Unknown';
   };
 
-  const maskedAnswer = (answer: string) => '•'.repeat(Math.max(answer.length, 6));
+  const maskedAnswer = () => '••••••';
+  const hasLegacyAnswers = questions.some(q => q.answer_hash.length !== 44);
 
   return (
     <Card className="bg-card/50 border-border">
@@ -205,6 +217,15 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
+        {hasLegacyAnswers && (
+          <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+            <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-destructive">Security Update Required</p>
+              <p className="text-xs text-muted-foreground mt-1">Your existing security question answers need to be re-entered to apply secure hashing. Please edit each question and re-type the answer.</p>
+            </div>
+          </div>
+        )}
         {/* Existing questions */}
         {questions.length > 0 && (
           <div className="space-y-3">
@@ -290,7 +311,7 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 space-y-1">
                       <p className="text-foreground font-medium text-sm">{q.question}</p>
-                      <p className="text-muted-foreground text-xs">Answer: {maskedAnswer(q.answer_hash)}</p>
+                      <p className="text-muted-foreground text-xs">Answer: {maskedAnswer()}</p>
                       {q.hint && (
                         <p className="text-muted-foreground text-xs">Hint: {q.hint}</p>
                       )}

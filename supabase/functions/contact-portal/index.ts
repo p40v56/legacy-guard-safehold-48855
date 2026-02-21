@@ -194,7 +194,7 @@ async function servePortalResponse(
       .single();
 
     if (share?.encrypted_content && share?.content_iv) {
-      console.log(`Serving encrypted portal data for contact ${contact.email || contact.id}`);
+      console.log(`Serving encrypted portal data for contact`);
       return new Response(
         JSON.stringify({
           encrypted: true,
@@ -288,7 +288,7 @@ async function servePortalDataLegacy(
   const userDisplayName = "the vault owner";
 
   console.log(
-    `Portal data served (legacy) for contact ${contact.email || contact.id}: docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`
+    `Portal data served (legacy): docs=${allowedDocuments.length}, accounts=${allowedAccounts.length}, financials=${allowedFinancialAssets.length}`
   );
 
   return new Response(

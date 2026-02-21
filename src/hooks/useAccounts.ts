@@ -74,6 +74,10 @@ export const useAccounts = () => {
 
   const createAccount = async (formData: Omit<DigitalAccount, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving.", variant: "destructive" });
+      return;
+    }
     
     try {
       let accountData: any = {
@@ -126,6 +130,10 @@ export const useAccounts = () => {
   };
 
   const updateAccount = async (accountId: string, formData: Omit<DigitalAccount, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving.", variant: "destructive" });
+      return;
+    }
     try {
       let accountData: any = {
         ...formData,
@@ -177,8 +185,6 @@ export const useAccounts = () => {
   };
 
   const deleteAccount = async (accountId: string) => {
-    if (!confirm('Are you sure you want to delete this account?')) return;
-    
     try {
       await AccountsService.deleteAccount(accountId);
       setAccounts(prev => prev.filter(account => account.id !== accountId));

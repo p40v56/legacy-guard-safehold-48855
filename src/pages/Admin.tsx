@@ -242,8 +242,6 @@ const Admin = () => {
   const filteredUsers = users.filter(u => {
     const search = searchQuery.toLowerCase();
     return !search ||
-      (u.first_name || '').toLowerCase().includes(search) ||
-      (u.last_name || '').toLowerCase().includes(search) ||
       u.user_id.toLowerCase().includes(search);
   });
 
@@ -304,9 +302,9 @@ const Admin = () => {
                   <tr key={u.user_id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                     <td className="p-4">
                       <div className="text-sm font-medium text-card-foreground">
-                        {u.first_name || ''} {u.last_name || ''}
+                        {u.user_id.slice(0, 8)}...
                       </div>
-                      <div className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}...</div>
+                      <div className="text-xs text-muted-foreground">User ID</div>
                     </td>
                     <td className="p-4">
                       {(() => {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, Plus, Edit, Trash2, PoundSterling } from 'lucide-react';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import FinancialsTab from '@/components/financials/FinancialsTab';
@@ -51,6 +52,7 @@ const Accounts = () => {
     platform: '', username: '', email: '', account_type: 'social',
     importance: 'medium', closure_action: 'memorialize', notes: '',
   });
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // Compute dynamic category tabs from accounts
   const categoryTabs = useMemo(() => {
@@ -308,7 +310,7 @@ const Accounts = () => {
                                   </div>
                                   <div className="flex items-center gap-1 ml-6">
                                     <Button variant="ghost" size="sm" onClick={() => handleEdit(account)} className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-10 w-10 p-0"><Edit className="w-4 h-4" /></Button>
-                                    <Button variant="ghost" size="sm" onClick={() => deleteAccount(account.id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"><Trash2 className="w-4 h-4" /></Button>
+                                    <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(account.id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"><Trash2 className="w-4 h-4" /></Button>
                                   </div>
                                 </div>
                               </CardContent>
@@ -323,6 +325,16 @@ const Accounts = () => {
             </TabsContent>
           ))}
         </Tabs>
+
+        <ConfirmationDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+          title="Delete Account"
+          description="Are you sure you want to delete this account? This action cannot be undone."
+          confirmText="Delete"
+          variant="destructive"
+          onConfirm={() => { if (deleteTarget) deleteAccount(deleteTarget); setDeleteTarget(null); }}
+        />
       </div>
     </DashboardLayout>
   );

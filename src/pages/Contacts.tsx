@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ContactCard from '@/components/contacts/ContactCard';
@@ -8,6 +8,7 @@ import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, UserPlus, Filter, Shield } from 'lucide-react';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { useContacts } from '@/hooks/useContacts';
 import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
@@ -27,6 +28,7 @@ const Contacts = () => {
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
   const [selectedContactForPermissions, setSelectedContactForPermissions] = useState<EmergencyContact | null>(null);
   const [expandedContactId, setExpandedContactId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const contactTypeLabels: Record<ContactType, string> = {
     immediate_family: 'Immediate Family',
@@ -198,7 +200,7 @@ const Contacts = () => {
                 contact={contact}
                 contactTypeLabels={contactTypeLabels}
                 onEdit={handleEditContact}
-                onDelete={deleteContact}
+                onDelete={(id) => setDeleteTargetId(id)}
                 onPermissionsChange={updateContactPermissions}
                 onUseTypeDefaultsChange={updateUseTypeDefaults}
                 isExpanded={expandedContactId === contact.id}
@@ -207,6 +209,16 @@ const Contacts = () => {
             ))
           )}
         </div>
+
+        <ConfirmationDialog
+          open={!!deleteTargetId}
+          onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+          title="Delete Contact"
+          description="Are you sure you want to delete this contact? This action cannot be undone."
+          confirmText="Delete"
+          variant="destructive"
+          onConfirm={() => { if (deleteTargetId) deleteContact(deleteTargetId); setDeleteTargetId(null); }}
+        />
       </div>
     </DashboardLayout>
   );

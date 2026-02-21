@@ -63,6 +63,10 @@ export const useContacts = () => {
 
   const createContact = async (formData: Omit<EmergencyContact, 'id' | 'created_at'>) => {
     if (!user) return;
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving.", variant: "destructive" });
+      return;
+    }
     
     try {
       let contactData: any = { ...formData };
@@ -111,6 +115,10 @@ export const useContacts = () => {
   };
 
   const updateContact = async (contactId: string, formData: Omit<EmergencyContact, 'id' | 'created_at'>) => {
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving.", variant: "destructive" });
+      return;
+    }
     try {
       let contactData: any = { ...formData };
 
@@ -160,8 +168,6 @@ export const useContacts = () => {
   };
 
   const deleteContact = async (contactId: string) => {
-    if (!confirm('Are you sure you want to delete this contact?')) return;
-    
     try {
       await ContactsService.deleteContact(contactId);
       setContacts(prev => prev.filter(contact => contact.id !== contactId));

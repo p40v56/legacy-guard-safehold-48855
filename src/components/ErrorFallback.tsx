@@ -25,8 +25,8 @@ const ErrorFallback = ({ error, resetErrorBoundary }: ErrorFallbackProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-muted border border-border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground font-mono break-all">
-              {error.message}
+            <p className="text-sm text-muted-foreground">
+              An unexpected error occurred. Please try again or return to the homepage.
             </p>
           </div>
           

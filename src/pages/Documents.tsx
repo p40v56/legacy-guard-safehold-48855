@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Edit, Trash2, Download, Eye, Upload, Calendar, Shield } from 'lucide-react';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SearchInput from '@/components/ui/search-input';
@@ -51,6 +52,7 @@ const Documents = () => {
     is_public: false,
   });
   const [uploading, setUploading] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const filteredDocuments = useMemo(() => {
     return documents.filter(document => {
@@ -114,6 +116,10 @@ const Documents = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving.", variant: "destructive" });
+      return;
+    }
     
     try {
       let submissionData: any = {
@@ -184,8 +190,6 @@ const Documents = () => {
   };
 
   const handleDelete = async (documentId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
-    
     try {
       const { error } = await supabase
         .from('legacy_documents')
@@ -598,7 +602,7 @@ const Documents = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(document.id)}
+                          onClick={() => setDeleteTargetId(document.id)}
                           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -612,6 +616,16 @@ const Documents = () => {
           )}
         </div>
         </>)}
+
+        <ConfirmationDialog
+          open={!!deleteTargetId}
+          onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+          title="Delete Document"
+          description="Are you sure you want to delete this document? This action cannot be undone."
+          confirmText="Delete"
+          variant="destructive"
+          onConfirm={() => { if (deleteTargetId) handleDelete(deleteTargetId); setDeleteTargetId(null); }}
+        />
       </div>
     </DashboardLayout>
   );

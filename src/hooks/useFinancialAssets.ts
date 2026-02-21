@@ -44,6 +44,10 @@ export const useFinancialAssets = () => {
 
   const createAsset = async (assetData: FinancialAssetInsert) => {
     if (!user) return;
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving.", variant: "destructive" });
+      return;
+    }
     try {
       let dataToInsert: any = { ...assetData, user_id: user.id };
 
@@ -89,6 +93,10 @@ export const useFinancialAssets = () => {
   };
 
   const updateAsset = async (id: string, assetData: Partial<FinancialAssetInsert>) => {
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving.", variant: "destructive" });
+      return;
+    }
     try {
       let dataToUpdate: any = { ...assetData };
 

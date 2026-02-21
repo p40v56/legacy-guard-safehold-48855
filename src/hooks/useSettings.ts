@@ -211,6 +211,10 @@ export const useSettings = () => {
     }
   };
 
+  // Email template fields are intentionally stored as plaintext in the profiles table.
+  // The edge function (send-notification) needs to read them server-side to build emails,
+  // and it has no access to the user's vault key. This is an accepted exception to the
+  // E2E encryption policy — these fields contain formatting preferences, not sensitive PII.
   const saveEmailTemplate = async () => {
     if (!user) return;
     
@@ -263,6 +267,10 @@ export const useSettings = () => {
 
   const saveActivationRules = async () => {
     if (!user) return;
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Please unlock your vault before saving activation rules.", variant: "destructive" });
+      return;
+    }
     
     try {
       const existingRules = await ActivationRulesService.getActivationRules(user.id);

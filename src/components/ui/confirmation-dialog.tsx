@@ -46,45 +46,45 @@ const ConfirmationDialog = ({
   const getIcon = () => {
     switch (variant) {
       case 'destructive':
-        return <XCircle className="w-6 h-6 text-red-500" />;
+        return <XCircle className="w-6 h-6 text-destructive" />;
       case 'success':
-        return <CheckCircle className="w-6 h-6 text-emerald-500" />;
+        return <CheckCircle className="w-6 h-6 text-success" />;
       case 'warning':
-        return <AlertTriangle className="w-6 h-6 text-amber-500" />;
+        return <AlertTriangle className="w-6 h-6 text-warning" />;
       default:
-        return <Info className="w-6 h-6 text-blue-500" />;
+        return <Info className="w-6 h-6 text-primary" />;
     }
   };
 
   const getConfirmButtonClass = () => {
     switch (variant) {
       case 'destructive':
-        return "bg-red-600 hover:bg-red-700 text-white";
+        return "bg-destructive hover:bg-destructive/90 text-destructive-foreground";
       case 'success':
-        return "bg-emerald-600 hover:bg-emerald-700 text-white";
+        return "bg-success hover:bg-success/90 text-success-foreground";
       case 'warning':
-        return "bg-amber-600 hover:bg-amber-700 text-white";
+        return "bg-warning hover:bg-warning/90 text-warning-foreground";
       default:
-        return "bg-blue-600 hover:bg-blue-700 text-white";
+        return "bg-primary hover:bg-primary/90 text-primary-foreground";
     }
   };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-slate-800 border-slate-700">
+      <AlertDialogContent className="bg-card border-border">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-white flex items-center gap-3">
+          <AlertDialogTitle className="text-card-foreground flex items-center gap-3">
             {getIcon()}
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-slate-300">
+          <AlertDialogDescription className="text-muted-foreground">
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel 
             onClick={handleCancel}
-            className="bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600"
+            className="bg-muted border-border text-foreground hover:bg-muted/80"
           >
             {cancelText}
           </AlertDialogCancel>

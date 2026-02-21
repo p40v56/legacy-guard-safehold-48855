@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, PoundSterling } from 'lucide-react';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
 import { useFinancialAssets } from '@/hooks/useFinancialAssets';
 import UpgradePrompt from '@/components/UpgradePrompt';
@@ -20,6 +21,7 @@ const FinancialsTab: React.FC = () => {
   const { assets, loading, createAsset, updateAsset, deleteAsset } = useFinancialAssets();
   const [showForm, setShowForm] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FinancialAsset | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const isFree = plan === 'free';
   const canAdd = !isFree || assets.length < FREE_MAX_FINANCIAL_ASSETS;
@@ -49,9 +51,7 @@ const FinancialsTab: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this financial asset?')) {
-      deleteAsset(id);
-    }
+    setDeleteTargetId(id);
   };
 
   const handleCancel = () => {
@@ -145,6 +145,16 @@ const FinancialsTab: React.FC = () => {
           ))}
         </div>
       )}
+
+      <ConfirmationDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+        title="Delete Financial Asset"
+        description="Are you sure you want to delete this financial asset? This action cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+        onConfirm={() => { if (deleteTargetId) deleteAsset(deleteTargetId); setDeleteTargetId(null); }}
+      />
     </div>
   );
 };

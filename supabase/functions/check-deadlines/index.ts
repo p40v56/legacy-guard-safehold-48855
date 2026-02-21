@@ -202,7 +202,7 @@ async function startGracePeriod(
     });
 
     const result = await response.json();
-    console.log(`Grace period warning email to ${userEmail}: ${result.success ? "sent" : "failed"}`);
+    console.log(`Grace period warning email: ${result.success ? "sent" : "failed"}`);
     return { success: result.success, error: result.error };
   } catch (err: unknown) {
     const errMessage = err instanceof Error ? err.message : "Unknown error";
@@ -288,7 +288,7 @@ async function triggerSwitch(
 
   for (const contact of contacts) {
     if (!contact.email) {
-      console.log(`Skipping contact (id: ${contact.id}) - no email`);
+      console.log(`Skipping contact (no email)`);
       continue;
     }
 
@@ -323,7 +323,7 @@ async function triggerSwitch(
       portalBaseUrl: APP_BASE_URL,
     };
 
-    console.log(`Sending to ${contactLabel}: portalToken=${portalToken ? "generated" : "none"}`);
+    console.log(`Sending notification: portalToken=${portalToken ? "generated" : "none"}`);
 
     try {
       const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
@@ -351,7 +351,7 @@ async function triggerSwitch(
         error: sendResult.error,
       });
 
-      console.log(`Switch notification to ${contactLabel}: ${sendResult.success ? "sent" : "failed"}`);
+      console.log(`Switch notification: ${sendResult.success ? "sent" : "failed"}`);
     } catch (err: unknown) {
       const errMessage = err instanceof Error ? err.message : "Unknown error";
       console.error(`Error sending to ${contactLabel}:`, errMessage);

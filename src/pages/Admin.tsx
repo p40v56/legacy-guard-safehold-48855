@@ -409,7 +409,7 @@ const Admin = () => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Set expiry date for {expiryTarget?.first_name || ''} {expiryTarget?.last_name || ''}
+                Set expiry date for user {expiryTarget?.user_id.slice(0, 8)}...
               </p>
               <div>
                 <Label className="text-card-foreground">Expiry Date (DD/MM/YYYY)</Label>

@@ -200,6 +200,8 @@ const Admin = () => {
       });
       toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(parsed.toISOString())}` });
       setShowExpiryEditor(false);
+      setShowCalendar(false);
+      setExpiryTarget(null);
       fetchData();
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to update expiry date', variant: 'destructive' });

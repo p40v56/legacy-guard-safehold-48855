@@ -233,11 +233,9 @@ const Switch = () => {
 
         {/* Section 3: Check-in Methods */}
         <CheckInMethods
-          emailCheckinEnabled={emailCheckinEnabled}
           smsCheckinEnabled={smsCheckinEnabled}
           hasPhone={hasPhone}
           smsNotificationsEnabled={smsNotificationsEnabled}
-          onEmailCheckinChange={(v) => plan === 'paid' ? handleCheckinMethodChange('email_checkin_enabled', v) : null}
           onSmsCheckinChange={(v) => plan === 'paid' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
           isPaidPlan={plan === 'paid'}
         />

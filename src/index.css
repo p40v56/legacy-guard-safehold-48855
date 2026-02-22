@@ -203,3 +203,187 @@
 .animate-float { animation: float 6s ease-in-out infinite; }
 
 ::selection { background: hsl(199 89% 48% / 0.3); }
+
+
+/* ── LANDING PAGE OVERRIDES ────────────────────────────────────────────
+   These rules are scoped to #lv-root and override Tailwind @layer base.
+   They must live in index.css (not a <style> tag) to beat @layer specificity.
+──────────────────────────────────────────────────────────────────────── */
+
+#lv-root {
+  font-family: 'DM Sans', sans-serif !important;
+  background: #0D1B2A !important;
+  color: white !important;
+  overflow-x: hidden;
+}
+
+#lv-root *,
+#lv-root *::before,
+#lv-root *::after {
+  box-sizing: border-box !important;
+  border-color: transparent !important;
+}
+
+html:has(#lv-root),
+body:has(#lv-root) {
+  background: #0D1B2A !important;
+  color: white !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+#lv-root h1,
+#lv-root h2,
+#lv-root h3,
+#lv-root h4,
+#lv-root h5,
+#lv-root h6 {
+  font-family: 'DM Serif Display', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  color: white !important;
+}
+
+#lv-root .lv-h1 {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: clamp(56px, 8vw, 92px) !important;
+  line-height: 1 !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  color: white !important;
+}
+
+#lv-root .lv-h1 em {
+  font-style: italic !important;
+  font-weight: 300 !important;
+}
+
+#lv-root .lv-h2 {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: clamp(32px, 4.5vw, 52px) !important;
+  line-height: 1.1 !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  color: white !important;
+}
+
+#lv-root .lv-h2 em {
+  font-style: italic !important;
+  font-weight: 300 !important;
+}
+
+#lv-root .lv-num-val {
+  font-family: 'DM Serif Display', serif !important;
+  font-weight: 400 !important;
+  color: white !important;
+}
+
+#lv-root .lv-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+#lv-root .lv-card:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+#lv-root .lv-card h3 {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  color: white !important;
+  letter-spacing: 0 !important;
+}
+
+#lv-root .lv-card p {
+  font-family: 'DM Sans', sans-serif !important;
+  color: rgba(255, 255, 255, 0.42) !important;
+}
+
+#lv-root .lv-card-ico {
+  background: rgba(26, 155, 215, 0.15) !important;
+  border: 1px solid rgba(26, 155, 215, 0.25) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+#lv-root .lv-card-ico.red {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+#lv-root .lv-card-ico.amber {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.22) !important;
+}
+
+#lv-root .lv-enc-flow {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+#lv-root .lv-enc-node {
+  box-shadow: none !important;
+}
+
+#lv-root .lv-enc-node.white {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+#lv-root .lv-enc-node.amber {
+  background: rgba(245, 158, 11, 0.07) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+#lv-root .lv-enc-node.blue {
+  background: rgba(26, 155, 215, 0.08) !important;
+  border-color: rgba(26, 155, 215, 0.35) !important;
+}
+
+#lv-root .lv-enc-node.green {
+  background: rgba(52, 211, 153, 0.07) !important;
+  border-color: rgba(52, 211, 153, 0.3) !important;
+}
+
+#lv-root .lv-step-circle {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+
+#lv-root .lv-step-lbl {
+  color: white !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+#lv-root .lv-step-desc {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+#lv-root footer.lv-footer {
+  background: #080f17 !important;
+}
+
+#lv-root .lv-footer-col h4 {
+  font-family: 'DM Sans', sans-serif !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.15em !important;
+}
+
+#lv-root .lv-footer-col a {
+  color: rgba(255, 255, 255, 0.3) !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+#lv-root .lv-footer-col a:hover {
+  color: rgba(255, 255, 255, 0.7) !important;
+}

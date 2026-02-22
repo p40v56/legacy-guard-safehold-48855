@@ -203,12 +203,17 @@
 .animate-float { animation: float 6s ease-in-out infinite; }
 
 ::selection { background: hsl(199 89% 48% / 0.3); }
+/* ══════════════════════════════════════════════════════
+   LANDING PAGE — complete styles
+   All classes used by Index.tsx live here.
+══════════════════════════════════════════════════════ */
 
-
-/* ── LANDING PAGE OVERRIDES ────────────────────────────────────────────
-   These rules are scoped to #lv-root and override Tailwind @layer base.
-   They must live in index.css (not a <style> tag) to beat @layer specificity.
-──────────────────────────────────────────────────────────────────────── */
+html:has(#lv-root),
+body:has(#lv-root) {
+  background: #0D1B2A !important;
+  color: white !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
 
 #lv-root {
   font-family: 'DM Sans', sans-serif !important;
@@ -224,166 +229,464 @@
   border-color: transparent !important;
 }
 
-html:has(#lv-root),
-body:has(#lv-root) {
-  background: #0D1B2A !important;
-  color: white !important;
-  font-family: 'DM Sans', sans-serif !important;
-}
-
-#lv-root h1,
-#lv-root h2,
-#lv-root h3,
-#lv-root h4,
-#lv-root h5,
-#lv-root h6 {
+#lv-root h1,#lv-root h2,#lv-root h3,#lv-root h4,#lv-root h5,#lv-root h6 {
   font-family: 'DM Serif Display', serif !important;
   font-weight: 400 !important;
   letter-spacing: 0 !important;
   color: white !important;
 }
 
+/* ── Reveal animations ── */
+#lv-root .reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1);
+}
+#lv-root .reveal.d1 { transition-delay: 0.1s; }
+#lv-root .reveal.d2 { transition-delay: 0.2s; }
+#lv-root .reveal.d3 { transition-delay: 0.3s; }
+#lv-root .reveal.d4 { transition-delay: 0.4s; }
+#lv-root .reveal.d5 { transition-delay: 0.5s; }
+#lv-root .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── Nav ── */
+#lv-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 20px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: all 0.4s ease;
+}
+#lv-nav.scrolled {
+  padding: 14px 48px;
+  background: rgba(13,27,42,0.9);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+}
+#lv-root .lv-logo {
+  display: flex; align-items: center; gap: 10px; text-decoration: none;
+}
+#lv-root .lv-logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  display: flex; align-items: center; justify-content: center;
+}
+#lv-root .lv-login {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  color: white; font-size: 13px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  padding: 8px 20px; border-radius: 99px;
+  cursor: pointer; transition: all 0.2s;
+}
+#lv-root .lv-login:hover { background: rgba(255,255,255,0.18); }
+
+/* ── Hero ── */
+#lv-root .lv-hero {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; position: relative; overflow: hidden;
+  background: linear-gradient(160deg, #1A9BD7 0%, #0D6EA8 45%, #0a3d5c 100%);
+  padding: 100px 24px 80px;
+}
+#lv-root .lv-orb {
+  position: absolute; border-radius: 50%;
+  pointer-events: none; filter: blur(80px); opacity: 0.35;
+}
+#lv-root .orb1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
+  top: -200px; left: -100px;
+  animation: lvOrbDrift1 18s ease-in-out infinite;
+}
+#lv-root .orb2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(10,70,120,0.8) 0%, transparent 70%);
+  bottom: -150px; right: -100px;
+  animation: lvOrbDrift2 22s ease-in-out infinite;
+}
+#lv-root .orb3 {
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+  top: 50%; right: 20%;
+  animation: lvOrbDrift3 14s ease-in-out infinite;
+}
+@keyframes lvOrbDrift1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(60px,40px) scale(1.08); }
+  66% { transform: translate(-30px,60px) scale(0.95); }
+}
+@keyframes lvOrbDrift2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  40% { transform: translate(-50px,-40px) scale(1.1); }
+  70% { transform: translate(40px,-20px) scale(0.92); }
+}
+@keyframes lvOrbDrift3 {
+  0%,100% { transform: translate(0,0); opacity: 0.3; }
+  50% { transform: translate(-30px,-50px); opacity: 0.5; }
+}
+#lv-root .lv-rays {
+  position: absolute; inset: 0; pointer-events: none;
+  background: conic-gradient(from 200deg at 60% 10%,
+    transparent 0deg, rgba(255,255,255,0.025) 20deg, transparent 40deg,
+    transparent 120deg, rgba(255,255,255,0.02) 140deg, transparent 160deg);
+}
+#lv-root .lv-hero-content {
+  position: relative; z-index: 2; max-width: 820px;
+}
+#lv-root .lv-zk {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 18px; border-radius: 99px;
+  border: 1px solid rgba(52,211,153,0.35) !important;
+  background: rgba(52,211,153,0.1);
+  color: #6ee7b7; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 32px;
+}
+#lv-root .lv-zk-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #34d399;
+  animation: lvPulseDot 2s ease-in-out infinite;
+}
+@keyframes lvPulseDot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
 #lv-root .lv-h1 {
   font-family: 'DM Serif Display', serif !important;
   font-size: clamp(56px, 8vw, 92px) !important;
-  line-height: 1 !important;
+  line-height: 1 !important; color: white !important;
+  margin-bottom: 28px; font-weight: 400 !important; letter-spacing: 0 !important;
+}
+#lv-root .lv-h1 em { font-style: italic !important; font-weight: 300 !important; }
+#lv-root .lv-hero-sub {
+  font-size: clamp(16px, 2vw, 20px);
+  color: rgba(255,255,255,0.68); font-weight: 300;
+  max-width: 560px; margin: 0 auto 48px; line-height: 1.65;
+  font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-trust {
+  margin-top: 52px; display: flex; align-items: center;
+  justify-content: center; gap: 32px; flex-wrap: wrap;
+}
+#lv-root .lv-trust-item {
+  display: flex; align-items: center; gap: 8px;
+  color: rgba(255,255,255,0.5); font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-trust-item svg { opacity: 0.6; }
+#lv-root .lv-scroll {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: rgba(255,255,255,0.3); font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase;
+  font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-scroll-line {
+  width: 1px; height: 48px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent);
+  animation: lvScrollGrow 2s ease-in-out infinite;
+}
+@keyframes lvScrollGrow {
+  0%,100% { transform: scaleY(1); opacity: 1; }
+  50% { transform: scaleY(0.6); opacity: 0.4; }
+}
+
+/* ── Numbers ── */
+#lv-root .lv-numbers {
+  background: #0D1B2A; padding: 80px 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+#lv-root .lv-numbers-inner {
+  max-width: 1000px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+}
+#lv-root .lv-num-item {
+  text-align: center; padding: 0 24px;
+  border-right: 1px solid rgba(255,255,255,0.08) !important;
+}
+#lv-root .lv-num-item:last-child { border-right: none !important; }
+#lv-root .lv-num-val {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: clamp(38px, 5vw, 56px) !important;
+  color: white !important; line-height: 1; margin-bottom: 8px;
   font-weight: 400 !important;
-  letter-spacing: 0 !important;
-  color: white !important;
+}
+#lv-root .lv-num-label {
+  color: rgba(255,255,255,0.35); font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
 }
 
-#lv-root .lv-h1 em {
-  font-style: italic !important;
-  font-weight: 300 !important;
+/* ── Shared section layout ── */
+#lv-root .lv-section { padding: 120px 48px; }
+#lv-root .lv-container { max-width: 1100px; margin: 0 auto; }
+#lv-root .lv-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.25em;
+  text-transform: uppercase; color: #1A9BD7;
+  display: block; margin-bottom: 16px;
+  font-family: 'DM Sans', sans-serif;
 }
-
+#lv-root .lv-label.light { color: rgba(255,255,255,0.45); }
 #lv-root .lv-h2 {
   font-family: 'DM Serif Display', serif !important;
   font-size: clamp(32px, 4.5vw, 52px) !important;
-  line-height: 1.1 !important;
-  font-weight: 400 !important;
-  letter-spacing: 0 !important;
-  color: white !important;
+  color: white !important; line-height: 1.1 !important;
+  margin-bottom: 20px; font-weight: 400 !important; letter-spacing: 0 !important;
 }
-
-#lv-root .lv-h2 em {
-  font-style: italic !important;
-  font-weight: 300 !important;
+#lv-root .lv-h2 em { font-style: italic !important; font-weight: 300 !important; }
+#lv-root .lv-body {
+  color: rgba(255,255,255,0.45); font-size: 18px;
+  font-weight: 300; line-height: 1.65; max-width: 540px;
+  font-family: 'DM Sans', sans-serif;
 }
+#lv-root .lv-centered { text-align: center; }
+#lv-root .lv-centered .lv-body { margin: 0 auto; }
 
-#lv-root .lv-num-val {
-  font-family: 'DM Serif Display', serif !important;
-  font-weight: 400 !important;
-  color: white !important;
+/* ── Cards ── */
+#lv-root .lv-grid3 {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-top: 64px;
 }
-
 #lv-root .lv-card {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 20px; padding: 28px;
+  display: flex; flex-direction: column;
+  transition: border-color 0.3s, background 0.3s, transform 0.3s;
+  backdrop-filter: none !important; box-shadow: none !important;
 }
-
 #lv-root .lv-card:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  background: rgba(255,255,255,0.06) !important;
+  transform: translateY(-2px);
 }
-
 #lv-root .lv-card h3 {
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 17px !important;
-  font-weight: 600 !important;
-  color: white !important;
-  letter-spacing: 0 !important;
+  font-size: 17px !important; font-weight: 600 !important;
+  color: white !important; margin-bottom: 10px;
+  font-family: 'DM Sans', sans-serif !important; letter-spacing: 0 !important;
 }
-
 #lv-root .lv-card p {
+  color: rgba(255,255,255,0.42) !important; font-size: 14px !important;
+  line-height: 1.65; font-weight: 300; flex: 1;
   font-family: 'DM Sans', sans-serif !important;
-  color: rgba(255, 255, 255, 0.42) !important;
 }
-
 #lv-root .lv-card-ico {
-  background: rgba(26, 155, 215, 0.15) !important;
-  border: 1px solid rgba(26, 155, 215, 0.25) !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(26,155,215,0.15) !important;
+  border: 1px solid rgba(26,155,215,0.25) !important;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px; backdrop-filter: none !important; box-shadow: none !important;
 }
-
 #lv-root .lv-card-ico.red {
-  background: rgba(239, 68, 68, 0.12) !important;
-  border-color: rgba(239, 68, 68, 0.22) !important;
+  background: rgba(239,68,68,0.12) !important;
+  border-color: rgba(239,68,68,0.22) !important;
 }
-
 #lv-root .lv-card-ico.amber {
-  background: rgba(245, 158, 11, 0.12) !important;
-  border-color: rgba(245, 158, 11, 0.22) !important;
+  background: rgba(245,158,11,0.12) !important;
+  border-color: rgba(245,158,11,0.22) !important;
+}
+#lv-root .lv-card-tag {
+  display: inline-flex; padding: 3px 10px; border-radius: 6px;
+  background: rgba(26,155,215,0.1);
+  border: 1px solid rgba(26,155,215,0.2) !important;
+  color: #1A9BD7; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 14px; align-self: flex-start;
+  font-family: 'DM Sans', sans-serif;
 }
 
+/* ── Encryption flow ── */
 #lv-root .lv-enc-flow {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 24px; padding: 48px; margin-top: 48px;
+  position: relative; overflow: hidden;
+  backdrop-filter: none !important; box-shadow: none !important;
 }
-
+#lv-root .lv-enc-flow::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(26,155,215,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+#lv-root .lv-enc-title {
+  text-align: center; color: rgba(255,255,255,0.3);
+  font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+  margin-bottom: 36px; font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-enc-steps {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; position: relative; z-index: 1;
+}
 #lv-root .lv-enc-node {
-  box-shadow: none !important;
+  flex: 1; min-width: 110px; text-align: center;
+  padding: 16px 10px; border-radius: 14px;
+  border: 1px solid transparent !important; box-shadow: none !important;
 }
-
 #lv-root .lv-enc-node.white {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  background: rgba(255,255,255,0.04) !important;
 }
-
 #lv-root .lv-enc-node.amber {
-  background: rgba(245, 158, 11, 0.07) !important;
-  border-color: rgba(245, 158, 11, 0.3) !important;
+  border-color: rgba(245,158,11,0.3) !important;
+  background: rgba(245,158,11,0.07) !important;
 }
-
 #lv-root .lv-enc-node.blue {
-  background: rgba(26, 155, 215, 0.08) !important;
-  border-color: rgba(26, 155, 215, 0.35) !important;
+  border-color: rgba(26,155,215,0.35) !important;
+  background: rgba(26,155,215,0.08) !important;
 }
-
 #lv-root .lv-enc-node.green {
-  background: rgba(52, 211, 153, 0.07) !important;
-  border-color: rgba(52, 211, 153, 0.3) !important;
+  border-color: rgba(52,211,153,0.3) !important;
+  background: rgba(52,211,153,0.07) !important;
+}
+#lv-root .lv-enc-arrow {
+  flex: 0; min-width: 20px; text-align: center;
+  color: rgba(255,255,255,0.2); font-size: 18px;
+}
+#lv-root .lv-enc-val {
+  font-size: 13px; font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-enc-node.white .lv-enc-val { color: rgba(255,255,255,0.85); }
+#lv-root .lv-enc-node.amber .lv-enc-val { color: #fbbf24; }
+#lv-root .lv-enc-node.blue .lv-enc-val  { color: #1A9BD7; }
+#lv-root .lv-enc-node.green .lv-enc-val { color: #34d399; }
+#lv-root .lv-enc-sub {
+  font-size: 11px; color: rgba(255,255,255,0.28);
+  margin-top: 4px; font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-enc-note {
+  text-align: center; color: rgba(255,255,255,0.22);
+  font-size: 12px; margin-top: 28px;
+  position: relative; z-index: 1;
+  font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-enc-line {
+  position: absolute; top: 50%; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(26,155,215,0.4) 20%, rgba(26,155,215,0.6) 50%,
+    rgba(52,211,153,0.4) 80%, transparent 100%);
+  transform: translateY(-50%);
+  animation: lvFlowPulse 3s ease-in-out infinite;
+  pointer-events: none; z-index: 0;
+}
+@keyframes lvFlowPulse {
+  0%,100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
 }
 
+/* ── Process ── */
+#lv-root .lv-process {
+  background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%);
+  padding: 120px 48px; position: relative; overflow: hidden;
+}
+#lv-root .lv-process::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,255,255,0.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+#lv-root .lv-steps {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 32px; margin-top: 64px; position: relative; z-index: 1;
+}
+#lv-root .lv-connector {
+  position: absolute; top: 28px; left: 10%; right: 10%;
+  height: 1px; background: rgba(255,255,255,0.22); overflow: hidden;
+}
+#lv-root .lv-connector-fill {
+  height: 100%; background: rgba(255,255,255,0.6);
+  width: 0; transition: width 1.5s cubic-bezier(0.22,1,0.36,1);
+}
+#lv-root .lv-connector.animated .lv-connector-fill { width: 100%; }
+#lv-root .lv-step { text-align: center; }
 #lv-root .lv-step-circle {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  box-shadow: none !important;
-  color: white !important;
+  width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.4) !important;
+  background: rgba(255,255,255,0.12) !important;
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 500; font-size: 18px; color: white !important;
+  transition: all 0.3s; box-shadow: none !important;
 }
-
+#lv-root .lv-step:hover .lv-step-circle {
+  background: rgba(255,255,255,0.22) !important;
+  border-color: rgba(255,255,255,0.7) !important;
+}
 #lv-root .lv-step-lbl {
-  color: white !important;
-  font-family: 'DM Sans', sans-serif !important;
+  color: white !important; font-weight: 500; font-size: 14px;
+  margin-bottom: 4px; font-family: 'DM Sans', sans-serif;
 }
-
 #lv-root .lv-step-desc {
-  color: rgba(255, 255, 255, 0.5) !important;
-  font-family: 'DM Sans', sans-serif !important;
+  color: rgba(255,255,255,0.5) !important; font-size: 12px;
+  line-height: 1.4; font-family: 'DM Sans', sans-serif;
 }
 
-#lv-root footer.lv-footer {
+/* ── Features ── */
+#lv-root .lv-features {
+  background: linear-gradient(180deg, #0D1B2A 0%, #091624 100%);
+  padding: 120px 48px;
+}
+
+/* ── Footer ── */
+#lv-root footer.lv-footer,
+#lv-root .lv-footer {
   background: #080f17 !important;
+  border-top: 1px solid rgba(255,255,255,0.06) !important;
+  padding: 64px 48px 40px;
 }
-
+#lv-root .lv-footer-top {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 48px; margin-bottom: 48px;
+}
+#lv-root .lv-footer-logo {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; text-decoration: none;
+}
+#lv-root .lv-footer-tagline {
+  color: rgba(255,255,255,0.28); font-size: 13px;
+  line-height: 1.6; margin-bottom: 16px;
+  font-family: 'DM Sans', sans-serif;
+}
 #lv-root .lv-footer-col h4 {
-  font-family: 'DM Sans', sans-serif !important;
-  color: rgba(255, 255, 255, 0.5) !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.15em !important;
+  color: rgba(255,255,255,0.5) !important;
+  font-size: 11px !important; font-weight: 600 !important;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  margin-bottom: 16px; font-family: 'DM Sans', sans-serif !important;
 }
-
+#lv-root .lv-footer-col ul { list-style: none; }
+#lv-root .lv-footer-col li { margin-bottom: 10px; }
 #lv-root .lv-footer-col a {
-  color: rgba(255, 255, 255, 0.3) !important;
-  font-family: 'DM Sans', sans-serif !important;
+  color: rgba(255,255,255,0.3) !important; font-size: 13px;
+  text-decoration: none; transition: color 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-footer-col a:hover { color: rgba(255,255,255,0.7) !important; }
+#lv-root .lv-footer-bottom {
+  max-width: 1100px; margin: 0 auto; padding-top: 28px;
+  border-top: 1px solid rgba(255,255,255,0.06) !important;
+  display: flex; justify-content: space-between;
+  align-items: center; flex-wrap: wrap; gap: 12px;
+}
+#lv-root .lv-footer-copy {
+  color: rgba(255,255,255,0.22); font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+}
+#lv-root .lv-footer-enc {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.22); font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
 }
 
-#lv-root .lv-footer-col a:hover {
-  color: rgba(255, 255, 255, 0.7) !important;
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  #lv-root .lv-grid3 { grid-template-columns: 1fr; }
+  #lv-root .lv-steps { grid-template-columns: repeat(2, 1fr); }
+  #lv-root .lv-numbers-inner { grid-template-columns: repeat(2, 1fr); }
+  #lv-root .lv-footer-top { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  #lv-nav { padding: 16px 24px !important; }
+  #lv-root .lv-section,
+  #lv-root .lv-process,
+  #lv-root .lv-features { padding: 80px 24px; }
+  #lv-root .lv-numbers { padding: 60px 24px; }
 }

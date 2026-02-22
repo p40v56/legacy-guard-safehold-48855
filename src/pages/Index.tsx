@@ -78,6 +78,11 @@ const Index = () => {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap');
+        body:has(#lv-root){background:#0D1B2A !important;color:white !important}
+        #lv-root h1,#lv-root h2,#lv-root h3,#lv-root h4,#lv-root h5,#lv-root h6{font-family:'DM Serif Display',serif !important;font-weight:400 !important;letter-spacing:0 !important}
+        #lv-root .lv-card-ico{background:rgba(26,155,215,.15) !important;border:1px solid rgba(26,155,215,.25) !important;backdrop-filter:none !important;box-shadow:none !important}
+        #lv-root .lv-card-ico.red{background:rgba(239,68,68,.12) !important;border-color:rgba(239,68,68,.22) !important}
+        #lv-root .lv-card-ico.amber{background:rgba(245,158,11,.12) !important;border-color:rgba(245,158,11,.22) !important}
         #lv-root *,#lv-root *::before,#lv-root *::after{box-sizing:border-box;margin:0;padding:0}
         #lv-root{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:white;overflow-x:hidden}
         .lv-serif{font-family:'DM Serif Display',serif}

@@ -4,21 +4,17 @@ import { Badge } from '@/components/ui/badge';
 import { Mail, Phone, PhoneCall, Lock, MessageSquare } from 'lucide-react';
 
 interface CheckInMethodsProps {
-  emailCheckinEnabled: boolean;
   smsCheckinEnabled: boolean;
   hasPhone: boolean;
   smsNotificationsEnabled: boolean;
-  onEmailCheckinChange: (enabled: boolean) => void;
   onSmsCheckinChange: (enabled: boolean) => void;
   isPaidPlan?: boolean;
 }
 
 const CheckInMethods = ({
-  emailCheckinEnabled,
   smsCheckinEnabled,
   hasPhone,
   smsNotificationsEnabled,
-  onEmailCheckinChange,
   onSmsCheckinChange,
   isPaidPlan = true,
 }: CheckInMethodsProps) => {
@@ -34,20 +30,7 @@ const CheckInMethods = ({
         </div>
       </div>
 
-      {/* 1. Email check-in reminders — paid only */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Mail className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <Label className="text-foreground">Email check-in reminders</Label>
-            <p className="text-xs text-muted-foreground">Receive a check-in link via email before your deadline</p>
-          </div>
-          {!isPaidPlan && <Badge variant="outline" className="text-xs ml-2"><Lock className="w-3 h-3 mr-1" />Paid</Badge>}
-        </div>
-        <Switch checked={emailCheckinEnabled} onCheckedChange={onEmailCheckinChange} disabled={!isPaidPlan} />
-      </div>
-
-      {/* 2. Check-in via email — paid only, coming soon */}
+      {/* 1. Check-in via email — paid only, coming soon */}
       <div className="flex items-center justify-between opacity-60">
         <div className="flex items-center gap-3">
           <MessageSquare className="w-5 h-5 text-muted-foreground" />

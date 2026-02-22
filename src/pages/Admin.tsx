@@ -320,10 +320,9 @@ const Admin = () => {
                 {filteredUsers.map((u) => (
                   <tr key={u.user_id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                     <td className="p-4">
-                      <div className="text-sm font-medium text-card-foreground">
-                        {u.user_id.slice(0, 8)}...
+                      <div className="text-sm font-medium text-card-foreground font-mono break-all">
+                        {u.user_id}
                       </div>
-                      <div className="text-xs text-muted-foreground">User ID</div>
                     </td>
                     <td className="p-4">
                       {(() => {
@@ -428,7 +427,7 @@ const Admin = () => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Set expiry date for user {expiryTarget?.user_id.slice(0, 8)}...
+                Set expiry date for user <span className="font-mono break-all">{expiryTarget?.user_id}</span>
               </p>
               <div>
                 <Label className="text-card-foreground">Expiry Date (DD/MM/YYYY)</Label>

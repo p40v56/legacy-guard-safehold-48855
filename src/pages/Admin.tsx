@@ -101,10 +101,13 @@ const Admin = () => {
         _profile_user_id: userProfile.user_id,
         _updates: updates,
       });
+      setUsers(prev => prev.map(u =>
+        u.user_id === userProfile.user_id
+          ? { ...u, plan: newPlan, plan_expires_at: updates.plan_expires_at ?? null }
+          : u
+      ));
       toast({ title: 'Success', description: `Plan set to ${newPlan}` });
-      fetchData();
     } catch (error) {
-      console.error('Error updating plan:', error);
       toast({ title: 'Error', description: 'Failed to update plan', variant: 'destructive' });
     }
   };
@@ -113,12 +116,17 @@ const Admin = () => {
     try {
       const currentExpiry = userProfile.plan_expires_at ? new Date(userProfile.plan_expires_at) : new Date();
       currentExpiry.setFullYear(currentExpiry.getFullYear() + 1);
+      const newExpiry = currentExpiry.toISOString();
       await supabase.rpc('admin_update_profile', {
         _profile_user_id: userProfile.user_id,
-        _updates: { plan_expires_at: currentExpiry.toISOString() },
+        _updates: { plan_expires_at: newExpiry },
       });
+      setUsers(prev => prev.map(u =>
+        u.user_id === userProfile.user_id
+          ? { ...u, plan_expires_at: newExpiry }
+          : u
+      ));
       toast({ title: 'Success', description: 'Plan extended by 1 year' });
-      fetchData();
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to extend plan', variant: 'destructive' });
     }
@@ -126,12 +134,17 @@ const Admin = () => {
 
   const handleToggleDeactivation = async (userProfile: UserProfile) => {
     try {
+      const newValue = !userProfile.deactivated;
       await supabase.rpc('admin_update_profile', {
         _profile_user_id: userProfile.user_id,
-        _updates: { deactivated: String(!userProfile.deactivated) },
+        _updates: { deactivated: String(newValue) },
       });
-      toast({ title: 'Success', description: userProfile.deactivated ? 'Account reactivated' : 'Account deactivated' });
-      fetchData();
+      setUsers(prev => prev.map(u =>
+        u.user_id === userProfile.user_id
+          ? { ...u, deactivated: newValue }
+          : u
+      ));
+      toast({ title: 'Success', description: newValue ? 'Account deactivated' : 'Account reactivated' });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to update account', variant: 'destructive' });
     }
@@ -183,7 +196,6 @@ const Admin = () => {
 
   const handleSaveExpiry = async () => {
     if (!expiryTarget) return;
-    // Validate from input field
     const parsed = parseEUDate(expiryDateInput);
     if (!parsed) {
       setExpiryDateError('Enter a valid date in DD/MM/YYYY format');
@@ -198,11 +210,16 @@ const Admin = () => {
         _profile_user_id: expiryTarget.user_id,
         _updates: { plan_expires_at: parsed.toISOString() },
       });
+      const updatedIso = parsed.toISOString();
+      setUsers(prev => prev.map(u =>
+        u.user_id === expiryTarget.user_id
+          ? { ...u, plan_expires_at: updatedIso, plan: 'paid' }
+          : u
+      ));
       setShowExpiryEditor(false);
-setShowCalendar(false);
-setExpiryTarget(null);
-toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(parsed.toISOString())}` });
-setTimeout(() => fetchData(), 300);
+      setShowCalendar(false);
+      setExpiryTarget(null);
+      toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(updatedIso)}` });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to update expiry date', variant: 'destructive' });
     }

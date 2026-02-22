@@ -198,11 +198,11 @@ const Admin = () => {
         _profile_user_id: expiryTarget.user_id,
         _updates: { plan_expires_at: parsed.toISOString() },
       });
-      toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(parsed.toISOString())}` });
       setShowExpiryEditor(false);
-      setShowCalendar(false);
-      setExpiryTarget(null);
-      fetchData();
+setShowCalendar(false);
+setExpiryTarget(null);
+toast({ title: 'Success', description: `Expiry date updated to ${formatDateEUShort(parsed.toISOString())}` });
+setTimeout(() => fetchData(), 300);
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to update expiry date', variant: 'destructive' });
     }

@@ -337,7 +337,7 @@ setTimeout(() => fetchData(), 300);
                       {formatDateEUShort(u.created_at)}
                     </td>
                     <td className="p-4">
-                      <DropdownMenu>
+                      <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
                         </DropdownMenuTrigger>
@@ -347,15 +347,15 @@ setTimeout(() => fetchData(), 300);
                           {u.plan === 'paid' && (
                             <DropdownMenuItem onClick={() => handleExtendPlan(u)}>Extend +1 year</DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => handleOpenExpiryEditor(u)}>Edit expiry date</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => handleOpenExpiryEditor(u), 0); }}>Edit expiry date</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleDeactivation(u)}>
                             {u.deactivated ? 'Reactivate' : 'Deactivate'}
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => { setDeleteTarget(u); setShowDeleteDialog(true); }}
-                          >
-                            Delete account
+                         <DropdownMenuItem
+                          className="text-destructive"
+                           onSelect={(e) => { e.preventDefault(); setTimeout(() => { setDeleteTarget(u); setShowDeleteDialog(true); }, 0); }}
+                            >
+                              Delete account
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

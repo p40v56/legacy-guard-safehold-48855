@@ -249,6 +249,20 @@ body:has(#lv-root) {
 #lv-root .reveal.d5 { transition-delay: 0.5s; }
 #lv-root .reveal.visible { opacity: 1; transform: translateY(0); }
 
+/* Hero reveals auto-animate without needing IntersectionObserver */
+#lv-root .lv-hero .reveal {
+  animation: lvHeroReveal 0.75s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+#lv-root .lv-hero .reveal:nth-child(1) { animation-delay: 0.1s; }
+#lv-root .lv-hero .reveal:nth-child(2) { animation-delay: 0.25s; }
+#lv-root .lv-hero .reveal:nth-child(3) { animation-delay: 0.4s; }
+#lv-root .lv-hero .reveal:nth-child(4) { animation-delay: 0.55s; }
+
+@keyframes lvHeroReveal {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Nav ── */
 #lv-nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;

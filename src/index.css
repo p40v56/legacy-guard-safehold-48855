@@ -513,13 +513,21 @@ body:has(#lv-root) {
   margin-bottom: 36px; font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-enc-steps {
-  display: flex; align-items: center; gap: 8px;
-  flex-wrap: wrap; position: relative; z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 #lv-root .lv-enc-node {
-  flex: 1; min-width: 110px; text-align: center;
-  padding: 16px 10px; border-radius: 14px;
-  border: 1px solid transparent !important; box-shadow: none !important;
+  flex: 1;
+  min-width: 110px;
+  text-align: center;
+  padding: 20px 14px;
+  border-radius: 14px;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
 }
 #lv-root .lv-enc-node.white {
   border-color: rgba(255,255,255,0.12) !important;
@@ -542,16 +550,20 @@ body:has(#lv-root) {
   color: rgba(255,255,255,0.2); font-size: 18px;
 }
 #lv-root .lv-enc-val {
-  font-size: 13px; font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   font-family: 'DM Sans', sans-serif;
+  margin-bottom: 4px;
 }
 #lv-root .lv-enc-node.white .lv-enc-val { color: rgba(255,255,255,0.85); }
 #lv-root .lv-enc-node.amber .lv-enc-val { color: #fbbf24; }
 #lv-root .lv-enc-node.blue .lv-enc-val  { color: #1A9BD7; }
 #lv-root .lv-enc-node.green .lv-enc-val { color: #34d399; }
 #lv-root .lv-enc-sub {
-  font-size: 11px; color: rgba(255,255,255,0.28);
-  margin-top: 4px; font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 4px;
+  font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-enc-note {
   text-align: center; color: rgba(255,255,255,0.22);
@@ -560,13 +572,21 @@ body:has(#lv-root) {
   font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-enc-line {
-  position: absolute; top: 50%; left: 0; right: 0; height: 1px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
   background: linear-gradient(90deg,
-    transparent 0%, rgba(26,155,215,0.4) 20%, rgba(26,155,215,0.6) 50%,
-    rgba(52,211,153,0.4) 80%, transparent 100%);
+    transparent 0%,
+    rgba(26,155,215,0.5) 20%,
+    rgba(26,155,215,0.8) 50%,
+    rgba(52,211,153,0.5) 80%,
+    transparent 100%);
   transform: translateY(-50%);
   animation: lvFlowPulse 3s ease-in-out infinite;
-  pointer-events: none; z-index: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 @keyframes lvFlowPulse {
   0%,100% { opacity: 0.3; }

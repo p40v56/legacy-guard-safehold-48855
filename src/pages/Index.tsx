@@ -55,7 +55,7 @@ const Index = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
 
     // Hero reveal
-    document.querySelectorAll('.hero .reveal').forEach((el) => {
+    document.querySelectorAll('.lv-hero .reveal').forEach((el) => {
       const delay = parseFloat((el as HTMLElement).style.transitionDelay || '0') * 1000;
       setTimeout(() => el.classList.add('visible'), delay + 100);
     });

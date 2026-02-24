@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Info } from 'lucide-react';
 
 interface PortalHeaderProps {
   contactName: string;
@@ -23,6 +23,14 @@ const PortalHeader: React.FC<PortalHeaderProps> = ({ contactName, userName, swit
             <span>Switch triggered: {new Date(switchTriggeredAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         )}
+
+        {/* Others notified */}
+        <div className="flex items-start gap-2 mt-4 bg-gray-50 rounded-lg p-3">
+          <Info className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
+          <p className="text-gray-500 text-xs leading-relaxed">
+            Other trusted contacts have also been notified. Coordinate before taking action where possible.
+          </p>
+        </div>
       </div>
 
       {/* Emergency Instructions */}

@@ -86,13 +86,14 @@ export async function createPortalShares(
   const permissions = resolvePermissions(contact, typePermRes.data || []);
 
   // Fetch all user data in parallel
-  const [profileRes, docsRes, accountsRes, financialsRes, settingsRes, rulesRes] = await Promise.all([
-    supabase.from('profiles').select('first_name, first_name_iv, last_name, last_name_iv, emergency_instructions, emergency_instructions_iv, plan').eq('user_id', userId).single(),
+  const [profileRes, docsRes, accountsRes, financialsRes, settingsRes, rulesRes, profContactsRes] = await Promise.all([
+    supabase.from('profiles').select('first_name, first_name_iv, last_name, last_name_iv, emergency_instructions, emergency_instructions_iv, plan, phone').eq('user_id', userId).single(),
     supabase.from('legacy_documents').select('*').eq('user_id', userId),
     supabase.from('accounts').select('*').eq('user_id', userId),
     supabase.from('financial_assets').select('*').eq('user_id', userId),
     supabase.from('user_settings').select('switch_triggered, switch_triggered_at').eq('user_id', userId).maybeSingle(),
     supabase.from('activation_rules').select('*').eq('user_id', userId).eq('enabled', true),
+    supabase.from('contacts').select('*').eq('user_id', userId).in('contact_type', ['professional', 'legal', 'financial']),
   ]);
 
   const profile = profileRes.data;
@@ -197,28 +198,45 @@ export async function createPortalShares(
 
   const userName = `${decryptedProfile?.first_name || ''} ${decryptedProfile?.last_name || ''}`.trim() || 'User';
 
+  // Decrypt key professionals
+  const keyProfessionals = await Promise.all(
+    (profContactsRes.data || []).map(async (c: any) => {
+      const dec = await decryptFields(c, ['name', 'phone', 'relationship', 'notes'], vaultKey);
+      return {
+        name: dec.name || c.name,
+        phone: dec.phone || null,
+        email: c.email,
+        relationship: dec.relationship || c.contact_type,
+      };
+    })
+  );
+
   // Build clean portal data object (plaintext — all values must be decrypted before here)
   const portalData = {
     contactName: decryptedContact.name || contact.name,
     userName,
     userPlan,
+    contactType: contact.contact_type,
     customMessage,
     emergencyInstructions: permissions.emergency_instructions ? decryptedProfile?.emergency_instructions : null,
     switchTriggeredAt: settingsRes.data?.switch_triggered_at || null,
+    keyProfessionals,
     documents: documents.map((d) => ({
       id: d.id, title: d.title, content: d.content, document_type: d.document_type,
-      description: d.description, created_at: d.created_at, file_path: d.file_path,
+      description: d.description, created_at: d.created_at, updated_at: d.updated_at, file_path: d.file_path,
     })),
     accounts: accounts.map((a) => ({
       id: a.id, account_name: a.account_name, platform: a.platform, username: a.username,
       email: a.email, account_type: a.account_type, importance: a.importance,
       closure_action: a.closure_action, notes: a.notes, website_url: a.website_url,
+      updated_at: a.updated_at,
     })),
     financialAssets: financialAssets.map((f) => ({
       id: f.id, name: f.name, category: f.category, institution: f.institution,
       reference_number: f.reference_number, estimated_value: f.estimated_value,
       notes: f.notes, contact_name: f.contact_name, contact_phone: f.contact_phone,
       contact_email: f.contact_email, category_specific_fields: f.category_specific_fields || {},
+      updated_at: f.updated_at,
     })),
     permissions,
   };

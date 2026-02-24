@@ -218,7 +218,7 @@ export async function createPortalShares(
       id: f.id, name: f.name, category: f.category, institution: f.institution,
       reference_number: f.reference_number, estimated_value: f.estimated_value,
       notes: f.notes, contact_name: f.contact_name, contact_phone: f.contact_phone,
-      contact_email: f.contact_email,
+      contact_email: f.contact_email, category_specific_fields: f.category_specific_fields || {},
     })),
     permissions,
   };

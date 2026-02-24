@@ -90,12 +90,21 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
                 )}
               </div>
 
-              {acct.closure_action && (
-                <div className="mt-3 bg-gray-50 rounded-lg p-3">
-                  <p className="text-gray-500 text-xs font-medium mb-1">Closure Instructions</p>
-                  <p className="text-gray-700 text-sm">{acct.closure_action}</p>
-                </div>
-              )}
+              {acct.closure_action && (() => {
+                const closureLabels: Record<string, { title: string; guidance: string }> = {
+                  delete: { title: 'Delete this account', guidance: 'Contact the platform directly to request account deletion.' },
+                  memorialize: { title: 'Memorialize this account', guidance: 'Contact the platform to request memorialization in their memory.' },
+                  transfer: { title: 'Transfer this account', guidance: 'Transfer this account to a designated recipient as instructed in the notes.' },
+                  download: { title: 'Download data before closing', guidance: "Use the platform's data export feature to download all data, then request closure." },
+                };
+                const info = closureLabels[acct.closure_action] || { title: acct.closure_action, guidance: '' };
+                return (
+                  <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                    <p className="text-gray-800 text-sm font-medium">{info.title}</p>
+                    {info.guidance && <p className="text-gray-500 text-xs mt-0.5">{info.guidance}</p>}
+                  </div>
+                );
+              })()}
 
               {acct.notes && <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>}
             </div>

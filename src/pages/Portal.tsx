@@ -16,9 +16,11 @@ export interface PortalData {
   contactName: string;
   userName: string;
   userPlan: string;
+  contactType: string;
   customMessage: string | null;
   emergencyInstructions: string | null;
   switchTriggeredAt: string | null;
+  keyProfessionals: { name: string; phone: string | null; email: string | null; relationship: string }[];
   documents: any[];
   accounts: any[];
   financialAssets: any[];

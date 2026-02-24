@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, ArrowLeft, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package } from 'lucide-react';
+import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, ArrowLeft, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package, Copy, Check } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface FinancialAsset {
@@ -14,6 +14,7 @@ interface FinancialAsset {
   estimated_value: number | null;
   notes: string | null;
   category_specific_fields: Record<string, any> | null;
+  updated_at?: string | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -45,6 +46,20 @@ interface PortalFinancialsProps {
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
 
+const CopyButton: React.FC<{ text: string }> = ({ text }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <button onClick={handleCopy} className="ml-2 text-gray-400 hover:text-gray-600 transition-colors" title="Copy reference number">
+      {copied ? <Check className="w-3.5 h-3.5 inline text-green-500" /> : <Copy className="w-3.5 h-3.5 inline" />}
+    </button>
+  );
+};
+
 const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) => {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(CATEGORY_ORDER));
   const { token } = useParams();
@@ -66,7 +81,17 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
     });
   };
 
-  const totalValue = financialAssets.reduce((sum, a) => sum + (a.estimated_value || 0), 0);
+  const assetTotal = financialAssets
+    .filter(a => a.category !== 'debt')
+    .reduce((sum, a) => sum + (a.estimated_value || 0), 0);
+  const debtTotal = financialAssets
+    .filter(a => a.category === 'debt')
+    .reduce((sum, a) => {
+      const csf = a.category_specific_fields || {};
+      return sum + (csf.outstanding_balance ? Number(csf.outstanding_balance) : (a.estimated_value || 0));
+    }, 0);
+  const netValue = assetTotal - debtTotal;
+  const hasDebts = debtTotal > 0;
 
   const renderCategoryFields = (asset: FinancialAsset) => {
     const csf = asset.category_specific_fields || {};
@@ -114,40 +139,28 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       </button>
 
       {/* Summary bar */}
-      {(() => {
-        const assetTotal = financialAssets
-          .filter(a => a.category !== 'debt')
-          .reduce((sum, a) => sum + (a.estimated_value || 0), 0);
-        const debtTotal = financialAssets
-          .filter(a => a.category === 'debt')
-          .reduce((sum, a) => {
-            const csf = a.category_specific_fields || {};
-            return sum + (csf.outstanding_balance ? Number(csf.outstanding_balance) : (a.estimated_value || 0));
-          }, 0);
-        const netValue = assetTotal - debtTotal;
-        const hasDebts = debtTotal > 0;
-
-        return (assetTotal > 0 || debtTotal > 0) ? (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 text-sm">Total assets</span>
-              <span className="text-gray-900 font-semibold">{formatCurrency(assetTotal)}</span>
-            </div>
-            {hasDebts && (
-              <>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 text-sm">Total liabilities</span>
-                  <span className="text-red-600 font-semibold">−{formatCurrency(debtTotal)}</span>
-                </div>
-                <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
-                  <span className="text-gray-700 text-sm font-medium">Net estate value</span>
-                  <span className={`text-lg font-semibold ${netValue >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{netValue >= 0 ? formatCurrency(netValue) : `−${formatCurrency(Math.abs(netValue))}`}</span>
-                </div>
-              </>
-            )}
+      {(assetTotal > 0 || debtTotal > 0) && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 text-sm">Total assets</span>
+            <span className="text-gray-900 font-semibold">{formatCurrency(assetTotal)}</span>
           </div>
-        ) : null;
-      })()}
+          {hasDebts && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 text-sm">Total liabilities</span>
+                <span className="text-red-600 font-semibold">−{formatCurrency(debtTotal)}</span>
+              </div>
+              <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
+                <span className="text-gray-700 text-sm font-medium">Net estate value</span>
+                <span className={`text-lg font-semibold ${netValue >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                  {netValue >= 0 ? formatCurrency(netValue) : `−${formatCurrency(Math.abs(netValue))}`}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Death certificate guidance */}
       <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
@@ -179,7 +192,6 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
             {isOpen && (
               <div className="border-t border-gray-200 divide-y divide-gray-100">
                 {assets.map(asset => {
-                  const csf = asset.category_specific_fields || {};
                   const categoryFields = renderCategoryFields(asset);
 
                   return (
@@ -197,9 +209,10 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
                       </div>
 
                       {asset.reference_number && (
-                        <div className="text-sm">
+                        <div className="text-sm flex items-center">
                           <span className="text-gray-500">Reference: </span>
-                          <span className="text-gray-900 font-mono">{asset.reference_number}</span>
+                          <span className="text-gray-900 font-mono ml-1">{asset.reference_number}</span>
+                          <CopyButton text={asset.reference_number} />
                         </div>
                       )}
 
@@ -214,19 +227,19 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
                         </div>
                       )}
 
-                      {csf.death_claim_process && (
+                      {(asset.category_specific_fields || {}).death_claim_process && (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                           <div className="flex items-center gap-2 mb-1">
                             <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                             <span className="text-amber-800 text-xs font-semibold">Death Claim Process</span>
                           </div>
-                          <p className="text-amber-900 text-sm whitespace-pre-wrap">{csf.death_claim_process}</p>
+                          <p className="text-amber-900 text-sm whitespace-pre-wrap">{(asset.category_specific_fields || {}).death_claim_process}</p>
                         </div>
                       )}
 
                       {asset.notes && <p className="text-gray-600 text-sm whitespace-pre-wrap">{asset.notes}</p>}
 
-                      {(asset.contact_name || asset.contact_phone || asset.contact_email) && (
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-4 flex-wrap text-sm">
                           {asset.contact_name && <span className="text-gray-700">{asset.contact_name}</span>}
                           {asset.contact_phone && (
@@ -240,7 +253,12 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
                             </a>
                           )}
                         </div>
-                      )}
+                        {asset.updated_at && (
+                          <span className="text-gray-400 text-xs">
+                            Updated {new Date(asset.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

@@ -60,20 +60,23 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ portalData, token, children
       {/* Mobile tabs */}
       {isMobile && sections.length > 1 && (
         <div className="bg-white border-b border-gray-200 sticky top-0 z-20">
-          <div className="flex overflow-x-auto no-scrollbar px-4">
-            {sections.map(s => (
-              <button
-                key={s.id}
-                onClick={() => goTo(s.id)}
-                className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  currentSection === s.id
-                    ? 'text-blue-700 border-blue-600'
-                    : 'text-gray-500 border-transparent hover:text-gray-700'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
+          <div className="relative">
+            <div className="flex overflow-x-auto no-scrollbar px-4">
+              {sections.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => goTo(s.id)}
+                  className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    currentSection === s.id
+                      ? 'text-blue-700 border-blue-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
           </div>
         </div>
       )}

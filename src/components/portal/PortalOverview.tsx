@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Phone, Mail, Briefcase } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { PortalData } from '@/pages/Portal';
 import PortalHeader from '@/components/portal/PortalHeader';
@@ -45,6 +45,41 @@ const PortalOverview: React.FC<PortalOverviewProps> = ({ portalData }) => {
         <PortalUrgentActions financialAssets={portalData.financialAssets} token={token} />
       )}
 
+      {/* Key Professionals */}
+      {portalData.keyProfessionals && portalData.keyProfessionals.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Briefcase className="w-4 h-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-900">Key Professionals</h3>
+          </div>
+          <div className="space-y-2.5">
+            {portalData.keyProfessionals.map((pro, i) => (
+              <div key={i} className="flex items-center gap-3 flex-wrap text-sm bg-gray-50 rounded-lg px-4 py-3">
+                <span className="text-gray-900 font-medium">{pro.name}</span>
+                <span className="text-gray-400">·</span>
+                <span className="text-gray-500 capitalize">{pro.relationship}</span>
+                {pro.phone && (
+                  <>
+                    <span className="text-gray-400">·</span>
+                    <a href={`tel:${pro.phone}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                      <Phone className="w-3 h-3" />{pro.phone}
+                    </a>
+                  </>
+                )}
+                {pro.email && (
+                  <>
+                    <span className="text-gray-400">·</span>
+                    <a href={`mailto:${pro.email}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                      <Mail className="w-3 h-3" />{pro.email}
+                    </a>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Navigation shortcuts */}
       {links.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -65,6 +100,19 @@ const PortalOverview: React.FC<PortalOverviewProps> = ({ portalData }) => {
           </div>
         </div>
       )}
+
+      {/* Help block */}
+      <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+        <h4 className="text-gray-700 font-medium text-sm mb-2">Not sure where to start?</h4>
+        <ol className="text-gray-600 text-sm space-y-1.5 list-decimal list-inside">
+          <li>Read the personal message and emergency instructions first</li>
+          <li>Order at least 10 certified death certificates from your local register office</li>
+          <li>Contact any solicitor or legal professional listed under Key Professionals</li>
+          <li>Work through the Urgent Actions checklist — start with insurance</li>
+          <li>Notify each financial institution using the details in the Financials section</li>
+          <li>Handle digital accounts last — close or memorialize as instructed</li>
+        </ol>
+      </div>
     </div>
   );
 };

@@ -13,6 +13,7 @@ interface DigitalAccount {
   notes: string | null;
   closure_action: string | null;
   importance: string | null;
+  updated_at?: string | null;
 }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -25,6 +26,8 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   entertainment: 'Entertainment',
   other: 'Other',
 };
+
+const IMPORTANCE_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 interface PortalAccountsProps {
   accounts: DigitalAccount[];
@@ -43,6 +46,21 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
     grouped[t].push(a);
   }
 
+  // Sort each group by importance
+  for (const type of Object.keys(grouped)) {
+    grouped[type].sort((a, b) =>
+      (IMPORTANCE_ORDER[a.importance as string] ?? 4) -
+      (IMPORTANCE_ORDER[b.importance as string] ?? 4)
+    );
+  }
+
+  const closureLabels: Record<string, { title: string; guidance: string }> = {
+    delete: { title: 'Delete this account', guidance: 'Contact the platform directly to request account deletion.' },
+    memorialize: { title: 'Memorialize this account', guidance: 'Contact the platform to request memorialization in their memory.' },
+    transfer: { title: 'Transfer this account', guidance: 'Transfer this account to a designated recipient as instructed in the notes.' },
+    download: { title: 'Download data before closing', guidance: "Use the platform's data export feature to download all data, then request closure." },
+  };
+
   return (
     <div className="space-y-6">
       <button onClick={() => navigate(`/portal/${token}/overview`)} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
@@ -57,58 +75,59 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
             <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{accts.length}</span>
           </div>
 
-          {accts.map(acct => (
-            <div key={acct.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div>
-                  <h5 className="text-gray-900 font-medium">{acct.platform || acct.account_name}</h5>
-                  {acct.username && <p className="text-gray-500 text-sm">Username: {acct.username}</p>}
+          {accts.map(acct => {
+            const closure = acct.closure_action ? (closureLabels[acct.closure_action] || { title: acct.closure_action, guidance: '' }) : null;
+
+            return (
+              <div key={acct.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <h5 className="text-gray-900 font-medium">{acct.platform || acct.account_name}</h5>
+                    {acct.username && <p className="text-gray-500 text-sm">Username: {acct.username}</p>}
+                  </div>
+                  {acct.importance && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      acct.importance === 'critical' ? 'bg-red-100 text-red-700' :
+                      acct.importance === 'high' ? 'bg-amber-100 text-amber-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {acct.importance}
+                    </span>
+                  )}
                 </div>
-                {acct.importance && (
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    acct.importance === 'critical' ? 'bg-red-100 text-red-700' :
-                    acct.importance === 'high' ? 'bg-amber-100 text-amber-700' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {acct.importance}
-                  </span>
-                )}
-              </div>
 
-              <div className="space-y-1.5 text-sm">
-                {acct.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3 h-3 text-gray-400" />
-                    <a href={`mailto:${acct.email}`} className="text-blue-600 hover:underline">{acct.email}</a>
-                  </div>
-                )}
-                {acct.website_url && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-3 h-3 text-gray-400" />
-                    <a href={acct.website_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{acct.website_url}</a>
-                  </div>
-                )}
-              </div>
+                <div className="space-y-1.5 text-sm">
+                  {acct.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3 h-3 text-gray-400" />
+                      <a href={`mailto:${acct.email}`} className="text-blue-600 hover:underline">{acct.email}</a>
+                    </div>
+                  )}
+                  {acct.website_url && (
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-3 h-3 text-gray-400" />
+                      <a href={acct.website_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{acct.website_url}</a>
+                    </div>
+                  )}
+                </div>
 
-              {acct.closure_action && (() => {
-                const closureLabels: Record<string, { title: string; guidance: string }> = {
-                  delete: { title: 'Delete this account', guidance: 'Contact the platform directly to request account deletion.' },
-                  memorialize: { title: 'Memorialize this account', guidance: 'Contact the platform to request memorialization in their memory.' },
-                  transfer: { title: 'Transfer this account', guidance: 'Transfer this account to a designated recipient as instructed in the notes.' },
-                  download: { title: 'Download data before closing', guidance: "Use the platform's data export feature to download all data, then request closure." },
-                };
-                const info = closureLabels[acct.closure_action] || { title: acct.closure_action, guidance: '' };
-                return (
+                {closure && (
                   <div className="mt-3 bg-gray-50 rounded-lg p-3">
-                    <p className="text-gray-800 text-sm font-medium">{info.title}</p>
-                    {info.guidance && <p className="text-gray-500 text-xs mt-0.5">{info.guidance}</p>}
+                    <p className="text-gray-800 text-sm font-medium">{closure.title}</p>
+                    {closure.guidance && <p className="text-gray-500 text-xs mt-0.5">{closure.guidance}</p>}
                   </div>
-                );
-              })()}
+                )}
 
-              {acct.notes && <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>}
-            </div>
-          ))}
+                {acct.notes && <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>}
+
+                {acct.updated_at && (
+                  <p className="text-gray-400 text-xs mt-3">
+                    Updated {new Date(acct.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>

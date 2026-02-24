@@ -724,3 +724,18 @@ body:has(#lv-root) {
   #lv-root .lv-features { padding: 80px 24px; }
   #lv-root .lv-numbers { padding: 60px 24px; }
 }
+
+/* ── Print styles for portal ── */
+@media print {
+  body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  nav, .print\\:hidden, button, .sticky { display: none !important; }
+  .min-h-screen { min-height: auto !important; }
+  .bg-slate-50 { background: white !important; }
+  .shadow-sm, .shadow-lg { box-shadow: none !important; }
+  .rounded-xl { border-radius: 8px !important; }
+  .max-w-5xl { max-width: 100% !important; padding: 0 !important; }
+  .border-gray-200 { border-color: #ddd !important; }
+  a[href]::after { content: " (" attr(href) ")"; font-size: 0.75em; color: #666; }
+  a[href^="tel:"]::after, a[href^="mailto:"]::after { content: none; }
+  .space-y-6 > * + * { page-break-inside: avoid; }
+}

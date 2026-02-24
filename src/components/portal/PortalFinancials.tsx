@@ -114,18 +114,50 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       </button>
 
       {/* Summary bar */}
-      {totalValue > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-between">
-          <span className="text-gray-500 text-sm">Total estimated value</span>
-          <span className="text-gray-900 text-lg font-semibold">{formatCurrency(totalValue)}</span>
-        </div>
-      )}
+      {(() => {
+        const assetTotal = financialAssets
+          .filter(a => a.category !== 'debt')
+          .reduce((sum, a) => sum + (a.estimated_value || 0), 0);
+        const debtTotal = financialAssets
+          .filter(a => a.category === 'debt')
+          .reduce((sum, a) => {
+            const csf = a.category_specific_fields || {};
+            return sum + (csf.outstanding_balance ? Number(csf.outstanding_balance) : (a.estimated_value || 0));
+          }, 0);
+        const netValue = assetTotal - debtTotal;
+        const hasDebts = debtTotal > 0;
 
-      {/* Guide */}
-      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-        <p className="text-gray-600 text-xs leading-relaxed">
-          💡 For each institution listed below, you will typically need to provide a certified copy of the death certificate. Start with insurance policies as they may have time-sensitive claims.
-        </p>
+        return (assetTotal > 0 || debtTotal > 0) ? (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500 text-sm">Total assets</span>
+              <span className="text-gray-900 font-semibold">{formatCurrency(assetTotal)}</span>
+            </div>
+            {hasDebts && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 text-sm">Total liabilities</span>
+                  <span className="text-red-600 font-semibold">−{formatCurrency(debtTotal)}</span>
+                </div>
+                <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
+                  <span className="text-gray-700 text-sm font-medium">Net estate value</span>
+                  <span className={`text-lg font-semibold ${netValue >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{netValue >= 0 ? formatCurrency(netValue) : `−${formatCurrency(Math.abs(netValue))}`}</span>
+                </div>
+              </>
+            )}
+          </div>
+        ) : null;
+      })()}
+
+      {/* Death certificate guidance */}
+      <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+        <h4 className="text-blue-900 font-semibold text-sm mb-2">📋 Before you begin: Death Certificate</h4>
+        <ul className="text-blue-800 text-xs leading-relaxed space-y-1.5 list-disc list-inside">
+          <li>You will need <strong>certified copies of the death certificate</strong> for almost every institution below.</li>
+          <li>Order at least <strong>10 certified copies</strong> — most organisations require an original, not a photocopy.</li>
+          <li>Obtain copies from the <strong>local register office</strong> where the death was registered, or order online via the General Register Office.</li>
+          <li>Start with <strong>insurance claims</strong> first — many have time-sensitive deadlines (typically 6–12 months).</li>
+        </ul>
       </div>
 
       {CATEGORY_ORDER.filter(cat => grouped[cat]).map(cat => {

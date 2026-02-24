@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, Printer } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { PortalData } from '@/pages/Portal';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -41,12 +41,19 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ portalData, token, children
           <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-blue-600" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-sm font-semibold text-gray-900">LegacyVault <span className="text-gray-400 font-normal">· Secure Portal</span></h1>
             <p className="text-xs text-gray-500">
               Shared by <span className="text-gray-700 font-medium">{portalData.userName}</span>
             </p>
           </div>
+          <button
+            onClick={() => window.print()}
+            className="print:hidden inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-700 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline">Print / Save PDF</span>
+          </button>
         </div>
       </div>
 

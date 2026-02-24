@@ -42,7 +42,7 @@ const PortalOverview: React.FC<PortalOverviewProps> = ({ portalData }) => {
       )}
 
       {portalData.financialAssets.length > 0 && (
-        <PortalUrgentActions financialAssets={portalData.financialAssets} />
+        <PortalUrgentActions financialAssets={portalData.financialAssets} token={token} />
       )}
 
       {/* Navigation shortcuts */}

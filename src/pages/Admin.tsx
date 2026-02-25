@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlan } from '@/hooks/usePlan';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,12 +45,13 @@ const Admin = () => {
   const { toast } = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
-  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', plan: 'free' });
   
@@ -68,9 +69,10 @@ const Admin = () => {
 
   const fetchData = async () => {
     try {
-      const [profilesResult, statsResult] = await Promise.all([
+      const [profilesResult, statsResult, emailsResult] = await Promise.all([
         supabase.rpc('admin_list_profiles'),
         supabase.rpc('admin_get_stats'),
+        supabase.rpc('admin_get_user_emails' as any),
       ]);
 
       if (profilesResult.data) {
@@ -78,6 +80,12 @@ const Admin = () => {
       }
       if (statsResult.data) {
         setStats(statsResult.data as unknown as AdminStats);
+      }
+      if (emailsResult.data) {
+        const map = Object.fromEntries(
+          (emailsResult.data as any[]).map((r: any) => [r.user_id, r.email])
+        );
+        setEmailMap(map);
       }
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -261,8 +269,11 @@ const Admin = () => {
   const filteredUsers = users.filter(u => {
     const search = searchQuery.toLowerCase();
     return !search ||
-      u.user_id.toLowerCase().includes(search);
+      u.user_id.toLowerCase().includes(search) ||
+      (emailMap[u.user_id] || '').toLowerCase().includes(search);
   });
+
+  const getDeleteTargetEmail = () => deleteTarget ? (emailMap[deleteTarget.user_id] || deleteTarget.user_id) : '';
 
   return (
     <DashboardLayout>
@@ -300,7 +311,7 @@ const Admin = () => {
 
         {/* Search */}
         <div className="bg-muted/30 rounded-2xl p-4">
-          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." className="bg-card/50 border-border" />
+          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search by email or user ID..." className="bg-card/50 border-border" />
         </div>
 
         {/* Users Table */}
@@ -309,7 +320,7 @@ const Admin = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider p-4">Name</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider p-4">User</th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider p-4">Plan</th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider p-4">Status</th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider p-4">Member Since</th>
@@ -320,7 +331,10 @@ const Admin = () => {
                 {filteredUsers.map((u) => (
                   <tr key={u.user_id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                     <td className="p-4">
-                      <div className="text-sm font-medium text-card-foreground font-mono break-all">
+                      <div className="text-sm font-medium text-card-foreground">
+                        {emailMap[u.user_id] || '—'}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-mono mt-0.5 break-all">
                         {u.user_id}
                       </div>
                     </td>
@@ -427,7 +441,7 @@ const Admin = () => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Set expiry date for user <span className="font-mono break-all">{expiryTarget?.user_id}</span>
+                Set expiry date for <span className="font-medium text-card-foreground">{expiryTarget ? (emailMap[expiryTarget.user_id] || expiryTarget.user_id) : ''}</span>
               </p>
               <div>
                 <Label className="text-card-foreground">Expiry Date (DD/MM/YYYY)</Label>
@@ -479,19 +493,19 @@ const Admin = () => {
               </DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              This will permanently delete all data for this user. Type their user ID to confirm:
+              This will permanently delete all data for this user. Type their email address to confirm:
             </p>
-            <p className="text-xs font-mono text-card-foreground bg-muted/50 p-2 rounded">{deleteTarget?.user_id}</p>
+            <p className="text-xs font-medium text-card-foreground bg-muted/50 p-2 rounded">{getDeleteTargetEmail()}</p>
             <Input
-              value={deleteConfirmEmail}
-              onChange={e => setDeleteConfirmEmail(e.target.value)}
-              placeholder="Type user ID to confirm"
+              value={deleteConfirmInput}
+              onChange={e => setDeleteConfirmInput(e.target.value)}
+              placeholder="Type email to confirm"
             />
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setDeleteConfirmEmail(''); }}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setDeleteConfirmInput(''); }}>Cancel</Button>
               <Button
                 variant="destructive"
-                disabled={deleteConfirmEmail !== deleteTarget?.user_id}
+                disabled={deleteConfirmInput !== getDeleteTargetEmail()}
                 onClick={async () => {
                   if (!deleteTarget) return;
                   try {
@@ -500,7 +514,7 @@ const Admin = () => {
                     });
                     toast({ title: 'User deleted' });
                     setShowDeleteDialog(false);
-                    setDeleteConfirmEmail('');
+                    setDeleteConfirmInput('');
                     fetchData();
                   } catch (error: any) {
                     toast({ title: 'Error', description: error.message, variant: 'destructive' });

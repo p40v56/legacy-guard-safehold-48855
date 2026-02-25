@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Routes, Route, Navigate } from 'react-router-dom';
-import { Shield, Lock, KeyRound, Loader2 } from 'lucide-react';
+import { Shield, Lock, KeyRound, Loader2, X, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import PortalFinancials from '@/components/portal/PortalFinancials';
 import PortalDocuments from '@/components/portal/PortalDocuments';
 import PortalAccounts from '@/components/portal/PortalAccounts';
 import { deriveKeyFromToken, decryptText } from '@/lib/crypto';
-
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PortalData {
   contactName: string;
@@ -34,16 +34,9 @@ interface SecurityChallenge {
   userName: string;
 }
 
-/**
- * Decrypt the portal bundle using the raw token string from the URL.
- * Steps: token string → PBKDF2 key → decrypt encrypted_content → parse JSON
- */
 async function decryptPortalResponse(result: any, rawToken: string): Promise<PortalData> {
-  // 1. Derive key from raw token string (same function as share-creation side)
   const shareKey = await deriveKeyFromToken(rawToken);
-  // 2. Decrypt the portal bundle
   const plaintext = await decryptText(result.encryptedContent, result.contentIv, shareKey);
-  // 3. Parse and return
   return JSON.parse(plaintext);
 }
 
@@ -57,9 +50,26 @@ const Portal = () => {
   const [loading, setLoading] = useState(true);
   const [decrypting, setDecrypting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOwnerPreview, setIsOwnerPreview] = useState(false);
+  const [showPreviewBanner, setShowPreviewBanner] = useState(true);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  // Check if the current user is the vault owner (preview mode)
+  useEffect(() => {
+    const checkOwner = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setIsOwnerPreview(true);
+        }
+      } catch {
+        // Not logged in — normal portal access
+      }
+    };
+    checkOwner();
+  }, []);
 
   useEffect(() => {
     if (token) fetchPortalData();
@@ -131,18 +141,40 @@ const Portal = () => {
     }
   };
 
+  // Preview banner for vault owner
+  const PreviewBanner = () => {
+    if (!isOwnerPreview || !showPreviewBanner) return null;
+    return (
+      <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-400 text-amber-900 px-4 py-2.5 flex items-center justify-between print:hidden">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Eye className="w-4 h-4" />
+          <span>Preview mode — this is exactly what your contact will see. Close this tab to return to your vault.</span>
+        </div>
+        <button
+          onClick={() => setShowPreviewBanner(false)}
+          className="p-1 hover:bg-amber-500/50 rounded transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  };
+
   // Decrypting state
   if (decrypting) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <>
+        <PreviewBanner />
+        <div className={`min-h-screen bg-slate-50 flex items-center justify-center p-4 ${isOwnerPreview && showPreviewBanner ? 'pt-14' : ''}`}>
+          <div className="text-center">
+            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            </div>
+            <p className="text-gray-700 font-medium">Decrypting your documents…</p>
+            <p className="text-gray-400 text-sm mt-1">Your data is being decrypted locally in your browser</p>
           </div>
-          <p className="text-gray-700 font-medium">Decrypting your documents…</p>
-          <p className="text-gray-400 text-sm mt-1">Your data is being decrypted locally in your browser</p>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -217,21 +249,26 @@ const Portal = () => {
   if (!portalData) return null;
 
   return (
-    <PortalLayout portalData={portalData} token={token || ''}>
-      <Routes>
-        <Route path="overview" element={<PortalOverview portalData={portalData} />} />
-        {portalData.financialAssets.length > 0 && (
-          <Route path="financials" element={<PortalFinancials financialAssets={portalData.financialAssets} />} />
-        )}
-        {portalData.documents.length > 0 && (
-          <Route path="documents" element={<PortalDocuments documents={portalData.documents} />} />
-        )}
-        {portalData.accounts.length > 0 && (
-          <Route path="accounts" element={<PortalAccounts accounts={portalData.accounts} />} />
-        )}
-        <Route path="*" element={<Navigate to="overview" replace />} />
-      </Routes>
-    </PortalLayout>
+    <>
+      <PreviewBanner />
+      <div className={isOwnerPreview && showPreviewBanner ? 'pt-10' : ''}>
+        <PortalLayout portalData={portalData} token={token || ''}>
+          <Routes>
+            <Route path="overview" element={<PortalOverview portalData={portalData} />} />
+            {portalData.financialAssets.length > 0 && (
+              <Route path="financials" element={<PortalFinancials financialAssets={portalData.financialAssets} />} />
+            )}
+            {portalData.documents.length > 0 && (
+              <Route path="documents" element={<PortalDocuments documents={portalData.documents} />} />
+            )}
+            {portalData.accounts.length > 0 && (
+              <Route path="accounts" element={<PortalAccounts accounts={portalData.accounts} />} />
+            )}
+            <Route path="*" element={<Navigate to="overview" replace />} />
+          </Routes>
+        </PortalLayout>
+      </div>
+    </>
   );
 };
 

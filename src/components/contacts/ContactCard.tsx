@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Trash2, Phone, Mail, Shield, AlertCircle, MessageSquare, Link2, Check, ChevronDown } from 'lucide-react';
+import { Edit, Trash2, Phone, Mail, Shield, AlertCircle, MessageSquare, Link2, Check, ChevronDown, Eye } from 'lucide-react';
 import PermissionsConfig from '@/components/contacts/PermissionsConfig';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,38 +48,42 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const isFree = plan === 'free';
   const [portalLink, setPortalLink] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [previewingPortal, setPreviewingPortal] = useState(false);
   const [customMsg, setCustomMsg] = useState(contact.custom_message || '');
   const [savingMessage, setSavingMessage] = useState(false);
+
+  const generateTokenAndShares = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    if (!vaultKey || !user) {
+      toast({ title: "Vault locked", description: "Unlock your vault before generating portal links.", variant: "destructive" });
+      return null;
+    }
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/contact-portal?action=generate-token`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ contactId: contact.id }),
+      }
+    );
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+    await createPortalShares(user.id, contact.id, result.token, vaultKey);
+    return result.token;
+  };
 
   const handleGeneratePortalLink = async () => {
     setGeneratingLink(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/contact-portal?action=generate-token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ contactId: contact.id }),
-        }
-      );
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
-
-      // Create encrypted portal shares — required for portal decryption
-      if (!vaultKey || !user) {
-        toast({ title: "Vault locked", description: "Unlock your vault before generating portal links.", variant: "destructive" });
-        return;
-      }
-      await createPortalShares(user.id, contact.id, result.token, vaultKey);
-
-      const link = `${window.location.origin}/portal/${result.token}`;
+      const token = await generateTokenAndShares();
+      if (!token) return;
+      const link = `${window.location.origin}/portal/${token}`;
       setPortalLink(link);
       await navigator.clipboard.writeText(link);
       toast({ title: "Portal link generated & copied!", description: "The link has been copied to your clipboard." });
@@ -88,6 +92,20 @@ const ContactCard: React.FC<ContactCardProps> = ({
       toast({ title: "Error", description: "Failed to generate portal link", variant: "destructive" });
     } finally {
       setGeneratingLink(false);
+    }
+  };
+
+  const handlePreviewPortal = async () => {
+    setPreviewingPortal(true);
+    try {
+      const token = await generateTokenAndShares();
+      if (!token) return;
+      window.open(`${window.location.origin}/portal/${token}`, '_blank');
+    } catch (error) {
+      console.error('Error previewing portal:', error);
+      toast({ title: "Error", description: "Failed to generate portal preview", variant: "destructive" });
+    } finally {
+      setPreviewingPortal(false);
     }
   };
 
@@ -188,7 +206,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
                     placeholder={`Write a personal message for ${contact.name}...`}
                     className="min-h-[120px] bg-muted/30 border-border rounded-xl"
                   />
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <Button onClick={handleSaveCustomMessage} disabled={savingMessage} size="sm" className="bg-primary hover:bg-primary/90 rounded-xl">
                       {savingMessage ? 'Saving...' : 'Save Message'}
                     </Button>
@@ -197,10 +215,16 @@ const ContactCard: React.FC<ContactCardProps> = ({
                         <Lock className="w-4 h-4" /><span>Portal links require a paid plan</span>
                       </div>
                     ) : (
-                      <Button onClick={handleGeneratePortalLink} disabled={generatingLink} size="sm" variant="outline" className="rounded-xl">
-                        <Link2 className="w-4 h-4 mr-2" />
-                        {generatingLink ? 'Generating...' : portalLink ? 'Regenerate Portal Link' : 'Generate Portal Link'}
-                      </Button>
+                      <>
+                        <Button onClick={handleGeneratePortalLink} disabled={generatingLink} size="sm" variant="outline" className="rounded-xl">
+                          <Link2 className="w-4 h-4 mr-2" />
+                          {generatingLink ? 'Generating...' : portalLink ? 'Regenerate Portal Link' : 'Generate Portal Link'}
+                        </Button>
+                        <Button onClick={handlePreviewPortal} disabled={previewingPortal} size="sm" variant="outline" className="rounded-xl">
+                          <Eye className="w-4 h-4 mr-2" />
+                          {previewingPortal ? 'Loading...' : 'Preview Portal'}
+                        </Button>
+                      </>
                     )}
                   </div>
                   {!isFree && portalLink && (

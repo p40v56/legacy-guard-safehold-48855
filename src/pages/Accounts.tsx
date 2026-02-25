@@ -99,7 +99,7 @@ const Accounts = () => {
             <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Accounts & Financials</h1>
             <p className="text-muted-foreground">Manage your digital accounts and financial legacy</p>
           </div>
-          <UpgradePrompt message="Upgrade to access and manage your digital accounts and financial assets." />
+          <UpgradePrompt message="Digital accounts are a paid feature. Upgrade to catalogue your accounts with closure instructions for your contacts." featureKey="accounts" />
         </div>
       </DashboardLayout>
     );

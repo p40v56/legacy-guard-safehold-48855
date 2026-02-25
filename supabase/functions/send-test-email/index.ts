@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-// Set APP_BASE_URL in Supabase Edge Function secrets for production.
 const ALLOWED_ORIGINS = [
   Deno.env.get("APP_BASE_URL") || "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
   "http://localhost:5173",
@@ -37,6 +36,10 @@ function formatDateTime(isoString: string): string {
   });
 }
 
+function buildGracePeriodHtml(userName: string, intro: string, gracePeriodHours: string): string {
+  return `<!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin:0; font-size:24px;">⚠️ Grace Period Started</h1><p style="margin:12px 0 0; opacity:0.9; font-size:14px;">Dead Man's Switch Warning</p></div><div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p>Hello <strong>${userName}</strong>,</p><p style="color:#4b5563;">${intro} A <strong>${gracePeriodHours}-hour grace period</strong> has now started.</p><div style="background:#fee2e2; border:2px solid #ef4444; padding:20px; border-radius:8px; text-align:center; margin:24px 0;"><p style="color:#991b1b; font-weight:600;">⏰ GRACE PERIOD ENDS:</p><p style="color:#dc2626; font-size:18px; font-weight:700;">${formatDateTime(new Date(Date.now() + parseInt(gracePeriodHours) * 60 * 60 * 1000).toISOString())}</p></div><hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;"><p style="font-size:13px; color:#9ca3af; text-align:center;">This email was sent by your Dead Man's Switch system.</p></div></body></html>`;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -63,10 +66,9 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { templateType } = await req.json();
+    const { templateType, action } = await req.json();
 
     const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
-    // Names are encrypted — use generic placeholder for test emails
     const userName = "the vault owner";
     const userEmail = user.email;
 
@@ -74,7 +76,11 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ error: "No email found" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const vars = { userName, contactName: "Test Contact", triggerDate: formatDateTime(new Date().toISOString()), gracePeriodHours: "24" };
+    // Fetch user settings for grace period hours
+    const { data: userSettings } = await supabase.from("user_settings").select("grace_period_hours").eq("user_id", user.id).single();
+    const gracePeriodHours = String(userSettings?.grace_period_hours || 24);
+
+    const vars = { userName, contactName: "Test Contact", triggerDate: formatDateTime(new Date().toISOString()), gracePeriodHours };
 
     let subject: string;
     let html: string;
@@ -82,16 +88,22 @@ const handler = async (req: Request): Promise<Response> => {
     if (templateType === "grace_period") {
       subject = resolveTemplate(profile?.email_grace_subject || "⚠️ Grace Period Started - Check In Required", vars);
       const intro = resolveTemplate(profile?.email_grace_intro || "Your Dead Man's Switch has detected that you did not check in by your scheduled deadline.", vars);
-      html = `<!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin:0; font-size:24px;">⚠️ Grace Period Started</h1><p style="margin:12px 0 0; opacity:0.9; font-size:14px;">Dead Man's Switch Warning — TEST EMAIL</p></div><div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p>Hello <strong>${userName}</strong>,</p><p style="color:#4b5563;">${intro} A <strong>24-hour grace period</strong> has now started.</p><div style="background:#fee2e2; border:2px solid #ef4444; padding:20px; border-radius:8px; text-align:center; margin:24px 0;"><p style="color:#991b1b; font-weight:600;">⏰ GRACE PERIOD ENDS:</p><p style="color:#dc2626; font-size:18px; font-weight:700;">${formatDateTime(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())}</p></div><hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;"><p style="font-size:13px; color:#9ca3af; text-align:center;">🧪 This is a test email. No action is required.</p></div></body></html>`;
+      html = buildGracePeriodHtml(userName, intro, gracePeriodHours);
     } else {
       subject = resolveTemplate(profile?.email_subject || "🚨 Important: Message from {userName}'s Dead Man's Switch", vars);
       const headerTitle = profile?.email_header_title || "🚨 Important Notification";
       const headerSubtitle = profile?.email_header_subtitle || "Dead Man's Switch Activated";
       const introMessage = resolveTemplate(profile?.email_intro_message || "This is an automated message from {userName}'s Dead Man's Switch system.", vars);
       const footerMessage = profile?.email_footer_message || "This is an automated message. Please keep this information confidential.";
-      html = `<!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #dc2626, #991b1b); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin:0; font-size:24px;">${headerTitle}</h1><p style="margin:12px 0 0; opacity:0.9; font-size:14px;">${headerSubtitle} — TEST EMAIL</p></div><div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p>Dear <strong>Test Contact</strong>,</p><p style="color:#4b5563;">${introMessage}</p><div style="background:#f3f4f6; padding:24px; text-align:center; border-radius:8px; margin:20px 0;"><p style="color:#6b7280;">📄 Your shared documents and messages would appear here.</p></div><hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;"><p style="font-size:13px; color:#9ca3af; text-align:center;">${footerMessage}</p><p style="font-size:13px; color:#9ca3af; text-align:center;">🧪 This is a test email. No action is required.</p></div></body></html>`;
+      html = `<!DOCTYPE html><html><body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #dc2626, #991b1b); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin:0; font-size:24px;">${headerTitle}</h1><p style="margin:12px 0 0; opacity:0.9; font-size:14px;">${headerSubtitle}</p></div><div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p>Dear <strong>Test Contact</strong>,</p><p style="color:#4b5563;">${introMessage}</p><div style="background:#f3f4f6; padding:24px; text-align:center; border-radius:8px; margin:20px 0;"><p style="color:#6b7280;">📄 Your shared documents and messages would appear here.</p></div><hr style="border:none; border-top:1px solid #e5e7eb; margin:32px 0;"><p style="font-size:13px; color:#9ca3af; text-align:center;">${footerMessage}</p></div></body></html>`;
     }
 
+    // Preview-only mode: return HTML without sending
+    if (action === "preview") {
+      return new Response(JSON.stringify({ html }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Send mode — mark as test
     subject = `[TEST] ${subject}`;
 
     const res = await fetch("https://api.resend.com/emails", {

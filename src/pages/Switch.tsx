@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlan } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Shield, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Shield, AlertTriangle, CheckCircle, Settings, Mail, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import SwitchCountdown from '@/components/switch/SwitchCountdown';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
 import CheckInMethods from '@/components/switch/CheckInMethods';
@@ -27,9 +29,24 @@ const Switch = () => {
   const [emailCheckinEnabled, setEmailCheckinEnabled] = useState(false);
   const [smsCheckinEnabled, setSmsCheckinEnabled] = useState(false);
 
+  // Email preview state
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [emailPreviewHtml, setEmailPreviewHtml] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (user) fetchSettings();
   }, [user]);
+
+  // Clean up blob URL on unmount or modal close
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
+  }, []);
 
   const calculateNextCheckIn = (frequency: CheckInFrequency, fromDate: Date = new Date()) => {
     const nextDate = new Date(fromDate);
@@ -145,6 +162,81 @@ const Switch = () => {
     }
   };
 
+  const handlePreviewEmail = async () => {
+    setShowEmailPreview(true);
+    setLoadingPreview(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-test-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ templateType: 'grace_period', action: 'preview' }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to load preview');
+
+      setEmailPreviewHtml(result.html);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to load email preview", variant: "destructive" });
+      setShowEmailPreview(false);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setSendingTest(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-test-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ templateType: 'grace_period' }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to send');
+      toast({ title: "Test email sent!", description: "Check your inbox for the grace period warning email." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to send test email", variant: "destructive" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const handleCloseEmailPreview = () => {
+    setShowEmailPreview(false);
+    setEmailPreviewHtml(null);
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+  };
+
+  // Build blob URL for iframe
+  const getIframeSrc = () => {
+    if (!emailPreviewHtml) return undefined;
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    const blob = new Blob([emailPreviewHtml], { type: 'text/html' });
+    blobUrlRef.current = URL.createObjectURL(blob);
+    return blobUrlRef.current;
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -192,7 +284,7 @@ const Switch = () => {
             switchTriggered={settings?.switch_triggered || false}
           />
 
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
             <Button
               onClick={performCheckIn}
               size="lg"
@@ -206,14 +298,19 @@ const Switch = () => {
 
         {/* Section 2: Configuration */}
         <div className="bg-muted/30 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-              <Settings className="w-6 h-6 text-primary" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <Settings className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-card-foreground">Configuration</h3>
+                <p className="text-sm text-muted-foreground">Customize your switch settings</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-medium text-card-foreground">Configuration</h3>
-              <p className="text-sm text-muted-foreground">Customize your switch settings</p>
-            </div>
+            <Button onClick={handlePreviewEmail} variant="outline" size="sm" className="rounded-xl">
+              <Mail className="w-4 h-4 mr-2" />Preview Email
+            </Button>
           </div>
           {settings && (
             <SwitchConfiguration
@@ -260,6 +357,45 @@ const Switch = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Email Preview Dialog */}
+      <Dialog open={showEmailPreview} onOpenChange={(open) => { if (!open) handleCloseEmailPreview(); }}>
+        <DialogContent className="bg-card border-border rounded-2xl max-w-[640px] max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-card-foreground flex items-center">
+              <Mail className="w-5 h-5 mr-2 text-primary" />
+              Grace Period Warning Email Preview
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            {loadingPreview ? (
+              <div className="flex items-center justify-center h-[400px]">
+                <div className="text-center">
+                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-3 animate-pulse">
+                    <Mail className="w-5 h-5 text-primary" />
+                  </div>
+                  <p className="text-muted-foreground text-sm">Loading preview...</p>
+                </div>
+              </div>
+            ) : emailPreviewHtml ? (
+              <iframe
+                ref={iframeRef}
+                src={getIframeSrc()}
+                sandbox="allow-same-origin"
+                className="w-full h-[500px] border border-border rounded-xl bg-white"
+                title="Email preview"
+              />
+            ) : null}
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={handleCloseEmailPreview}>Close</Button>
+            <Button onClick={handleSendTestEmail} disabled={sendingTest} className="bg-primary hover:bg-primary/90">
+              <Send className="w-4 h-4 mr-2" />
+              {sendingTest ? 'Sending...' : 'Send test email to myself'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

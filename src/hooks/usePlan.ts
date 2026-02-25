@@ -75,3 +75,10 @@ export const FREE_PLAN_LIMITS = {
   hasMultiChannelCheckin: false,
   hasFullEmailCustomization: false,
 };
+
+export const PAID_FEATURES = {
+  documents: 'Store and share documents with trusted contacts',
+  accounts: 'Catalogue digital accounts with closure instructions',
+  multipleContacts: 'Add multiple trusted contacts with individual permissions',
+  portal: 'Contacts get a private decrypted portal when your switch fires',
+};

@@ -5,6 +5,7 @@ import { useContacts } from '@/hooks/useContacts';
 import { usePlan } from '@/hooks/usePlan';
 import { supabase } from '@/integrations/supabase/client';
 import { useEncryption } from '@/contexts/EncryptionContext';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
@@ -27,6 +29,7 @@ import RichTextEditor from '@/components/ui/rich-text-editor';
 import EmailTemplateEditor, { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateEUShort } from '@/utils/dateUtils';
+import { decryptFields } from '@/lib/crypto';
 
 interface Profile {
   id: string;
@@ -68,9 +71,10 @@ const contactTypeLabels: Record<ContactCategory, string> = {
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { rewrapVaultKey } = useEncryption();
+  const { rewrapVaultKey, vaultKey } = useEncryption();
   const { plan, planExpiresAt, isExpired, rawPlan } = usePlan();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const defaultTab = searchParams.get('tab') || 'profile';
   const {
     profile, setProfile, notifications, setNotifications,
@@ -86,6 +90,86 @@ const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // GDPR state
+  const [exporting, setExporting] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleExportData = async () => {
+    if (!user) return;
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Unlock your vault first to export your data.", variant: "destructive" });
+      return;
+    }
+    setExporting(true);
+    try {
+      const [contactsRes, docsRes, accountsRes, financialsRes, settingsRes, rulesRes] = await Promise.all([
+        supabase.from('contacts').select('*').eq('user_id', user.id),
+        supabase.from('legacy_documents').select('*').eq('user_id', user.id),
+        supabase.from('accounts').select('*').eq('user_id', user.id),
+        supabase.from('financial_assets').select('*').eq('user_id', user.id),
+        supabase.from('user_settings').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('activation_rules').select('*').eq('user_id', user.id),
+      ]);
+
+      const decryptAll = async (rows: any[], fields: string[]) =>
+        Promise.all((rows || []).map(async (r) => {
+          const dec = await decryptFields(r, fields, vaultKey!);
+          return { ...r, ...dec };
+        }));
+
+      const contacts = await decryptAll(contactsRes.data || [], ['name', 'phone', 'relationship', 'notes', 'custom_message']);
+      const documents = await decryptAll(docsRes.data || [], ['title', 'description', 'content']);
+      const accounts = await decryptAll(accountsRes.data || [], ['account_name', 'username', 'credentials', 'website_url', 'notes', 'email', 'platform']);
+      const financialAssets = await decryptAll(financialsRes.data || [], ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email']);
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        contacts,
+        documents,
+        accounts,
+        financialAssets,
+        settings: settingsRes.data || {},
+        activationRules: rulesRes.data || [],
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `legacyvault-export-${date}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Export complete", description: "Your data has been downloaded." });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({ title: "Error", description: "Failed to export data", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setDeletingAccount(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-own-account');
+      if (error) throw error;
+      await supabase.auth.signOut();
+      toast({ title: "Account deleted", description: "Your account has been permanently deleted." });
+      navigate('/');
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      toast({ title: "Error", description: error.message || "Failed to delete account", variant: "destructive" });
+    } finally {
+      setDeletingAccount(false);
+      setShowDeleteAccountDialog(false);
+      setDeleteConfirmText('');
+    }
+  };
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
@@ -169,7 +253,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-muted/30 rounded-2xl p-1.5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 bg-muted/30 rounded-2xl p-1.5 mb-6">
             <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
               <User className="w-4 h-4 mr-2" />Profile
             </TabsTrigger>
@@ -184,6 +268,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="notifications" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
               <Bell className="w-4 h-4 mr-2" />Alerts
+            </TabsTrigger>
+            <TabsTrigger value="privacy" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
+              <Database className="w-4 h-4 mr-2" />Privacy
             </TabsTrigger>
           </TabsList>
 
@@ -402,7 +489,75 @@ const Settings = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="privacy" className="space-y-6 mt-6">
+            <Card className="bg-muted/30 border-none rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center"><Download className="w-5 h-5 mr-2 text-primary" />Export Your Data</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Download a complete copy of all your data including contacts, documents, accounts, and financial assets. Data is decrypted locally before export.
+                </p>
+                <Button onClick={handleExportData} disabled={exporting} variant="default">
+                  {exporting ? (<><LoadingSpinner size="sm" className="mr-2" />Exporting...</>) : (<><Download className="w-4 h-4 mr-2" />Download my data (JSON)</>)}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/30 border-none rounded-2xl border-destructive/20">
+              <CardHeader>
+                <CardTitle className="text-destructive flex items-center"><Trash2 className="w-5 h-5 mr-2" />Danger Zone</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Permanently delete your account and all associated data. This action cannot be undone.
+                  </p>
+                  <Button onClick={() => setShowDeleteAccountDialog(true)} variant="destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />Delete my account
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Your encryption keys are derived from your password. Once deleted, your data cannot be recovered by anyone.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        {/* Delete Account Confirmation Dialog */}
+        <Dialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+          <DialogContent className="bg-card border-border rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-destructive flex items-center">
+                <AlertTriangle className="w-5 h-5 mr-2" />Permanently delete your account
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This will delete all your data including contacts, documents, financial information, and your vault. This cannot be undone.
+            </p>
+            <div className="space-y-2">
+              <Label className="text-foreground">Type <span className="font-mono font-bold">DELETE</span> to confirm</Label>
+              <Input
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE to confirm"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowDeleteAccountDialog(false); setDeleteConfirmText(''); }}>Cancel</Button>
+              <Button
+                variant="destructive"
+                disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
+                onClick={handleDeleteAccount}
+              >
+                {deletingAccount ? <LoadingSpinner size="sm" className="mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                Delete Permanently
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

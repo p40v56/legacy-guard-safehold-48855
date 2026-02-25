@@ -368,9 +368,7 @@ const Documents = () => {
         </div>
 
         {isFreeBlocked && (
-          <>
-            <UpgradePrompt message="Upgrade to store and share documents with your contacts securely." />
-          </>
+          <UpgradePrompt message="Documents are a paid feature. Upgrade to store and share important documents with your trusted contacts securely." featureKey="documents" />
         )}
 
         {!isFreeBlocked && (<>

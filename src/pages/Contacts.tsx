@@ -140,7 +140,7 @@ const Contacts = () => {
         </div>
 
         {isAtContactLimit && (
-          <UpgradePrompt message="Free plan is limited to 1 contact. Upgrade to add unlimited contacts across all categories." />
+          <UpgradePrompt message="Free plan is limited to 1 contact. Upgrade to add unlimited contacts across all categories with individual permissions and portal access." featureKey="multipleContacts" />
         )}
 
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">

@@ -28,7 +28,7 @@ const PortalHeader: React.FC<PortalHeaderProps> = ({ contactName, userName, swit
         <div className="flex items-start gap-2 mt-4 bg-gray-50 rounded-lg p-3">
           <Info className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
           <p className="text-gray-500 text-xs leading-relaxed">
-            Other trusted contacts have also been notified. Coordinate before taking action where possible.
+            You may not be the only person who has received access. Coordinate with others before taking irreversible actions.
           </p>
         </div>
       </div>

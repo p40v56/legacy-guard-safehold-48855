@@ -728,7 +728,7 @@ body:has(#lv-root) {
 /* ── Print styles for portal ── */
 @media print {
   body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  nav, .print\\:hidden, button, .sticky { display: none !important; }
+  nav, button, .sticky { display: none !important; }
   .min-h-screen { min-height: auto !important; }
   .bg-slate-50 { background: white !important; }
   .shadow-sm, .shadow-lg { box-shadow: none !important; }

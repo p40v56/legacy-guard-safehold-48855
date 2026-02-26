@@ -3,10 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
+const APP_URL = Deno.env.get("APP_BASE_URL");
 const ALLOWED_ORIGINS = [
-  Deno.env.get("APP_BASE_URL") || "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
+  "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
+  "https://legacy-guard-safehold-48855.lovable.app",
   "http://localhost:5173",
   "http://localhost:3000",
+  ...(APP_URL ? [APP_URL] : []),
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {

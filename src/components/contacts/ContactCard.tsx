@@ -14,6 +14,7 @@ import { usePlan } from '@/hooks/usePlan';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { encryptFields } from '@/lib/crypto';
 import { createPortalShares } from '@/lib/portalShares';
+import UpgradePrompt from '@/components/UpgradePrompt';
 import { Lock } from 'lucide-react';
 import { formatDateEU } from '@/utils/dateUtils';
 import { useAuth } from '@/hooks/useAuth';
@@ -174,13 +175,16 @@ const ContactCard: React.FC<ContactCardProps> = ({
         {/* Expanded content */}
         {isExpanded && (
           <div className="border-t border-border px-4 pb-4 pt-2">
-            <Tabs defaultValue="permissions" className="w-full mt-2">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/20 border-border">
+            <Tabs defaultValue={isFree ? "permissions" : "portal"} className="w-full mt-2">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/20 border-border">
                 <TabsTrigger value="permissions" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">
                   <Shield className="w-4 h-4 mr-2" />Permissions
                 </TabsTrigger>
                 <TabsTrigger value="message" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">
                   <MessageSquare className="w-4 h-4 mr-2" />Message
+                </TabsTrigger>
+                <TabsTrigger value="portal" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">
+                  <Link2 className="w-4 h-4 mr-2" />Portal
                 </TabsTrigger>
                 <TabsTrigger value="details" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">
                   <AlertCircle className="w-4 h-4 mr-2" />Details
@@ -206,37 +210,43 @@ const ContactCard: React.FC<ContactCardProps> = ({
                     placeholder={`Write a personal message for ${contact.name}...`}
                     className="min-h-[120px] bg-muted/30 border-border rounded-xl"
                   />
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <Button onClick={handleSaveCustomMessage} disabled={savingMessage} size="sm" className="bg-primary hover:bg-primary/90 rounded-xl">
-                      {savingMessage ? 'Saving...' : 'Save Message'}
-                    </Button>
-                    {isFree ? (
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Lock className="w-4 h-4" /><span>Portal links require a paid plan</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Button onClick={handleGeneratePortalLink} disabled={generatingLink} size="sm" variant="outline" className="rounded-xl">
-                          <Link2 className="w-4 h-4 mr-2" />
-                          {generatingLink ? 'Generating...' : portalLink ? 'Regenerate Portal Link' : 'Generate Portal Link'}
-                        </Button>
-                        <Button onClick={handlePreviewPortal} disabled={previewingPortal} size="sm" variant="outline" className="rounded-xl">
-                          <Eye className="w-4 h-4 mr-2" />
-                          {previewingPortal ? 'Loading...' : 'Preview Portal'}
-                        </Button>
-                      </>
-                    )}
+                  <Button onClick={handleSaveCustomMessage} disabled={savingMessage} size="sm" className="bg-primary hover:bg-primary/90 rounded-xl">
+                    {savingMessage ? 'Saving...' : 'Save Message'}
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="portal" className="space-y-4 mt-4">
+                {!vaultKey && (
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm mb-3">
+                    <Lock className="w-4 h-4 shrink-0" />
+                    Unlock your vault first to generate portal links.
                   </div>
-                  {!isFree && portalLink && (
-                    <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                      <p className="text-sm text-primary truncate flex-1">{portalLink}</p>
-                      <Button size="sm" variant="ghost" className="text-primary flex-shrink-0" onClick={() => { navigator.clipboard.writeText(portalLink); toast({ title: "Copied!", description: "Portal link copied to clipboard." }); }}>
-                        Copy
+                )}
+                {isFree ? (
+                  <UpgradePrompt message="Portal access requires a paid plan. Upgrade to generate portal links so your contacts can securely access shared information." featureKey="portal" />
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <Button onClick={handleGeneratePortalLink} disabled={generatingLink || !vaultKey} size="sm" variant="outline" className="rounded-xl">
+                        <Link2 className="w-4 h-4 mr-2" />
+                        {generatingLink ? 'Generating...' : portalLink ? 'Regenerate Portal Link' : 'Generate Portal Link'}
+                      </Button>
+                      <Button onClick={handlePreviewPortal} disabled={previewingPortal || !vaultKey} size="sm" variant="outline" className="rounded-xl">
+                        <Eye className="w-4 h-4 mr-2" />
+                        {previewingPortal ? 'Loading...' : 'Preview Portal'}
                       </Button>
                     </div>
-                  )}
-                </div>
+                    {portalLink && (
+                      <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <p className="text-sm text-primary truncate flex-1">{portalLink}</p>
+                        <Button size="sm" variant="ghost" className="text-primary flex-shrink-0" onClick={() => { navigator.clipboard.writeText(portalLink); toast({ title: "Copied!", description: "Portal link copied to clipboard." }); }}>
+                          Copy
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </TabsContent>
               <TabsContent value="details" className="space-y-4 mt-4">
                 <div className="space-y-2">

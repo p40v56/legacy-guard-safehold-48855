@@ -54,28 +54,59 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [savingMessage, setSavingMessage] = useState(false);
 
   const generateTokenAndShares = async (): Promise<string | null> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+    // Step 1: get session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw new Error(`Session error: ${sessionError.message}`);
+    if (!session) throw new Error('No active session — please log out and log back in');
+
+    // Step 2: vault check
     if (!vaultKey || !user) {
-      toast({ title: "Vault locked", description: "Unlock your vault before generating portal links.", variant: "destructive" });
+      toast({ title: 'Vault locked', description: 'Unlock your vault before generating portal links.', variant: 'destructive' });
       return null;
     }
+
+    // Step 3: generate token from edge function
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/contact-portal?action=generate-token`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ contactId: contact.id }),
-      }
-    );
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error);
-    await createPortalShares(user.id, contact.id, result.token, vaultKey);
+    let response: Response;
+    try {
+      response = await fetch(
+        `${supabaseUrl}/functions/v1/contact-portal?action=generate-token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ contactId: contact.id }),
+        }
+      );
+    } catch (fetchErr: any) {
+      throw new Error(`Network error calling edge function: ${fetchErr.message}`);
+    }
+
+    let result: any;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error(`Edge function returned non-JSON response (status ${response.status})`);
+    }
+
+    if (!response.ok) {
+      throw new Error(`Edge function error (${response.status}): ${result?.error || JSON.stringify(result)}`);
+    }
+
+    if (!result.token) {
+      throw new Error(`Edge function returned no token: ${JSON.stringify(result)}`);
+    }
+
+    // Step 4: create portal shares
+    try {
+      await createPortalShares(user.id, contact.id, result.token, vaultKey);
+    } catch (shareErr: any) {
+      throw new Error(`Portal share creation failed: ${shareErr.message}`);
+    }
+
     return result.token;
   };
 
@@ -90,7 +121,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
       toast({ title: "Portal link generated & copied!", description: "The link has been copied to your clipboard." });
     } catch (error) {
       console.error('Error generating portal link:', error);
-      toast({ title: "Error", description: "Failed to generate portal link", variant: "destructive" });
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to generate portal link", variant: "destructive" });
     } finally {
       setGeneratingLink(false);
     }
@@ -104,7 +135,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
       window.open(`${window.location.origin}/portal/${token}`, '_blank');
     } catch (error) {
       console.error('Error previewing portal:', error);
-      toast({ title: "Error", description: "Failed to generate portal preview", variant: "destructive" });
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to generate portal preview", variant: "destructive" });
     } finally {
       setPreviewingPortal(false);
     }

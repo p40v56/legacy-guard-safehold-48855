@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import SwitchCountdown from '@/components/switch/SwitchCountdown';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
 import CheckInMethods from '@/components/switch/CheckInMethods';
+import CheckInHistory from '@/components/switch/CheckInHistory';
 import { CheckInFrequency, UserSettings } from '@/types/common';
 import { SettingsService, ProfileService, NotificationSettingsService } from '@/services/supabaseService';
 
@@ -336,6 +337,9 @@ const Switch = () => {
           onSmsCheckinChange={(v) => plan === 'paid' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
           isPaidPlan={plan === 'paid'}
         />
+
+        {/* Section 4: Check-in History */}
+        <CheckInHistory />
       </div>
 
       <AlertDialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>

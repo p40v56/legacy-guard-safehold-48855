@@ -113,7 +113,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ portalData, token, children
               This is a secure, private portal. The information shown here is confidential.
             </p>
             <p className="text-gray-300 text-xs">
-              If you need help or have questions, contact LegacyVault support.
+              If you need help or have questions, contact <a href="mailto:support@legacyvault.app" className="text-gray-400 underline hover:text-gray-500">support@legacyvault.app</a>.
             </p>
           </div>
         </div>

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DashboardStats } from '@/types/common';
 import { DashboardService, SettingsService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import { useCountdown } from '@/hooks/useCountdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatDateEU } from '@/utils/dateUtils';
@@ -31,6 +32,7 @@ const Dashboard = () => {
   const [wizardDismissed, setWizardDismissed] = useState(true);
   const [rulesCount, setRulesCount] = useState(0);
   const [testEmailSent, setTestEmailSent] = useState(false);
+  const [hasPortalLinks, setHasPortalLinks] = useState(false);
   const [firstName, setFirstName] = useState('');
 
   const settings = stats.userSettings;
@@ -79,14 +81,16 @@ const Dashboard = () => {
   const fetchStats = async () => {
     if (!user) return;
     try {
-      const [dashboardStats, profile, rules] = await Promise.all([
+      const [dashboardStats, profile, rules, sharesRes] = await Promise.all([
         DashboardService.getDashboardStats(user.id),
         ProfileService.getProfile(user.id),
         ActivationRulesService.getActivationRules(user.id),
+        supabase.from('contact_shares').select('id').eq('user_id', user.id).limit(1),
       ]);
       setStats(dashboardStats);
       setWizardDismissed(profile.setup_wizard_dismissed ?? false);
       setTestEmailSent(!!profile.last_test_email_sent_at);
+      setHasPortalLinks((sharesRes.data?.length ?? 0) > 0);
       let firstName = profile.first_name || '';
       if (vaultKey && firstName) {
         try {
@@ -229,6 +233,7 @@ const Dashboard = () => {
             isActive={settings?.is_active || false}
             rulesCount={rulesCount}
             testEmailSent={testEmailSent}
+            hasPortalLinks={hasPortalLinks}
             onDismiss={handleDismissWizard}
           />
         )}

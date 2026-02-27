@@ -114,10 +114,19 @@ const Settings = () => {
         supabase.from('activation_rules').select('*').eq('user_id', user.id),
       ]);
 
+      const stripIvFields = (obj: any) => {
+        const cleaned: any = {};
+        for (const key of Object.keys(obj)) {
+          if (key.endsWith('_iv') || key === 'encrypted_vault_key' || key === 'vault_key_iv' || key === 'salt') continue;
+          cleaned[key] = obj[key];
+        }
+        return cleaned;
+      };
+
       const decryptAll = async (rows: any[], fields: string[]) =>
         Promise.all((rows || []).map(async (r) => {
           const dec = await decryptFields(r, fields, vaultKey!);
-          return { ...r, ...dec };
+          return stripIvFields({ ...r, ...dec });
         }));
 
       const contacts = await decryptAll(contactsRes.data || [], ['name', 'phone', 'relationship', 'notes', 'custom_message']);

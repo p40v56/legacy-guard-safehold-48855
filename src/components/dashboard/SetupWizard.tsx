@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Check, ArrowRight, X, Users, Shield, AlertTriangle, Mail } from 'lucide-react';
+import { Check, ArrowRight, X, Users, Shield, AlertTriangle, Mail, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 
@@ -8,10 +8,11 @@ interface SetupWizardProps {
   isActive: boolean;
   rulesCount: number;
   testEmailSent: boolean;
+  hasPortalLinks: boolean;
   onDismiss: () => void;
 }
 
-const SetupWizard = ({ contactsCount, isActive, rulesCount, testEmailSent, onDismiss }: SetupWizardProps) => {
+const SetupWizard = ({ contactsCount, isActive, rulesCount, testEmailSent, hasPortalLinks, onDismiss }: SetupWizardProps) => {
   const steps = [
     {
       title: 'Add a contact',
@@ -37,6 +38,12 @@ const SetupWizard = ({ contactsCount, isActive, rulesCount, testEmailSent, onDis
       icon: Mail,
       completed: testEmailSent,
     },
+    {
+      title: 'Generate portal links',
+      href: '/contacts',
+      icon: Link2,
+      completed: hasPortalLinks,
+    },
   ];
 
   const completedCount = steps.filter(s => s.completed).length;
@@ -58,7 +65,7 @@ const SetupWizard = ({ contactsCount, isActive, rulesCount, testEmailSent, onDis
 
       <Progress value={(completedCount / steps.length) * 100} className="h-2 mb-6" />
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {steps.map((step) => (
           <Link
             key={step.title}

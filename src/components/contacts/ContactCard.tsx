@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Trash2, Phone, Mail, Shield, AlertCircle, MessageSquare, Link2, Check, ChevronDown, Eye } from 'lucide-react';
+import { Edit, Trash2, Phone, Mail, Shield, AlertCircle, MessageSquare, Link2, Check, ChevronDown, Eye, AlertTriangle } from 'lucide-react';
 import PermissionsConfig from '@/components/contacts/PermissionsConfig';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,8 +52,39 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [previewingPortal, setPreviewingPortal] = useState(false);
   const [customMsg, setCustomMsg] = useState(contact.custom_message || '');
   const [savingMessage, setSavingMessage] = useState(false);
+  const [portalStale, setPortalStale] = useState(false);
+  const [regeneratingShares, setRegeneratingShares] = useState(false);
 
-  const generateTokenAndShares = async (): Promise<string | null> => {
+  // Auto-regenerate portal shares when permissions change
+  const handlePermissionsChange = async (contactId: string, permissions: ContactPermissions) => {
+    onPermissionsChange(contactId, permissions);
+    // Check if portal shares exist for this contact
+    if (!isFree && vaultKey && user) {
+      const { data: shares } = await supabase
+        .from('contact_shares')
+        .select('id')
+        .eq('contact_id', contact.id)
+        .eq('user_id', user.id)
+        .limit(1);
+      if (shares && shares.length > 0) {
+        setPortalStale(true);
+        setRegeneratingShares(true);
+        try {
+          const token = await generateTokenAndSharesInternal();
+          if (token) {
+            setPortalStale(false);
+            toast({ title: "Portal updated", description: "Portal link has been regenerated with new permissions." });
+          }
+        } catch (err) {
+          console.error('Auto-regenerate failed:', err);
+        } finally {
+          setRegeneratingShares(false);
+        }
+      }
+    }
+  };
+
+  const generateTokenAndSharesInternal = async (): Promise<string | null> => {
     // Step 1: get session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) throw new Error(`Session error: ${sessionError.message}`);
@@ -113,7 +144,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const handleGeneratePortalLink = async () => {
     setGeneratingLink(true);
     try {
-      const token = await generateTokenAndShares();
+      const token = await generateTokenAndSharesInternal();
       if (!token) return;
       const link = `${window.location.origin}/portal/${token}`;
       setPortalLink(link);
@@ -130,7 +161,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const handlePreviewPortal = async () => {
     setPreviewingPortal(true);
     try {
-      const token = await generateTokenAndShares();
+      const token = await generateTokenAndSharesInternal();
       if (!token) return;
       window.open(`${window.location.origin}/portal/${token}`, '_blank');
     } catch (error) {
@@ -222,9 +253,17 @@ const ContactCard: React.FC<ContactCardProps> = ({
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="permissions" className="space-y-4 mt-4">
+                {portalStale && (
+                  <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/30 rounded-xl text-sm mb-3">
+                    <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+                    <span className="text-foreground">
+                      {regeneratingShares ? 'Regenerating portal link...' : 'Portal link is being updated with new permissions.'}
+                    </span>
+                  </div>
+                )}
                 <PermissionsConfig
                   permissions={contact.permissions}
-                  onChange={(permissions) => onPermissionsChange(contact.id, permissions)}
+                  onChange={(permissions) => handlePermissionsChange(contact.id, permissions)}
                   useTypeDefaults={contact.use_type_defaults}
                   onUseTypeDefaultsChange={(useDefaults) => onUseTypeDefaultsChange(contact.id, useDefaults)}
                 />

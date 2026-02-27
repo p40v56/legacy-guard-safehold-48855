@@ -180,7 +180,7 @@ const Auth = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
-                LegacyVault is currently invite-only. Contact us to request access.
+                Secure your digital legacy with zero-knowledge encryption.
               </p>
             </div>
           </div>

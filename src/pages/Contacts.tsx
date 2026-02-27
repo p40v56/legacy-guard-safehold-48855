@@ -7,11 +7,16 @@ import ContactPermissionsDialog from '@/components/contacts/ContactPermissionsDi
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, Filter, Shield } from 'lucide-react';
+import { Users, UserPlus, Filter, Shield, RefreshCw } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { useContacts } from '@/hooks/useContacts';
 import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
+import { useAuth } from '@/hooks/useAuth';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { createPortalShares } from '@/lib/portalShares';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Contacts = () => {
   const {
@@ -19,7 +24,10 @@ const Contacts = () => {
     updateContactPermissions, updateUseTypeDefaults,
   } = useContacts();
   const { plan } = usePlan();
-  
+  const { user } = useAuth();
+  const { vaultKey } = useEncryption();
+  const { toast } = useToast();
+  const [regeneratingAll, setRegeneratingAll] = useState(false);
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -110,6 +118,56 @@ const Contacts = () => {
     setExpandedContactId(prev => prev === contactId ? null : contactId);
   };
 
+  const handleRegenerateAllPortalLinks = async () => {
+    if (!user || !vaultKey) {
+      toast({ title: 'Vault locked', description: 'Unlock your vault first.', variant: 'destructive' });
+      return;
+    }
+    setRegeneratingAll(true);
+    try {
+      // Get all contacts that have existing shares
+      const { data: shares } = await supabase
+        .from('contact_shares')
+        .select('contact_id')
+        .eq('user_id', user.id);
+      const contactIdsWithShares = [...new Set((shares || []).map(s => s.contact_id))];
+      if (contactIdsWithShares.length === 0) {
+        toast({ title: 'No portal links', description: 'No existing portal links to regenerate.' });
+        return;
+      }
+      let success = 0;
+      for (const contactId of contactIdsWithShares) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) throw new Error('No session');
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const response = await fetch(`${supabaseUrl}/functions/v1/contact-portal?action=generate-token`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ contactId }),
+          });
+          const result = await response.json();
+          if (response.ok && result.token) {
+            await createPortalShares(user.id, contactId, result.token, vaultKey);
+            success++;
+          }
+        } catch (err) {
+          console.error(`Failed to regenerate for ${contactId}:`, err);
+        }
+      }
+      toast({ title: 'Portal links regenerated', description: `${success}/${contactIdsWithShares.length} links updated successfully.` });
+    } catch (error) {
+      console.error('Bulk regenerate error:', error);
+      toast({ title: 'Error', description: 'Failed to regenerate portal links.', variant: 'destructive' });
+    } finally {
+      setRegeneratingAll(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -133,9 +191,22 @@ const Contacts = () => {
             <p className="text-muted-foreground">Manage your trusted contacts for notifications</p>
           </div>
           {!isAtContactLimit ? (
-            <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
-              <UserPlus className="w-4 h-4 mr-2" />Add Contact
-            </Button>
+            <div className="flex items-center gap-3">
+              {plan === 'paid' && contacts.length > 0 && (
+                <Button
+                  onClick={handleRegenerateAllPortalLinks}
+                  disabled={regeneratingAll || !vaultKey}
+                  variant="outline"
+                  className="rounded-full px-5"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${regeneratingAll ? 'animate-spin' : ''}`} />
+                  {regeneratingAll ? 'Regenerating...' : 'Regenerate All Portal Links'}
+                </Button>
+              )}
+              <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
+                <UserPlus className="w-4 h-4 mr-2" />Add Contact
+              </Button>
+            </div>
           ) : null}
         </div>
 

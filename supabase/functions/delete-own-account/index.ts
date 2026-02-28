@@ -51,18 +51,48 @@ Deno.serve(async (req) => {
     const userId = user.id;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Delete all user data from all tables
+    // Delete all user data from all tables (ordered by FK dependencies)
     const tables = [
-      'contact_shares', 'contact_access_tokens', 'sent_notifications',
-      'security_questions', 'contacts', 'accounts', 'legacy_documents',
-      'financial_assets', 'activation_rules', 'notification_settings',
-      'user_settings', 'check_in_history', 'check_in_tokens',
-      'contact_type_permissions', 'portal_access_attempts',
-      'profiles', 'user_roles',
+      'portal_access_attempts',
+      'contact_shares',
+      'contact_access_tokens',
+      'sent_notifications',
+      'security_questions',
+      'activation_rules',
+      'notification_settings',
+      'check_in_tokens',
+      'check_in_history',
+      'user_settings',
+      'contact_type_permissions',
+      'accounts',
+      'legacy_documents',
+      'financial_assets',
+      'contacts',
+      'user_roles',
+      'profiles',
     ];
 
     for (const table of tables) {
       await adminClient.from(table).delete().eq('user_id', userId);
+    }
+
+    // Delete user files from storage
+    try {
+      const { data: files } = await adminClient.storage
+        .from('documents')
+        .list(userId);
+
+      if (files && files.length > 0) {
+        const filePaths = files.map(f => `${userId}/${f.name}`);
+        await adminClient.storage.from('documents').remove(filePaths);
+      }
+
+      // Also check for flat-stored files
+      const { data: rootFiles } = await adminClient.storage
+        .from('documents')
+        .list('', { search: userId });
+    } catch (storageErr) {
+      console.error('Storage cleanup error (non-fatal):', storageErr);
     }
 
     // Delete the auth user

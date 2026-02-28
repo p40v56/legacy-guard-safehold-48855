@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isDeactivated: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -28,6 +29,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDeactivated, setIsDeactivated] = useState(false);
+
+  const checkDeactivated = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('deactivated')
+        .eq('user_id', userId)
+        .single();
+      setIsDeactivated(data?.deactivated ?? false);
+    } catch {
+      setIsDeactivated(false);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -35,6 +50,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) {
+          checkDeactivated(session.user.id);
+        } else {
+          setIsDeactivated(false);
+        }
         setLoading(false);
       }
     );
@@ -43,6 +63,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        checkDeactivated(session.user.id);
+      }
       setLoading(false);
     });
 
@@ -53,12 +76,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    setIsDeactivated(false);
   };
 
   const value = {
     user,
     session,
     loading,
+    isDeactivated,
     signOut,
   };
 

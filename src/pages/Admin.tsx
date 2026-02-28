@@ -72,7 +72,7 @@ const Admin = () => {
       const [profilesResult, statsResult, emailsResult] = await Promise.all([
         supabase.rpc('admin_list_profiles'),
         supabase.rpc('admin_get_stats'),
-        supabase.rpc('admin_get_user_emails' as any),
+        supabase.rpc('admin_get_user_emails' as any, { row_limit: 500 }),
       ]);
 
       if (profilesResult.data) {

@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, AlertTriangle, CheckCircle, Settings, Mail, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +36,7 @@ const Switch = () => {
   const [emailPreviewHtml, setEmailPreviewHtml] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
+  const [previewTab, setPreviewTab] = useState<'grace_period' | 'switch_triggered'>('grace_period');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const blobUrlRef = useRef<string | null>(null);
 
@@ -163,9 +165,9 @@ const Switch = () => {
     }
   };
 
-  const handlePreviewEmail = async () => {
-    setShowEmailPreview(true);
+  const fetchPreview = async (templateType: 'grace_period' | 'switch_triggered') => {
     setLoadingPreview(true);
+    setEmailPreviewHtml(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
@@ -178,7 +180,7 @@ const Switch = () => {
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ templateType: 'grace_period', action: 'preview' }),
+        body: JSON.stringify({ templateType, action: 'preview' }),
       });
 
       const result = await response.json();
@@ -187,10 +189,21 @@ const Switch = () => {
       setEmailPreviewHtml(result.html);
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to load email preview", variant: "destructive" });
-      setShowEmailPreview(false);
     } finally {
       setLoadingPreview(false);
     }
+  };
+
+  const handlePreviewEmail = async () => {
+    setShowEmailPreview(true);
+    setPreviewTab('grace_period');
+    await fetchPreview('grace_period');
+  };
+
+  const handlePreviewTabChange = async (tab: string) => {
+    const t = tab as 'grace_period' | 'switch_triggered';
+    setPreviewTab(t);
+    await fetchPreview(t);
   };
 
   const handleSendTestEmail = async () => {
@@ -223,6 +236,7 @@ const Switch = () => {
   const handleCloseEmailPreview = () => {
     setShowEmailPreview(false);
     setEmailPreviewHtml(null);
+    setPreviewTab('grace_period');
     if (blobUrlRef.current) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
@@ -368,9 +382,15 @@ const Switch = () => {
           <DialogHeader>
             <DialogTitle className="text-card-foreground flex items-center">
               <Mail className="w-5 h-5 mr-2 text-primary" />
-              Grace Period Warning Email Preview
+              Email Preview
             </DialogTitle>
           </DialogHeader>
+          <Tabs value={previewTab} onValueChange={handlePreviewTabChange} className="w-full">
+            <TabsList className="w-full rounded-xl">
+              <TabsTrigger value="grace_period" className="flex-1 rounded-lg text-xs">Grace period warning</TabsTrigger>
+              <TabsTrigger value="switch_triggered" className="flex-1 rounded-lg text-xs">Switch triggered</TabsTrigger>
+            </TabsList>
+          </Tabs>
           <div className="flex-1 min-h-0">
             {loadingPreview ? (
               <div className="flex items-center justify-center h-[400px]">
@@ -391,11 +411,11 @@ const Switch = () => {
               />
             ) : null}
           </div>
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={handleCloseEmailPreview}>Close</Button>
             <Button onClick={handleSendTestEmail} disabled={sendingTest} className="bg-primary hover:bg-primary/90">
               <Send className="w-4 h-4 mr-2" />
-              {sendingTest ? 'Sending...' : 'Send test email to myself'}
+              {sendingTest ? 'Sending...' : 'Send test email to myself (grace period warning)'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -136,6 +136,7 @@ const Contacts = () => {
         return;
       }
       let success = 0;
+      // Sequential intentionally — avoids rate-limiting the generate-token edge function
       for (const contactId of contactIdsWithShares) {
         try {
           const { data: { session } } = await supabase.auth.getSession();

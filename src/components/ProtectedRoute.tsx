@@ -2,7 +2,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Loader2, ShieldX } from 'lucide-react';
-import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
@@ -10,23 +9,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
-  const [deactivated, setDeactivated] = useState(false);
-  const [checkingProfile, setCheckingProfile] = useState(true);
+  const { user, loading, isDeactivated } = useAuth();
 
-  useEffect(() => {
-    if (!user) { setCheckingProfile(false); return; }
-    const checkProfile = async () => {
-      try {
-        const { data } = await supabase.from('profiles').select('deactivated').eq('user_id', user.id).single();
-        if (data?.deactivated) setDeactivated(true);
-      } catch { /* ignore */ }
-      setCheckingProfile(false);
-    };
-    checkProfile();
-  }, [user]);
-
-  if (loading || checkingProfile) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-primary/10 to-background flex items-center justify-center">
         <div className="text-center">
@@ -41,7 +26,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/" replace />;
   }
 
-  if (deactivated) {
+  if (isDeactivated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-primary/10 to-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">

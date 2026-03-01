@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Download, ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 
 interface PortalDocument {
   id: string;
@@ -89,7 +90,7 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
                       <>
                         <div
                           className="bg-gray-50 rounded-lg p-4 prose prose-sm max-w-none text-gray-700"
-                          dangerouslySetInnerHTML={{ __html: doc.content }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(doc.content) }}
                         />
                         {isLong && (
                           <button

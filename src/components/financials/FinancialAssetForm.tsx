@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PoundSterling } from 'lucide-react';
 import type { FinancialAsset, FinancialCategory, FinancialAssetInsert } from '@/types/financial';
 import { CATEGORY_LABELS } from '@/types/financial';
+import { useContacts } from '@/hooks/useContacts';
 
 interface FinancialAssetFormProps {
   initialData?: FinancialAsset | null;
@@ -17,6 +19,7 @@ interface FinancialAssetFormProps {
 }
 
 const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, onSubmit, onCancel }) => {
+  const { contacts } = useContacts();
   const [category, setCategory] = useState<FinancialCategory>(initialData?.category || 'bank_account');
   const [name, setName] = useState(initialData?.name || '');
   const [institution, setInstitution] = useState(initialData?.institution || '');
@@ -27,6 +30,8 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
   const [referenceNumber, setReferenceNumber] = useState(initialData?.reference_number || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [csf, setCsf] = useState<Record<string, any>>(initialData?.category_specific_fields || {});
+  const [visibleToAll, setVisibleToAll] = useState(!initialData?.visible_to || initialData.visible_to.length === 0);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>(initialData?.visible_to || []);
 
   const updateCsf = (key: string, value: any) => setCsf(prev => ({ ...prev, [key]: value }));
 
@@ -43,7 +48,7 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
       reference_number: referenceNumber || null,
       notes: notes || null,
       category_specific_fields: csf,
-      visible_to: null,
+      visible_to: visibleToAll ? null : (selectedContactIds.length > 0 ? selectedContactIds : null),
       attached_document_ids: null,
     });
   };
@@ -298,6 +303,39 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
         <div className="space-y-2">
           <Label className="text-card-foreground">Notes</Label>
           <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="bg-muted/50 border-border rounded-xl" rows={4} placeholder="Important details, instructions..." />
+        </div>
+
+        {/* Visibility */}
+        <div className="space-y-4">
+          <Label className="text-card-foreground font-medium">Visible To</Label>
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border">
+            <Switch checked={visibleToAll} onCheckedChange={setVisibleToAll} />
+            <div>
+              <div className="font-medium text-card-foreground text-sm">All contacts</div>
+              <p className="text-xs text-muted-foreground">Share this asset with every trusted contact</p>
+            </div>
+          </div>
+          {!visibleToAll && contacts.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+              {contacts.map(c => (
+                <div key={c.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`vis-${c.id}`}
+                    checked={selectedContactIds.includes(c.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedContactIds(prev =>
+                        checked ? [...prev, c.id] : prev.filter(id => id !== c.id)
+                      );
+                    }}
+                  />
+                  <label htmlFor={`vis-${c.id}`} className="text-sm text-card-foreground cursor-pointer">{c.name}</label>
+                </div>
+              ))}
+            </div>
+          )}
+          {!visibleToAll && contacts.length === 0 && (
+            <p className="text-xs text-muted-foreground">No contacts available. Add contacts first.</p>
+          )}
         </div>
 
         {/* Actions */}

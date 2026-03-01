@@ -97,7 +97,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
         if (!migrationCheck?.migration_complete) {
           const result = await migrateUserData(userId, decryptedVaultKey);
           if (result.total > 0) {
-            console.log(`Encrypted ${result.total} existing records`);
+            // Migration complete — records encrypted
           }
           await supabase
             .from('profiles')

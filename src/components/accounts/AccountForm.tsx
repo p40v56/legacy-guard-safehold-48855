@@ -17,6 +17,8 @@ interface AccountFormData {
   username: string;
   website_url: string;
   notes: string;
+  credentials: string;
+  closure_action: string;
 }
 
 interface AccountFormProps {
@@ -132,6 +134,38 @@ const AccountForm: React.FC<AccountFormProps> = ({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Credentials */}
+          <div className="space-y-2">
+            <Label className="text-card-foreground font-medium">Credentials / Password Hint</Label>
+            <Textarea
+              value={formData.credentials}
+              onChange={(e) => setFormData({...formData, credentials: e.target.value})}
+              className="rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all min-h-[80px]"
+              placeholder="Password hint, recovery codes, or other credential info (encrypted)..."
+            />
+            <p className="text-xs text-muted-foreground">This field is end-to-end encrypted and only visible to authorized contacts.</p>
+          </div>
+
+          {/* Closure Action */}
+          <div className="space-y-2">
+            <Label className="text-card-foreground font-medium">Closure Action</Label>
+            <Select
+              value={formData.closure_action || 'none'}
+              onValueChange={(value) => setFormData({...formData, closure_action: value === 'none' ? '' : value})}
+            >
+              <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all">
+                <SelectValue placeholder="What should contacts do with this account?" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="none" className="rounded-lg">No action specified</SelectItem>
+                <SelectItem value="delete" className="rounded-lg">Delete this account</SelectItem>
+                <SelectItem value="memorialize" className="rounded-lg">Memorialize</SelectItem>
+                <SelectItem value="transfer" className="rounded-lg">Transfer to someone</SelectItem>
+                <SelectItem value="download" className="rounded-lg">Download data then close</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Notes */}

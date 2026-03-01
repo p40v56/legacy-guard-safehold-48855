@@ -183,6 +183,13 @@ const Dashboard = () => {
       actionLabel: stats.contactsCount < 3 ? 'Add a contact' : 'Manage',
     },
     {
+      name: 'Financial Assets',
+      href: '/financials',
+      icon: Shield,
+      contextInfo: 'Estate & legacy assets',
+      actionLabel: 'Manage',
+    },
+    {
       name: 'Accounts',
       href: '/accounts',
       icon: CreditCard,
@@ -199,7 +206,7 @@ const Dashboard = () => {
   ];
 
   const securityItems = [
-    { label: 'Two-Factor Auth', enabled: true, explanation: 'Your account is protected by two-factor authentication.' },
+    { label: 'Vault Auto-Lock', enabled: true, explanation: 'Your vault automatically locks after 15 minutes of inactivity, clearing encryption keys from memory.' },
     { label: 'Data Encryption', enabled: true, explanation: 'All data is encrypted client-side with AES-256-GCM before reaching our servers. We operate on a zero-knowledge basis.' },
     { label: 'Backup Status', enabled: true, explanation: 'Your encrypted data is automatically backed up and replicated across multiple zones.' },
     { label: 'Emergency Contacts', enabled: stats.contactsCount > 0, explanation: `You have configured ${stats.contactsCount} trusted contact${stats.contactsCount !== 1 ? 's' : ''}.` },

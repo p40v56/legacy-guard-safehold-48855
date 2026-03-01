@@ -19,6 +19,7 @@ interface DigitalAccount {
   importance: ImportanceLevel;
   closure_action: ClosureAction;
   notes?: string;
+  credentials?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -55,6 +56,7 @@ export const useAccounts = () => {
           importance: decrypted.importance as ImportanceLevel,
           closure_action: decrypted.closure_action as ClosureAction,
           notes: decrypted.notes || undefined,
+          credentials: decrypted.credentials || undefined,
           created_at: decrypted.created_at,
           updated_at: decrypted.updated_at || undefined,
         };
@@ -93,6 +95,7 @@ export const useAccounts = () => {
           platform: formData.platform,
           email: formData.email,
           notes: formData.notes,
+          credentials: formData.credentials,
         };
         const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
         accountData = { ...accountData, ...encrypted };
@@ -110,6 +113,7 @@ export const useAccounts = () => {
         importance: formData.importance,
         closure_action: formData.closure_action,
         notes: formData.notes || undefined,
+        credentials: formData.credentials || undefined,
         created_at: newAccount.created_at,
         updated_at: newAccount.updated_at || undefined,
       };
@@ -147,6 +151,7 @@ export const useAccounts = () => {
           platform: formData.platform,
           email: formData.email,
           notes: formData.notes,
+          credentials: formData.credentials,
         };
         const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
         accountData = { ...accountData, ...encrypted };
@@ -163,6 +168,7 @@ export const useAccounts = () => {
         importance: formData.importance,
         closure_action: formData.closure_action,
         notes: formData.notes || undefined,
+        credentials: formData.credentials || undefined,
         created_at: updatedAccount.created_at,
         updated_at: updatedAccount.updated_at || undefined,
       };

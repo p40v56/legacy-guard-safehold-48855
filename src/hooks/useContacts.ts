@@ -48,7 +48,7 @@ export const useContacts = () => {
           created_at: decrypted.created_at,
         };
       }));
-      setContacts(transformedData);
+      setContacts(transformedData.sort((a, b) => (a.priority_order ?? 99) - (b.priority_order ?? 99)));
     } catch (error) {
       console.error('Error fetching contacts:', error);
       toast({
@@ -98,7 +98,7 @@ export const useContacts = () => {
         custom_message: formData.custom_message || null,
         created_at: newContact.created_at,
       };
-      setContacts(prev => [...prev, transformedContact]);
+      setContacts(prev => [...prev, transformedContact].sort((a, b) => (a.priority_order ?? 99) - (b.priority_order ?? 99)));
       
       toast({
         title: "Success",
@@ -151,7 +151,7 @@ export const useContacts = () => {
       };
       setContacts(prev => prev.map(contact => 
         contact.id === contactId ? transformedContact : contact
-      ));
+      ).sort((a, b) => (a.priority_order ?? 99) - (b.priority_order ?? 99)));
       
       toast({
         title: "Success",

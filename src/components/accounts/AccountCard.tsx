@@ -78,6 +78,13 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) 
                   <p className="text-foreground mt-1">{account.notes}</p>
                 </div>
               )}
+
+              {(account as any).closure_action && (
+                <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border">
+                  <span className="text-muted-foreground text-xs font-medium uppercase">Closure action:</span>
+                  <p className="text-foreground text-sm mt-1 capitalize">{(account as any).closure_action}</p>
+                </div>
+              )}
               
               <div className="flex items-center gap-2 mt-3">
                 <span className="text-muted-foreground">Created:</span>

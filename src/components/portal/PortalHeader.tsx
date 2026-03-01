@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Info } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface PortalHeaderProps {
   contactName: string;
@@ -42,7 +43,7 @@ const PortalHeader: React.FC<PortalHeaderProps> = ({ contactName, userName, swit
           </div>
           <div 
             className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: emergencyInstructions }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(emergencyInstructions) }}
           />
         </div>
       )}

@@ -44,6 +44,7 @@ interface UserSettings {
   grace_period_active: boolean;
   grace_period_end: string | null;
   switch_triggered: boolean;
+  switch_triggered_at: string | null;
 }
 
 interface Contact {
@@ -145,6 +146,50 @@ function filterDocumentsByPermissions(documents: Document[], permissions: any): 
   return documents.filter((doc) => allowedCategories.includes(doc.document_type));
 }
 
+/**
+ * Check whether a contact should be notified based on activation rules and delay_hours.
+ * Returns true if the contact is eligible for notification at this point in time.
+ */
+function shouldNotifyContact(
+  contact: Contact,
+  activationRules: ActivationRule[],
+  switchTriggeredAt: string | null,
+  now: Date
+): boolean {
+  // If no activation rules exist, notify all contacts immediately
+  if (activationRules.length === 0) return true;
+  if (!switchTriggeredAt) return true;
+
+  const triggeredTime = new Date(switchTriggeredAt).getTime();
+  const elapsedHours = (now.getTime() - triggeredTime) / (1000 * 60 * 60);
+
+  // Find the minimum delay_hours that applies to this contact from enabled rules
+  let applicableDelayHours: number | null = null;
+
+  for (const rule of activationRules) {
+    if (!rule.enabled) continue;
+
+    let ruleAppliesToContact = false;
+
+    if (rule.target_type === "contacts" && rule.contact_ids?.includes(contact.id)) {
+      ruleAppliesToContact = true;
+    } else if (rule.target_type === "category" && rule.contact_category === contact.contact_type) {
+      ruleAppliesToContact = true;
+    }
+
+    if (ruleAppliesToContact) {
+      if (applicableDelayHours === null || rule.delay_hours < applicableDelayHours) {
+        applicableDelayHours = rule.delay_hours;
+      }
+    }
+  }
+
+  // If no rule specifically targets this contact, notify immediately (backward compatible)
+  if (applicableDelayHours === null) return true;
+
+  return elapsedHours >= applicableDelayHours;
+}
+
 async function startGracePeriod(
   supabase: any,
   supabaseUrl: string,
@@ -169,6 +214,18 @@ async function startGracePeriod(
   if (updateError) {
     console.error("Error starting grace period:", updateError);
     return { success: false, error: updateError.message };
+  }
+
+  // Check notification preferences — skip email if email_notifications is off
+  const { data: notifSettings } = await supabase
+    .from("notification_settings")
+    .select("email_notifications")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (notifSettings && notifSettings.email_notifications === false) {
+    console.log(`User ${userId} has email notifications disabled, skipping grace period warning email`);
+    return { success: true };
   }
 
   const userEmail = await getUserEmail(supabase, userId);
@@ -262,35 +319,56 @@ async function triggerSwitch(
   const authEmail = await getUserEmail(supabase, userId);
   const userName = authEmail || "the vault owner";
 
-  const { error: updateError } = await supabase
-    .from("user_settings")
-    .update({
-      switch_triggered: true,
-      switch_triggered_at: now.toISOString(),
-      is_active: false,
-    })
-    .eq("user_id", userId);
+  // Only update switch_triggered if not already set
+  if (!userSettings.switch_triggered) {
+    const { error: updateError } = await supabase
+      .from("user_settings")
+      .update({
+        switch_triggered: true,
+        switch_triggered_at: now.toISOString(),
+        is_active: false,
+      })
+      .eq("user_id", userId);
 
-  if (updateError) {
-    console.error("Error triggering switch:", updateError);
-    return { success: false, results: [] };
+    if (updateError) {
+      console.error("Error triggering switch:", updateError);
+      return { success: false, results: [] };
+    }
   }
 
-  const [contactsRes, typePermissionsRes] = await Promise.all([
+  const switchTriggeredAt = userSettings.switch_triggered_at || now.toISOString();
+
+  const [contactsRes, typePermissionsRes, rulesRes, alreadySentRes] = await Promise.all([
     supabase.from("contacts").select("*").eq("user_id", userId).eq("can_receive_messages", true),
     supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
+    supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
+    supabase.from("sent_notifications").select("contact_id").eq("user_id", userId).eq("notification_type", "switch_triggered").eq("status", "sent"),
   ]);
 
   const contacts = (contactsRes.data || []) as Contact[];
   const typePermissions = (typePermissionsRes.data || []) as ContactTypePermission[];
+  const activationRules = (rulesRes.data || []) as ActivationRule[];
+  const alreadySentContactIds = new Set((alreadySentRes.data || []).map((r: any) => r.contact_id));
 
-  console.log(`Processing ${contacts.length} contacts`);
+  console.log(`Processing ${contacts.length} contacts with ${activationRules.length} activation rules`);
 
   const results: any[] = [];
 
   for (const contact of contacts) {
     if (!contact.email) {
       console.log(`Skipping contact (no email)`);
+      continue;
+    }
+
+    // Skip contacts already notified
+    if (alreadySentContactIds.has(contact.id)) {
+      console.log(`Skipping contact ${contact.id} — already notified`);
+      continue;
+    }
+
+    // Check delay_hours from activation rules
+    if (!shouldNotifyContact(contact, activationRules, switchTriggeredAt, now)) {
+      console.log(`Skipping contact ${contact.id} — delay_hours not yet reached`);
       continue;
     }
 
@@ -386,18 +464,19 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: activeSettings, error: settingsError } = await supabase
       .from("user_settings")
       .select("*")
-      .eq("is_active", true);
+      .or("is_active.eq.true,switch_triggered.eq.true");
 
     if (settingsError) {
       console.error("Error fetching settings:", settingsError);
       throw settingsError;
     }
 
-    console.log(`Found ${activeSettings?.length || 0} active users`);
+    console.log(`Found ${activeSettings?.length || 0} active/triggered users`);
 
     const results = {
       gracePeriodStarted: [] as any[],
       switchTriggered: [] as any[],
+      delayedNotificationsSent: [] as any[],
     };
 
     const settingsList = (activeSettings || []) as UserSettings[];
@@ -410,6 +489,15 @@ const handler = async (req: Request): Promise<Response> => {
         .select("*")
         .eq("user_id", userId)
         .single();
+
+      // Handle already-triggered switches with pending delayed notifications
+      if (settings.switch_triggered && settings.switch_triggered_at) {
+        const triggerResult = await triggerSwitch(supabase, supabaseUrl, supabaseServiceKey, settings, profile);
+        if (triggerResult.results.length > 0) {
+          results.delayedNotificationsSent.push({ userId, ...triggerResult });
+        }
+        continue;
+      }
 
       if (settings.grace_period_active && settings.grace_period_end) {
         const graceEnd = new Date(settings.grace_period_end);
@@ -436,7 +524,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(
-      `=== Results: ${results.gracePeriodStarted.length} grace periods started, ${results.switchTriggered.length} switches triggered ===`
+      `=== Results: ${results.gracePeriodStarted.length} grace periods, ${results.switchTriggered.length} triggers, ${results.delayedNotificationsSent.length} delayed ===`
     );
 
     return new Response(JSON.stringify({ success: true, ...results }), {

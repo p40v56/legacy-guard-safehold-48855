@@ -38,6 +38,7 @@ interface AccountFormData {
   importance: ImportanceLevel;
   closure_action: ClosureAction;
   notes: string;
+  credentials: string;
 }
 
 const Accounts = () => {
@@ -50,7 +51,7 @@ const Accounts = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [formData, setFormData] = useState<AccountFormData>({
     platform: '', username: '', email: '', account_type: 'social',
-    importance: 'medium', closure_action: 'memorialize', notes: '',
+    importance: 'medium', closure_action: 'memorialize', notes: '', credentials: '',
   });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
@@ -119,14 +120,14 @@ const Accounts = () => {
     setFormData({
       platform: account.platform, username: account.username || '', email: account.email || '',
       account_type: account.account_type, importance: account.importance,
-      closure_action: account.closure_action, notes: account.notes || '',
+      closure_action: account.closure_action, notes: account.notes || '', credentials: account.credentials || '',
     });
     setEditingAccount(account);
     setShowForm(true);
   };
 
   const resetForm = () => {
-    setFormData({ platform: '', username: '', email: '', account_type: 'social', importance: 'medium', closure_action: 'memorialize', notes: '' });
+    setFormData({ platform: '', username: '', email: '', account_type: 'social', importance: 'medium', closure_action: 'memorialize', notes: '', credentials: '' });
     setShowForm(false);
     setEditingAccount(null);
   };
@@ -257,6 +258,11 @@ const Accounts = () => {
                           <div className="space-y-2">
                             <Label className="text-card-foreground">Notes</Label>
                             <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={4} placeholder="Additional notes..." />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-card-foreground">Credentials / Password Hint</Label>
+                            <Textarea value={formData.credentials} onChange={(e) => setFormData({...formData, credentials: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={3} placeholder="Password hints, recovery codes... (encrypted)" />
+                            <p className="text-xs text-muted-foreground">End-to-end encrypted. Only visible to authorized contacts.</p>
                           </div>
                           <div className="flex gap-3 pt-4">
                             <Button type="submit" className="bg-primary hover:bg-primary/90 rounded-full px-6">{editingAccount ? 'Update Account' : 'Add Account'}</Button>

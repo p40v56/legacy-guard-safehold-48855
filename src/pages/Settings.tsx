@@ -262,7 +262,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-muted/30 rounded-2xl p-1.5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 bg-muted/30 rounded-2xl p-1.5 mb-6 overflow-x-auto">
             <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
               <User className="w-4 h-4 mr-2" />Profile
             </TabsTrigger>

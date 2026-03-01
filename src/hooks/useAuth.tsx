@@ -45,6 +45,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
+    let initialCheckDone = false;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -55,18 +57,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else {
           setIsDeactivated(false);
         }
+        initialCheckDone = true;
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session — but skip if onAuthStateChange already fired
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkDeactivated(session.user.id);
+      if (!initialCheckDone) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          checkDeactivated(session.user.id);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

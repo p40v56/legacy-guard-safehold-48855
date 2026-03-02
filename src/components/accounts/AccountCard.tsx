@@ -16,6 +16,7 @@ interface DigitalAccount {
   username?: string;
   website_url?: string;
   notes?: string;
+  credentials?: string;
   created_at: string;
 }
 
@@ -76,6 +77,13 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) 
                 <div className="mt-3">
                   <span className="text-muted-foreground">Notes:</span>
                   <p className="text-foreground mt-1">{account.notes}</p>
+                </div>
+              )}
+
+              {account.credentials && (
+                <div className="mt-3">
+                  <span className="text-muted-foreground text-xs font-medium uppercase">Credentials / Password hint:</span>
+                  <p className="text-foreground text-sm mt-1 font-mono">{account.credentials}</p>
                 </div>
               )}
 

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -452,13 +453,11 @@ const Documents = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-card-foreground">Description</Label>
-                <Textarea
+                <Label className="text-card-foreground">Document Content</Label>
+                <RichTextEditor
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="bg-muted/50 border-border rounded-xl"
-                  rows={4}
-                  placeholder="Brief description of the document and its importance..."
+                  onChange={(value) => setFormData({...formData, description: value})}
+                  placeholder="Write your document content here — supports formatting..."
                 />
               </div>
 

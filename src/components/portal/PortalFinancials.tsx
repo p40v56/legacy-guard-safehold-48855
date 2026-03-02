@@ -138,6 +138,10 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
 
+      <p className="text-gray-400 text-xs italic">
+        Only assets shared with you are shown here. Other trusted contacts may see a different selection.
+      </p>
+
       {/* Summary bar */}
       {(assetTotal > 0 || debtTotal > 0) && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2">

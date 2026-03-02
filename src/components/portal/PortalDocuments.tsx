@@ -23,6 +23,8 @@ const formatDocumentType = (type: string) =>
 
 const CONTENT_PREVIEW_LENGTH = 300;
 
+const isHtml = (str: string) => /<[a-z][\s\S]*>/i.test(str);
+
 const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -74,33 +76,41 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
                 {doc.description && <p className="text-gray-500 text-sm mb-3">{doc.description}</p>}
                 {doc.content && (
                   <div className="mb-3">
-                    {isLong && !isExpanded ? (
+                    {isHtml(doc.content) ? (
                       <>
-                        <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm leading-relaxed">
-                          {doc.content.slice(0, CONTENT_PREVIEW_LENGTH)}…
-                        </div>
-                        <button
-                          onClick={() => toggleExpand(doc.id)}
-                          className="text-blue-600 text-xs mt-2 hover:underline"
-                        >
-                          Read full document →
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <div
-                          className="bg-gray-50 rounded-lg p-4 prose prose-sm max-w-none text-gray-700"
-                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(doc.content) }}
-                        />
-                        {isLong && (
-                          <button
-                            onClick={() => toggleExpand(doc.id)}
-                            className="text-blue-600 text-xs mt-2 hover:underline"
-                          >
-                            ← Collapse
-                          </button>
+                        {isLong && !isExpanded ? (
+                          <>
+                            <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm leading-relaxed">
+                              {doc.content.replace(/<[^>]*>/g, '').slice(0, CONTENT_PREVIEW_LENGTH)}…
+                            </div>
+                            <button
+                              onClick={() => toggleExpand(doc.id)}
+                              className="text-blue-600 text-xs mt-2 hover:underline"
+                            >
+                              Read full document →
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <div
+                              className="bg-gray-50 rounded-lg p-4 prose prose-sm max-w-none text-gray-700"
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(doc.content) }}
+                            />
+                            {isLong && (
+                              <button
+                                onClick={() => toggleExpand(doc.id)}
+                                className="text-blue-600 text-xs mt-2 hover:underline"
+                              >
+                                ← Collapse
+                              </button>
+                            )}
+                          </>
                         )}
                       </>
+                    ) : (
+                      <pre className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                        {doc.content}
+                      </pre>
                     )}
                   </div>
                 )}

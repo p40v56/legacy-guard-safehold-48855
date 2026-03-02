@@ -842,21 +842,13 @@ export type Database = {
     }
     Functions: {
       admin_get_stats: { Args: never; Returns: Json }
-      admin_get_user_emails:
-        | {
-            Args: never
-            Returns: {
-              email: string
-              user_id: string
-            }[]
-          }
-        | {
-            Args: { row_limit?: number }
-            Returns: {
-              email: string
-              user_id: string
-            }[]
-          }
+      admin_get_user_emails: {
+        Args: { row_limit?: number }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       admin_list_profiles: {
         Args: never
         Returns: {

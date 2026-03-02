@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -43,12 +44,14 @@ interface AccountFormData {
 
 const Accounts = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const { plan } = usePlan();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+  const defaultTab = searchParams.get('tab') || 'all';
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [formData, setFormData] = useState<AccountFormData>({
     platform: '', username: '', email: '', account_type: 'social',
     importance: 'medium', closure_action: 'memorialize', notes: '', credentials: '',

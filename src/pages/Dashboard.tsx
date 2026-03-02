@@ -184,7 +184,7 @@ const Dashboard = () => {
     },
     {
       name: 'Financial Assets',
-      href: '/financials',
+      href: '/accounts',
       icon: Shield,
       contextInfo: 'Estate & legacy assets',
       actionLabel: 'Manage',

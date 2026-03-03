@@ -22,6 +22,7 @@ interface DigitalAccount {
   credentials?: string;
   created_at: string;
   updated_at?: string;
+  attached_document_ids?: string[] | null;
 }
 
 // Fields that get encrypted before storage
@@ -59,6 +60,7 @@ export const useAccounts = () => {
           credentials: decrypted.credentials || undefined,
           created_at: decrypted.created_at,
           updated_at: decrypted.updated_at || undefined,
+          attached_document_ids: (decrypted as any).attached_document_ids || null,
         };
       }));
       setAccounts(transformedData);
@@ -116,6 +118,7 @@ export const useAccounts = () => {
         credentials: formData.credentials || undefined,
         created_at: newAccount.created_at,
         updated_at: newAccount.updated_at || undefined,
+        attached_document_ids: formData.attached_document_ids || null,
       };
       setAccounts(prev => [...prev, transformedAccount]);
       
@@ -171,6 +174,7 @@ export const useAccounts = () => {
         credentials: formData.credentials || undefined,
         created_at: updatedAccount.created_at,
         updated_at: updatedAccount.updated_at || undefined,
+        attached_document_ids: formData.attached_document_ids || null,
       };
       setAccounts(prev => prev.map(account => 
         account.id === accountId ? transformedAccount : account

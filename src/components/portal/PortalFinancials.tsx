@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, ArrowLeft, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, ArrowLeft, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package, Copy, Check, FileText, Download, Eye } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+
+interface AttachedDocument {
+  id: string;
+  title: string;
+  file_path: string | null;
+  document_type: string;
+}
 
 interface FinancialAsset {
   id: string;
@@ -15,6 +22,7 @@ interface FinancialAsset {
   notes: string | null;
   category_specific_fields: Record<string, any> | null;
   updated_at?: string | null;
+  attached_documents?: AttachedDocument[];
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -39,6 +47,11 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 
 const CATEGORY_ORDER = ['insurance', 'bank_account', 'investment', 'pension', 'property', 'debt', 'other'];
 
+const DOC_TYPE_LABELS: Record<string, string> = {
+  legal: 'Legal', financial: 'Financial', medical: 'Medical', personal: 'Personal',
+  insurance: 'Insurance', property: 'Property', other: 'Other',
+};
+
 interface PortalFinancialsProps {
   financialAssets: FinancialAsset[];
 }
@@ -62,6 +75,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 
 const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) => {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(CATEGORY_ORDER));
+  const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const { token } = useParams();
   const navigate = useNavigate();
 
@@ -79,6 +93,31 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       next.has(cat) ? next.delete(cat) : next.add(cat);
       return next;
     });
+  };
+
+  const toggleDocExpand = (docId: string) => {
+    setExpandedDocs(prev => {
+      const next = new Set(prev);
+      next.has(docId) ? next.delete(docId) : next.add(docId);
+      return next;
+    });
+  };
+
+  const handleDocDownload = async (doc: AttachedDocument) => {
+    if (!doc.file_path) return;
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/get-document-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_path: doc.file_path, token }),
+      });
+      if (!response.ok) throw new Error('Failed to get download URL');
+      const { url } = await response.json();
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Download error:', error);
+    }
   };
 
   const assetTotal = financialAssets
@@ -130,6 +169,34 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
     }
 
     return fields;
+  };
+
+  const renderAttachedDocs = (docs?: AttachedDocument[]) => {
+    if (!docs || docs.length === 0) return null;
+    return (
+      <div className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-gray-600 text-xs font-semibold">
+          <FileText className="w-3.5 h-3.5" />
+          Attached Documents
+        </div>
+        {docs.map(doc => (
+          <div key={doc.id} className="flex items-center justify-between gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-700">{doc.title}</span>
+              <span className="text-gray-400 text-xs bg-gray-100 px-1.5 py-0.5 rounded">{DOC_TYPE_LABELS[doc.document_type] || doc.document_type}</span>
+            </div>
+            {doc.file_path && (
+              <button
+                onClick={() => handleDocDownload(doc)}
+                className="text-blue-600 hover:underline text-xs flex items-center gap-1"
+              >
+                <Download className="w-3 h-3" /> Download
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -242,6 +309,8 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
                       )}
 
                       {asset.notes && <p className="text-gray-600 text-sm whitespace-pre-wrap">{asset.notes}</p>}
+
+                      {renderAttachedDocs(asset.attached_documents)}
 
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-4 flex-wrap text-sm">

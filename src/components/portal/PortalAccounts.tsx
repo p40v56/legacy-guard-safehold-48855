@@ -1,6 +1,13 @@
 import React from 'react';
-import { Globe, Monitor, Mail, ArrowLeft } from 'lucide-react';
+import { Globe, Monitor, Mail, ArrowLeft, FileText, Download } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+
+interface AttachedDocument {
+  id: string;
+  title: string;
+  file_path: string | null;
+  document_type: string;
+}
 
 interface DigitalAccount {
   id: string;
@@ -14,6 +21,7 @@ interface DigitalAccount {
   closure_action: string | null;
   importance: string | null;
   updated_at?: string | null;
+  attached_documents?: AttachedDocument[];
 }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -28,6 +36,11 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 };
 
 const IMPORTANCE_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  legal: 'Legal', financial: 'Financial', medical: 'Medical', personal: 'Personal',
+  insurance: 'Insurance', property: 'Property', other: 'Other',
+};
 
 interface PortalAccountsProps {
   accounts: DigitalAccount[];
@@ -59,6 +72,51 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
     memorialize: { title: 'Memorialize this account', guidance: 'Contact the platform to request memorialization in their memory.' },
     transfer: { title: 'Transfer this account', guidance: 'Transfer this account to a designated recipient as instructed in the notes.' },
     download: { title: 'Download data before closing', guidance: "Use the platform's data export feature to download all data, then request closure." },
+  };
+
+  const handleDocDownload = async (doc: AttachedDocument) => {
+    if (!doc.file_path) return;
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/get-document-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_path: doc.file_path, token }),
+      });
+      if (!response.ok) throw new Error('Failed to get download URL');
+      const { url } = await response.json();
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+
+  const renderAttachedDocs = (docs?: AttachedDocument[]) => {
+    if (!docs || docs.length === 0) return null;
+    return (
+      <div className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-gray-600 text-xs font-semibold">
+          <FileText className="w-3.5 h-3.5" />
+          Attached Documents
+        </div>
+        {docs.map(doc => (
+          <div key={doc.id} className="flex items-center justify-between gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-700">{doc.title}</span>
+              <span className="text-gray-400 text-xs bg-gray-100 px-1.5 py-0.5 rounded">{DOC_TYPE_LABELS[doc.document_type] || doc.document_type}</span>
+            </div>
+            {doc.file_path && (
+              <button
+                onClick={() => handleDocDownload(doc)}
+                className="text-blue-600 hover:underline text-xs flex items-center gap-1"
+              >
+                <Download className="w-3 h-3" /> Download
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -119,6 +177,8 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
                 )}
 
                 {acct.notes && <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>}
+
+                {renderAttachedDocs(acct.attached_documents)}
 
                 {acct.updated_at && (
                   <p className="text-gray-400 text-xs mt-3">

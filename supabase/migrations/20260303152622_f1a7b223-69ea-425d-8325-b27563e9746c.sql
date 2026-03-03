@@ -1,0 +1,1 @@
+ALTER TABLE public.accounts ADD COLUMN IF NOT EXISTS attached_document_ids uuid[] DEFAULT '{}';

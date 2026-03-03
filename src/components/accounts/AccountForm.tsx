@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { CreditCard, Globe, Mail, User, FileText } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { supabase } from '@/integrations/supabase/client';
+import { decryptFields } from '@/lib/crypto';
 
 type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
 
@@ -19,6 +25,7 @@ interface AccountFormData {
   notes: string;
   credentials: string;
   closure_action: string;
+  attached_document_ids?: string[];
 }
 
 interface AccountFormProps {
@@ -36,6 +43,46 @@ const AccountForm: React.FC<AccountFormProps> = ({
   onCancel,
   isEditing
 }) => {
+  const { user } = useAuth();
+  const { vaultKey } = useEncryption();
+  const [availableDocs, setAvailableDocs] = useState<{id: string; title: string; document_type: string}[]>([]);
+  const [attachedDocIds, setAttachedDocIds] = useState<string[]>(formData.attached_document_ids || []);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchDocs = async () => {
+      const { data } = await supabase
+        .from('legacy_documents')
+        .select('id, title, title_iv, document_type')
+        .eq('user_id', user.id);
+      if (!data) return;
+      const docs = await Promise.all(data.map(async (doc) => {
+        let title = doc.title;
+        if (vaultKey && doc.title_iv) {
+          try {
+            const decrypted = await decryptFields(doc, ['title'], vaultKey);
+            title = decrypted.title || doc.title;
+          } catch { /* use raw */ }
+        }
+        return { id: doc.id, title, document_type: doc.document_type };
+      }));
+      setAvailableDocs(docs);
+    };
+    fetchDocs();
+  }, [user, vaultKey]);
+
+  // Sync attachedDocIds back to formData on change
+  useEffect(() => {
+    if (JSON.stringify(attachedDocIds) !== JSON.stringify(formData.attached_document_ids || [])) {
+      setFormData({ ...formData, attached_document_ids: attachedDocIds });
+    }
+  }, [attachedDocIds]);
+
+  // Sync from formData when it changes externally (e.g. editing different account)
+  useEffect(() => {
+    setAttachedDocIds(formData.attached_document_ids || []);
+  }, [formData.account_name, isEditing]);
+
   return (
     <Card className="glass border-none rounded-3xl overflow-hidden">
       <CardHeader className="bg-primary/10 pb-6">
@@ -177,6 +224,36 @@ const AccountForm: React.FC<AccountFormProps> = ({
               className="rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all min-h-[100px]"
               placeholder="Additional notes about this account..."
             />
+          </div>
+
+          {/* Linked Documents */}
+          <div className="space-y-3">
+            <Label className="text-card-foreground font-medium">Linked Documents</Label>
+            <p className="text-xs text-muted-foreground">Attach relevant documents to this account</p>
+            {availableDocs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {availableDocs.map(doc => (
+                  <div key={doc.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`acct-doc-${doc.id}`}
+                      checked={attachedDocIds.includes(doc.id)}
+                      onCheckedChange={(checked) => {
+                        setAttachedDocIds(prev =>
+                          checked ? [...prev, doc.id] : prev.filter(id => id !== doc.id)
+                        );
+                      }}
+                    />
+                    <label htmlFor={`acct-doc-${doc.id}`} className="text-sm text-card-foreground cursor-pointer flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                      {doc.title}
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{doc.document_type}</Badge>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">No documents yet. Upload documents in the Documents section first.</p>
+            )}
           </div>
 
           {/* Actions */}

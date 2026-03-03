@@ -1,9 +1,13 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { decryptFields } from '@/lib/crypto';
 
 type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
 
@@ -18,6 +22,7 @@ interface DigitalAccount {
   notes?: string;
   credentials?: string;
   created_at: string;
+  attached_document_ids?: string[] | null;
 }
 
 interface AccountCardProps {
@@ -27,6 +32,34 @@ interface AccountCardProps {
 }
 
 const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) => {
+  const [linkedDocs, setLinkedDocs] = useState<{id: string; title: string}[]>([]);
+  const navigate = useNavigate();
+  const { vaultKey } = useEncryption();
+
+  useEffect(() => {
+    const docIds = account.attached_document_ids;
+    if (!docIds || docIds.length === 0) return;
+    const fetchDocs = async () => {
+      const { data } = await supabase
+        .from('legacy_documents')
+        .select('id, title, title_iv')
+        .in('id', docIds);
+      if (!data) return;
+      const docs = await Promise.all(data.map(async (doc) => {
+        let title = doc.title;
+        if (vaultKey && doc.title_iv) {
+          try {
+            const decrypted = await decryptFields(doc, ['title'], vaultKey);
+            title = decrypted.title || doc.title;
+          } catch { /* use raw */ }
+        }
+        return { id: doc.id, title };
+      }));
+      setLinkedDocs(docs);
+    };
+    fetchDocs();
+  }, [account.attached_document_ids, vaultKey]);
+
   return (
     <Card className="bg-card border-border">
       <CardContent className="p-6">
@@ -91,6 +124,21 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete }) 
                 <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border">
                   <span className="text-muted-foreground text-xs font-medium uppercase">Closure action:</span>
                   <p className="text-foreground text-sm mt-1 capitalize">{(account as any).closure_action}</p>
+                </div>
+              )}
+
+              {linkedDocs.length > 0 && (
+                <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                  {linkedDocs.map(doc => (
+                    <button
+                      key={doc.id}
+                      onClick={() => navigate('/documents')}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
+                      📄 {doc.title}
+                    </button>
+                  ))}
                 </div>
               )}
               

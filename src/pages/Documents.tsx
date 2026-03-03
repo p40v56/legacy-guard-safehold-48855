@@ -10,12 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Plus, Edit, Trash2, Download, Eye, Upload, Calendar, Shield } from 'lucide-react';
+import { FileText, Plus, Edit, Trash2, Download, Eye, Upload, Calendar, Shield, Link2 } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
@@ -55,9 +54,11 @@ const Documents = () => {
   const [uploading, setUploading] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
+  // Reverse-link map: document ID → list of asset/account names that reference it
+  const [reverseLinks, setReverseLinks] = useState<Record<string, string[]>>({});
+
   const filteredDocuments = useMemo(() => {
     return documents.filter(document => {
-      // Safe string conversion with null checks
       const title = (document.title || '').toLowerCase();
       const description = (document.description || '').toLowerCase();
       const searchLower = searchTerm.toLowerCase();
@@ -80,8 +81,59 @@ const Documents = () => {
   useEffect(() => {
     if (user) {
       fetchDocuments();
+      fetchReverseLinks();
     }
   }, [user, vaultKey]);
+
+  const fetchReverseLinks = async () => {
+    if (!user) return;
+    try {
+      const [financialsRes, accountsRes] = await Promise.all([
+        supabase.from('financial_assets').select('name, name_iv, attached_document_ids').eq('user_id', user.id),
+        supabase.from('accounts').select('account_name, account_name_iv, attached_document_ids').eq('user_id', user.id),
+      ]);
+
+      const linkMap: Record<string, string[]> = {};
+
+      // Process financial assets
+      for (const asset of (financialsRes.data || [])) {
+        const docIds = asset.attached_document_ids as string[] | null;
+        if (!docIds || docIds.length === 0) continue;
+        let assetName = asset.name;
+        if (vaultKey && asset.name_iv) {
+          try {
+            const dec = await decryptFields(asset, ['name'], vaultKey);
+            assetName = dec.name || asset.name;
+          } catch { /* use raw */ }
+        }
+        for (const docId of docIds) {
+          if (!linkMap[docId]) linkMap[docId] = [];
+          linkMap[docId].push(assetName);
+        }
+      }
+
+      // Process accounts
+      for (const acct of (accountsRes.data || [])) {
+        const docIds = acct.attached_document_ids as string[] | null;
+        if (!docIds || docIds.length === 0) continue;
+        let acctName = acct.account_name;
+        if (vaultKey && acct.account_name_iv) {
+          try {
+            const dec = await decryptFields(acct, ['account_name'], vaultKey);
+            acctName = dec.account_name || acct.account_name;
+          } catch { /* use raw */ }
+        }
+        for (const docId of docIds) {
+          if (!linkMap[docId]) linkMap[docId] = [];
+          linkMap[docId].push(acctName);
+        }
+      }
+
+      setReverseLinks(linkMap);
+    } catch (error) {
+      console.error('Error fetching reverse links:', error);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -93,7 +145,6 @@ const Documents = () => {
 
       if (error) throw error;
       
-      // Decrypt document fields
       const decryptedDocs = await Promise.all((data || []).map(async (doc) => {
         if (vaultKey) {
           const decryptedValues = await decryptFields(doc, ['title', 'description', 'content'], vaultKey);
@@ -133,7 +184,6 @@ const Documents = () => {
         file_size: (formData as any).file_size || null,
       };
 
-      // Encrypt text fields before storage
       if (vaultKey) {
         const encrypted = await encryptFields({
           title: formData.title,
@@ -221,7 +271,6 @@ const Documents = () => {
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${user?.id}/${fileName}`;
 
-      // Read file and optionally encrypt before upload
       let fileToUpload: Blob | File = file;
       let fileIv: string | null = null;
 
@@ -243,7 +292,6 @@ const Documents = () => {
         description: `${file.name} has been uploaded successfully`,
       });
       
-      // Update form data with file info
       setFormData(prev => ({
         ...prev,
         title: prev.title || file.name.split('.')[0],
@@ -293,7 +341,6 @@ const Documents = () => {
 
       if (error) throw error;
 
-      // Decrypt file if it was encrypted (check for file_iv)
       let fileBlob = data;
       const docRecord = document as any;
       if (vaultKey && docRecord.file_iv) {
@@ -302,7 +349,6 @@ const Documents = () => {
         fileBlob = new Blob([decryptedBuffer], { type: document.file_type || 'application/octet-stream' });
       }
 
-      // Create download link
       const url = URL.createObjectURL(fileBlob);
       const a = window.document.createElement('a');
       a.href = url;
@@ -517,98 +563,114 @@ const Documents = () => {
             </div>
           ) : (
             <div className="grid gap-4">
-              {filteredDocuments.map((document) => (
-                <Card key={document.id} className="bg-muted/30 border-none rounded-2xl hover:bg-muted/50 transition-all duration-300 group">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
-                            <FileText className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-foreground mb-1 truncate">{document.title}</h3>
-                            <div className="flex items-center gap-3">
-                              <Badge 
-                                variant={document.is_public ? "default" : "secondary"} 
-                                className={`text-xs font-medium ${
-                                  document.is_public 
-                                    ? 'bg-success/20 text-success border-success/30' 
-                                    : 'bg-muted text-muted-foreground border-border'
-                                }`}
-                              >
-                                {document.is_public ? 'Public' : 'Private'}
-                              </Badge>
-                              <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(document.created_at).toLocaleDateString()}
+              {filteredDocuments.map((document) => {
+                const links = reverseLinks[document.id];
+                return (
+                  <Card key={document.id} className="bg-muted/30 border-none rounded-2xl hover:bg-muted/50 transition-all duration-300 group">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
+                              <FileText className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-lg font-semibold text-foreground mb-1 truncate">{document.title}</h3>
+                              <div className="flex items-center gap-3">
+                                <Badge 
+                                  variant={document.is_public ? "default" : "secondary"} 
+                                  className={`text-xs font-medium ${
+                                    document.is_public 
+                                      ? 'bg-success/20 text-success border-success/30' 
+                                      : 'bg-muted text-muted-foreground border-border'
+                                  }`}
+                                >
+                                  {document.is_public ? 'Public' : 'Private'}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(document.created_at).toLocaleDateString()}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        {document.description && (
-                          <p className="text-muted-foreground mb-4 leading-relaxed">{document.description}</p>
-                        )}
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          {document.file_type && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground font-medium">Type:</span>
-                              <span className="text-foreground">{document.file_type}</span>
-                            </div>
+                          
+                          {document.description && (
+                            <p className="text-muted-foreground mb-4 leading-relaxed">{document.description}</p>
                           )}
                           
-                          {document.file_size && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground font-medium">Size:</span>
-                              <span className="text-foreground">{formatFileSize(document.file_size)}</span>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            {document.file_type && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground font-medium">Type:</span>
+                                <span className="text-foreground">{document.file_type}</span>
+                              </div>
+                            )}
+                            
+                            {document.file_size && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground font-medium">Size:</span>
+                                <span className="text-foreground">{formatFileSize(document.file_size)}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Reverse links - "Used by" indicator */}
+                          {links && links.length > 0 && (
+                            <div className="flex items-center gap-2 mt-3 flex-wrap">
+                              <Link2 className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                              <span className="text-xs text-muted-foreground">Linked to:</span>
+                              {links.map((name, i) => (
+                                <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                                  {name}
+                                </span>
+                              ))}
                             </div>
                           )}
                         </div>
+                        
+                        <div className="flex items-center gap-1 ml-6">
+                          {document.file_path && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted h-10 w-10 p-0"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload(document)}
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted h-10 w-10 p-0"
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(document)}
+                            className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-10 w-10 p-0"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTargetId(document.id)}
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center gap-1 ml-6">
-                        {document.file_path && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-muted-foreground hover:text-foreground hover:bg-muted h-10 w-10 p-0"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDownload(document)}
-                              className="text-muted-foreground hover:text-foreground hover:bg-muted h-10 w-10 p-0"
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(document)}
-                          className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-10 w-10 p-0"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteTargetId(document.id)}
-                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

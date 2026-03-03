@@ -82,6 +82,7 @@ export const useFinancialAssets = () => {
         contact_name: assetData.contact_name || null,
         contact_phone: assetData.contact_phone || null,
         contact_email: assetData.contact_email || null,
+        attached_document_ids: assetData.attached_document_ids || null,
       };
       setAssets(prev => [localAsset, ...prev]);
       toast({ title: 'Success', description: 'Financial asset added successfully' });

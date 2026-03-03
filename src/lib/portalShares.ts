@@ -108,15 +108,17 @@ export async function createPortalShares(
   const decryptedContactValues = await decryptFields(contact, ENCRYPTED_CONTACT_FIELDS, vaultKey);
   const decryptedContact = { ...contact, ...decryptedContactValues };
 
-  // Decrypt & filter documents
+  // Decrypt ALL documents (before permission filtering, for attached doc lookups)
+  const allDocs = await Promise.all(
+    (docsRes.data || []).map(async (doc: any) => {
+      const decrypted = await decryptFields(doc, ENCRYPTED_DOC_FIELDS, vaultKey);
+      return { ...doc, ...decrypted };
+    })
+  );
+
+  // Filter documents by permissions
   let documents: any[] = [];
   if (!isFree) {
-    const allDocs = await Promise.all(
-      (docsRes.data || []).map(async (doc: any) => {
-        const decrypted = await decryptFields(doc, ENCRYPTED_DOC_FIELDS, vaultKey);
-        return { ...doc, ...decrypted };
-      })
-    );
     const docPerms = permissions.legacy_documents;
     if (docPerms) {
       if (docPerms.all_documents) {
@@ -172,6 +174,20 @@ export async function createPortalShares(
       return a.visible_to.includes(contactId);
     });
   }
+
+  // Helper to resolve attached documents from allDocs
+  const resolveAttachedDocs = (docIds: string[] | null | undefined) => {
+    if (!docIds || docIds.length === 0) return [];
+    return docIds
+      .map((docId: string) => allDocs.find((d: any) => d.id === docId))
+      .filter(Boolean)
+      .map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        file_path: d.file_path || null,
+        document_type: d.document_type,
+      }));
+  };
 
   // Custom message resolution
   let customMessage = decryptedContact.custom_message || null;
@@ -230,6 +246,7 @@ export async function createPortalShares(
       email: a.email, account_type: a.account_type, importance: a.importance,
       closure_action: a.closure_action, notes: a.notes, website_url: a.website_url,
       updated_at: a.updated_at,
+      attached_documents: resolveAttachedDocs(a.attached_document_ids),
     })),
     financialAssets: financialAssets.map((f) => ({
       id: f.id, name: f.name, category: f.category, institution: f.institution,
@@ -237,6 +254,7 @@ export async function createPortalShares(
       notes: f.notes, contact_name: f.contact_name, contact_phone: f.contact_phone,
       contact_email: f.contact_email, category_specific_fields: f.category_specific_fields || {},
       updated_at: f.updated_at,
+      attached_documents: resolveAttachedDocs(f.attached_document_ids),
     })),
     permissions,
   };

@@ -19,6 +19,7 @@ export type Database = {
           account_name: string
           account_name_iv: string | null
           account_type: string
+          attached_document_ids: string[] | null
           closure_action: string | null
           created_at: string
           credentials: string | null
@@ -42,6 +43,7 @@ export type Database = {
           account_name: string
           account_name_iv?: string | null
           account_type: string
+          attached_document_ids?: string[] | null
           closure_action?: string | null
           created_at?: string
           credentials?: string | null
@@ -65,6 +67,7 @@ export type Database = {
           account_name?: string
           account_name_iv?: string | null
           account_type?: string
+          attached_document_ids?: string[] | null
           closure_action?: string | null
           created_at?: string
           credentials?: string | null

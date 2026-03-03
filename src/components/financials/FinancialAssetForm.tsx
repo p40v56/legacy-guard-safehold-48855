@@ -7,10 +7,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { PoundSterling } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { PoundSterling, FileText } from 'lucide-react';
 import type { FinancialAsset, FinancialCategory, FinancialAssetInsert } from '@/types/financial';
 import { CATEGORY_LABELS } from '@/types/financial';
 import { useContacts } from '@/hooks/useContacts';
+import { useAuth } from '@/hooks/useAuth';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { supabase } from '@/integrations/supabase/client';
+import { decryptFields } from '@/lib/crypto';
 
 interface FinancialAssetFormProps {
   initialData?: FinancialAsset | null;
@@ -20,6 +25,8 @@ interface FinancialAssetFormProps {
 
 const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, onSubmit, onCancel }) => {
   const { contacts } = useContacts();
+  const { user } = useAuth();
+  const { vaultKey } = useEncryption();
   const [category, setCategory] = useState<FinancialCategory>(initialData?.category || 'bank_account');
   const [name, setName] = useState(initialData?.name || '');
   const [institution, setInstitution] = useState(initialData?.institution || '');
@@ -32,6 +39,31 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
   const [csf, setCsf] = useState<Record<string, any>>(initialData?.category_specific_fields || {});
   const [visibleToAll, setVisibleToAll] = useState(!initialData?.visible_to || initialData.visible_to.length === 0);
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>(initialData?.visible_to || []);
+  const [attachedDocIds, setAttachedDocIds] = useState<string[]>(initialData?.attached_document_ids || []);
+  const [availableDocs, setAvailableDocs] = useState<{id: string; title: string; document_type: string}[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchDocs = async () => {
+      const { data } = await supabase
+        .from('legacy_documents')
+        .select('id, title, title_iv, document_type')
+        .eq('user_id', user.id);
+      if (!data) return;
+      const docs = await Promise.all(data.map(async (doc) => {
+        let title = doc.title;
+        if (vaultKey && doc.title_iv) {
+          try {
+            const decrypted = await decryptFields(doc, ['title'], vaultKey);
+            title = decrypted.title || doc.title;
+          } catch { /* use raw */ }
+        }
+        return { id: doc.id, title, document_type: doc.document_type };
+      }));
+      setAvailableDocs(docs);
+    };
+    fetchDocs();
+  }, [user, vaultKey]);
 
   const updateCsf = (key: string, value: any) => setCsf(prev => ({ ...prev, [key]: value }));
 
@@ -49,7 +81,7 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
       notes: notes || null,
       category_specific_fields: csf,
       visible_to: visibleToAll ? null : (selectedContactIds.length > 0 ? selectedContactIds : null),
-      attached_document_ids: null,
+      attached_document_ids: attachedDocIds.length > 0 ? attachedDocIds : null,
     });
   };
 
@@ -335,6 +367,36 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
           )}
           {!visibleToAll && contacts.length === 0 && (
             <p className="text-xs text-muted-foreground">No contacts available. Add contacts first.</p>
+          )}
+        </div>
+
+        {/* Linked Documents */}
+        <div className="space-y-4">
+          <Label className="text-card-foreground font-medium">Linked Documents</Label>
+          <p className="text-xs text-muted-foreground">Attach relevant documents (e.g. policy PDF, deed, certificate)</p>
+          {availableDocs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {availableDocs.map(doc => (
+                <div key={doc.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`doc-${doc.id}`}
+                    checked={attachedDocIds.includes(doc.id)}
+                    onCheckedChange={(checked) => {
+                      setAttachedDocIds(prev =>
+                        checked ? [...prev, doc.id] : prev.filter(id => id !== doc.id)
+                      );
+                    }}
+                  />
+                  <label htmlFor={`doc-${doc.id}`} className="text-sm text-card-foreground cursor-pointer flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                    {doc.title}
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{doc.document_type}</Badge>
+                  </label>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">No documents yet. Upload documents in the Documents section first.</p>
           )}
         </div>
 

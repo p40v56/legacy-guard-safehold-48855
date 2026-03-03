@@ -3,6 +3,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { decryptFields } from '@/lib/crypto';
+import { supabase } from '@/integrations/supabase/client';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,8 +14,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Plus, Edit, Trash2, PoundSterling } from 'lucide-react';
+import { CreditCard, Plus, Edit, Trash2, PoundSterling, FileText } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
@@ -40,6 +44,7 @@ interface AccountFormData {
   closure_action: ClosureAction;
   notes: string;
   credentials: string;
+  attached_document_ids: string[];
 }
 
 const Accounts = () => {
@@ -47,6 +52,7 @@ const Accounts = () => {
   const [searchParams] = useSearchParams();
   const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const { plan } = usePlan();
+  const { vaultKey } = useEncryption();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,8 +61,34 @@ const Accounts = () => {
   const [formData, setFormData] = useState<AccountFormData>({
     platform: '', username: '', email: '', account_type: 'social',
     importance: 'medium', closure_action: 'memorialize', notes: '', credentials: '',
+    attached_document_ids: [],
   });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [availableDocs, setAvailableDocs] = useState<{id: string; title: string; document_type: string}[]>([]);
+
+  // Fetch available documents for linking
+  useEffect(() => {
+    if (!user) return;
+    const fetchDocs = async () => {
+      const { data } = await supabase
+        .from('legacy_documents')
+        .select('id, title, title_iv, document_type')
+        .eq('user_id', user.id);
+      if (!data) return;
+      const docs = await Promise.all(data.map(async (doc) => {
+        let title = doc.title;
+        if (vaultKey && doc.title_iv) {
+          try {
+            const decrypted = await decryptFields(doc, ['title'], vaultKey);
+            title = decrypted.title || doc.title;
+          } catch { /* use raw */ }
+        }
+        return { id: doc.id, title, document_type: doc.document_type };
+      }));
+      setAvailableDocs(docs);
+    };
+    fetchDocs();
+  }, [user, vaultKey]);
 
   // Compute dynamic category tabs from accounts
   const categoryTabs = useMemo(() => {
@@ -111,10 +143,14 @@ const Accounts = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const submitData = {
+      ...formData,
+      attached_document_ids: formData.attached_document_ids.length > 0 ? formData.attached_document_ids : undefined,
+    };
     if (editingAccount) {
-      await updateAccount(editingAccount.id, formData);
+      await updateAccount(editingAccount.id, submitData as any);
     } else {
-      await createAccount(formData);
+      await createAccount(submitData as any);
     }
     resetForm();
   };
@@ -124,13 +160,14 @@ const Accounts = () => {
       platform: account.platform, username: account.username || '', email: account.email || '',
       account_type: account.account_type, importance: account.importance,
       closure_action: account.closure_action, notes: account.notes || '', credentials: account.credentials || '',
+      attached_document_ids: account.attached_document_ids || [],
     });
     setEditingAccount(account);
     setShowForm(true);
   };
 
   const resetForm = () => {
-    setFormData({ platform: '', username: '', email: '', account_type: 'social', importance: 'medium', closure_action: 'memorialize', notes: '', credentials: '' });
+    setFormData({ platform: '', username: '', email: '', account_type: 'social', importance: 'medium', closure_action: 'memorialize', notes: '', credentials: '', attached_document_ids: [] });
     setShowForm(false);
     setEditingAccount(null);
   };
@@ -267,6 +304,40 @@ const Accounts = () => {
                             <Textarea value={formData.credentials} onChange={(e) => setFormData({...formData, credentials: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={3} placeholder="Password hints, recovery codes... (encrypted)" />
                             <p className="text-xs text-muted-foreground">End-to-end encrypted. Only visible to authorized contacts.</p>
                           </div>
+
+                          {/* Linked Documents */}
+                          <div className="space-y-3">
+                            <Label className="text-card-foreground font-medium">Linked Documents</Label>
+                            <p className="text-xs text-muted-foreground">Attach relevant documents to this account</p>
+                            {availableDocs.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {availableDocs.map(doc => (
+                                  <div key={doc.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`inline-doc-${doc.id}`}
+                                      checked={formData.attached_document_ids.includes(doc.id)}
+                                      onCheckedChange={(checked) => {
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          attached_document_ids: checked
+                                            ? [...prev.attached_document_ids, doc.id]
+                                            : prev.attached_document_ids.filter(id => id !== doc.id)
+                                        }));
+                                      }}
+                                    />
+                                    <label htmlFor={`inline-doc-${doc.id}`} className="text-sm text-card-foreground cursor-pointer flex items-center gap-2">
+                                      <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                                      {doc.title}
+                                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{doc.document_type}</Badge>
+                                    </label>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground italic">No documents yet. Upload documents in the Documents section first.</p>
+                            )}
+                          </div>
+
                           <div className="flex gap-3 pt-4">
                             <Button type="submit" className="bg-primary hover:bg-primary/90 rounded-full px-6">{editingAccount ? 'Update Account' : 'Add Account'}</Button>
                             <Button type="button" variant="outline" onClick={resetForm} className="rounded-full">Cancel</Button>
@@ -311,13 +382,31 @@ const Accounts = () => {
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                      {account.email && (<div className="flex items-center gap-2"><span className="text-muted-foreground font-medium">Email:</span><span className="text-foreground">{account.email}</span></div>)}
-                                      {account.username && (<div className="flex items-center gap-2"><span className="text-muted-foreground font-medium">Username:</span><span className="text-foreground">{account.username}</span></div>)}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                      {account.email && (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-muted-foreground font-medium">Email:</span>
+                                          <span className="text-foreground truncate">{account.email}</span>
+                                        </div>
+                                      )}
+                                      {account.username && (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-muted-foreground font-medium">Username:</span>
+                                          <span className="text-foreground">{account.username}</span>
+                                        </div>
+                                      )}
                                     </div>
-                                    {account.notes && (<p className="text-muted-foreground mt-4 leading-relaxed">{account.notes}</p>)}
+                                    {account.notes && (
+                                      <p className="text-muted-foreground mt-3 text-sm leading-relaxed line-clamp-2">{account.notes}</p>
+                                    )}
+                                    {account.credentials && (
+                                      <div className="mt-3">
+                                        <span className="text-muted-foreground text-xs font-medium uppercase">Credentials / Password hint:</span>
+                                        <p className="text-foreground text-sm mt-1 font-mono">{account.credentials}</p>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="flex items-center gap-1 ml-6">
+                                  <div className="flex items-center gap-1 ml-4">
                                     <Button variant="ghost" size="sm" onClick={() => handleEdit(account)} className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-10 w-10 p-0"><Edit className="w-4 h-4" /></Button>
                                     <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(account.id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"><Trash2 className="w-4 h-4" /></Button>
                                   </div>

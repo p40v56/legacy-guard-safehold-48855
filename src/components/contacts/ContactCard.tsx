@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Trash2, Phone, Mail, Shield, AlertCircle, MessageSquare, Link2, Check, ChevronDown, Eye, AlertTriangle } from 'lucide-react';
+import { Edit, Trash2, Phone, Mail, Shield, AlertCircle, MessageSquare, Link2, Check, ChevronDown, Eye, AlertTriangle, ShieldOff } from 'lucide-react';
 import PermissionsConfig from '@/components/contacts/PermissionsConfig';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,11 +54,23 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [savingMessage, setSavingMessage] = useState(false);
   const [portalStale, setPortalStale] = useState(false);
   const [regeneratingShares, setRegeneratingShares] = useState(false);
+  const [hasActiveShare, setHasActiveShare] = useState(false);
+
+  // Check if an active share exists on mount
+  useEffect(() => {
+    if (!user || isFree) return;
+    supabase
+      .from('contact_shares')
+      .select('id')
+      .eq('contact_id', contact.id)
+      .eq('user_id', user.id)
+      .limit(1)
+      .then(({ data }) => setHasActiveShare((data?.length ?? 0) > 0));
+  }, [contact.id, user, isFree]);
 
   // Auto-regenerate portal shares when permissions change
   const handlePermissionsChange = async (contactId: string, permissions: ContactPermissions) => {
     onPermissionsChange(contactId, permissions);
-    // Check if portal shares exist for this contact
     if (!isFree && vaultKey && user) {
       const { data: shares } = await supabase
         .from('contact_shares')
@@ -85,18 +97,15 @@ const ContactCard: React.FC<ContactCardProps> = ({
   };
 
   const generateTokenAndSharesInternal = async (): Promise<string | null> => {
-    // Step 1: get session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) throw new Error(`Session error: ${sessionError.message}`);
     if (!session) throw new Error('No active session — please log out and log back in');
 
-    // Step 2: vault check
     if (!vaultKey || !user) {
       toast({ title: 'Vault locked', description: 'Unlock your vault before generating portal links.', variant: 'destructive' });
       return null;
     }
 
-    // Step 3: generate token from edge function
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     let response: Response;
     try {
@@ -131,7 +140,6 @@ const ContactCard: React.FC<ContactCardProps> = ({
       throw new Error(`Edge function returned no token: ${JSON.stringify(result)}`);
     }
 
-    // Step 4: create portal shares
     try {
       await createPortalShares(user.id, contact.id, result.token, vaultKey);
     } catch (shareErr: any) {
@@ -148,6 +156,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
       if (!token) return;
       const link = `${window.location.origin}/portal/${token}`;
       setPortalLink(link);
+      setHasActiveShare(true);
       await navigator.clipboard.writeText(link);
       toast({ title: "Portal link generated & copied!", description: "The link has been copied to your clipboard." });
     } catch (error) {
@@ -163,12 +172,34 @@ const ContactCard: React.FC<ContactCardProps> = ({
     try {
       const token = await generateTokenAndSharesInternal();
       if (!token) return;
+      setHasActiveShare(true);
       window.open(`${window.location.origin}/portal/${token}`, '_blank');
     } catch (error) {
       console.error('Error previewing portal:', error);
       toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to generate portal preview", variant: "destructive" });
     } finally {
       setPreviewingPortal(false);
+    }
+  };
+
+  const handleRevokeAccess = async () => {
+    if (!user) return;
+    try {
+      await supabase
+        .from('contact_access_tokens')
+        .update({ is_active: false })
+        .eq('contact_id', contact.id)
+        .eq('user_id', user.id);
+      await supabase
+        .from('contact_shares')
+        .delete()
+        .eq('contact_id', contact.id)
+        .eq('user_id', user.id);
+      setPortalLink(null);
+      setHasActiveShare(false);
+      toast({ title: 'Access revoked', description: `${contact.name} can no longer access the portal.` });
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to revoke access', variant: 'destructive' });
     }
   };
 
@@ -305,6 +336,17 @@ const ContactCard: React.FC<ContactCardProps> = ({
                         <Eye className="w-4 h-4 mr-2" />
                         {previewingPortal ? 'Loading...' : 'Preview Portal'}
                       </Button>
+                      {hasActiveShare && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRevokeAccess}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                        >
+                          <ShieldOff className="w-4 h-4 mr-2" />
+                          Revoke Access
+                        </Button>
+                      )}
                     </div>
                     {portalLink && (
                       <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
@@ -313,6 +355,12 @@ const ContactCard: React.FC<ContactCardProps> = ({
                         <Button size="sm" variant="ghost" className="text-primary flex-shrink-0" onClick={() => { navigator.clipboard.writeText(portalLink); toast({ title: "Copied!", description: "Portal link copied to clipboard." }); }}>
                           Copy
                         </Button>
+                      </div>
+                    )}
+                    {hasActiveShare && !portalLink && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+                        <Check className="w-3.5 h-3.5 text-success" />
+                        Portal link is active for this contact
                       </div>
                     )}
                   </div>

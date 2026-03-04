@@ -488,7 +488,42 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      return await servePortalResponse(supabase, tokenData, contact, token, corsHeaders);
+      // Serve portal and notify owner
+      const portalResponse = await servePortalResponse(supabase, tokenData, contact, token, corsHeaders);
+
+      // Notify vault owner that contact accessed the portal
+      try {
+        const ownerEmailResult = await supabase.auth.admin.getUserById(tokenData.user_id);
+        const ownerEmail = ownerEmailResult.data?.user?.email;
+        if (ownerEmail) {
+          const contactName = contact.name || 'A trusted contact';
+          const accessedAt = new Date().toLocaleString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric', 
+            hour: '2-digit', minute: '2-digit', timeZone: 'UTC' 
+          });
+          await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              notificationType: 'portal_accessed',
+              recipientEmail: ownerEmail,
+              recipientName: 'Vault Owner',
+              contactName,
+              accessedAt,
+              userId: tokenData.user_id,
+              contactId: contact.id,
+            }),
+          });
+        }
+      } catch (err) {
+        // Non-blocking — never fail the portal response due to notification error
+        console.error('Failed to send portal access notification:', err);
+      }
+
+      return portalResponse;
     }
 
     // ── generate-token ─────────────────────────────────────
@@ -561,6 +596,7 @@ const handler = async (req: Request): Promise<Response> => {
           user_id: claims.user.id,
           token: tokenHash,
           is_active: true,
+          expires_at: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(),
         });
 
       if (insertError) {

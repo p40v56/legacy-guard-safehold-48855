@@ -189,6 +189,21 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin: 0; font-size: 24px; font-weight: 600;">${headerTitle}</h1><p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">${headerSubtitle}</p></div><div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p style="font-size: 16px; margin: 0 0 20px 0;">Dear <strong>${contactName}</strong>,</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${introMessage}</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${userName} has designated you as a trusted contact and has authorized the following information to be shared with you:</p>${sectionsHtml}${portalHtml}<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;"><p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">${footerMessage}</p></div></body></html>`;
 }
 
+function buildPortalAccessedHtml(contactName: string, accessedAt: string): string {
+  return `<!DOCTYPE html><html><body style="font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+  <div style="background:linear-gradient(135deg,#1A9BD7,#0D6EA8);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0">
+    <h1 style="margin:0;font-size:22px">👁 Portal Accessed</h1>
+    <p style="margin:8px 0 0;opacity:.9;font-size:14px">LegacyVault Notification</p>
+  </div>
+  <div style="background:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px">
+    <p style="color:#374151"><strong>${contactName}</strong> has accessed their portal.</p>
+    <p style="color:#6b7280;font-size:14px">Access time: ${accessedAt} UTC</p>
+    <p style="color:#6b7280;font-size:13px">If you are still alive and did not expect this, your switch may have been triggered accidentally. Log in to your vault to check your system status and reset if needed.</p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+    <p style="font-size:12px;color:#9ca3af;text-align:center">This is an automated notification from LegacyVault.</p>
+  </div></body></html>`;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -205,7 +220,32 @@ const handler = async (req: Request): Promise<Response> => {
     let recipientName: string;
     let subject: string;
 
-    if (notificationType === "grace_period_warning") {
+    if (notificationType === "portal_accessed") {
+      const { recipientEmail: pEmail, recipientName: pName, contactName, accessedAt, userId, contactId } = data as any;
+      emailHtml = buildPortalAccessedHtml(contactName || 'A trusted contact', accessedAt || new Date().toISOString());
+      recipientEmail = pEmail;
+      recipientName = pName || 'Vault Owner';
+      subject = `👁 ${contactName || 'A contact'} has accessed their portal`;
+      console.log(`Sending portal accessed notification to ${recipientEmail}`);
+
+      // Record in sent_notifications
+      if (userId && contactId) {
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.58.0");
+          const supabase = createClient(supabaseUrl, supabaseServiceKey);
+          await supabase.from('sent_notifications').insert({
+            user_id: userId,
+            contact_id: contactId,
+            notification_type: 'portal_accessed',
+            status: 'sent',
+          });
+        } catch (e) {
+          console.error('Failed to record portal_accessed notification:', e);
+        }
+      }
+    } else if (notificationType === "grace_period_warning") {
       const warningData = data as GracePeriodWarningRequest;
       emailHtml = generateGracePeriodWarningHtml(warningData);
       recipientEmail = warningData.recipientEmail;

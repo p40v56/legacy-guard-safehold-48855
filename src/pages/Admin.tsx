@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import SearchInput from '@/components/ui/search-input';
-import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle, CalendarIcon } from 'lucide-react';
+import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle, CalendarIcon, Eye, ChevronDown } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { format } from 'date-fns';
@@ -54,6 +54,8 @@ const Admin = () => {
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', plan: 'free' });
+  const [portalAccessLog, setPortalAccessLog] = useState<any[]>([]);
+  const [accessLogOpen, setAccessLogOpen] = useState(false);
   
   // Expiry date editor state
   const [showExpiryEditor, setShowExpiryEditor] = useState(false);
@@ -69,10 +71,11 @@ const Admin = () => {
 
   const fetchData = async () => {
     try {
-      const [profilesResult, statsResult, emailsResult] = await Promise.all([
+      const [profilesResult, statsResult, emailsResult, portalLogResult] = await Promise.all([
         supabase.rpc('admin_list_profiles'),
         supabase.rpc('admin_get_stats'),
         supabase.rpc('admin_get_user_emails' as any, { row_limit: 500 }),
+        supabase.from('sent_notifications').select('id, user_id, contact_id, created_at, status').eq('notification_type', 'portal_accessed').order('created_at', { ascending: false }).limit(50),
       ]);
 
       if (profilesResult.data) {
@@ -86,6 +89,9 @@ const Admin = () => {
           (emailsResult.data as any[]).map((r: any) => [r.user_id, r.email])
         );
         setEmailMap(map);
+      }
+      if (portalLogResult.data) {
+        setPortalAccessLog(portalLogResult.data);
       }
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -395,6 +401,49 @@ const Admin = () => {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Portal Access Log */}
+        <div className="bg-muted/30 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setAccessLogOpen(prev => !prev)}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-medium text-card-foreground">Portal Access Log</h3>
+              <span className="text-xs text-muted-foreground">({portalAccessLog.length} events)</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${accessLogOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {accessLogOpen && (
+            <div className="border-t border-border">
+              {portalAccessLog.length === 0 ? (
+                <p className="text-muted-foreground text-sm p-4">No portal access events recorded yet.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">User</th>
+                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Contact</th>
+                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Time</th>
+                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {portalAccessLog.map((entry) => (
+                      <tr key={entry.id} className="border-b border-border/50">
+                        <td className="p-3 text-muted-foreground font-mono text-xs">{emailMap[entry.user_id] || entry.user_id?.slice(0,8)+'...'}</td>
+                        <td className="p-3 text-muted-foreground font-mono text-xs">{entry.contact_id?.slice(0,8)}...</td>
+                        <td className="p-3 text-muted-foreground text-xs">{new Date(entry.created_at).toLocaleString('en-GB')}</td>
+                        <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded-full ${entry.status === 'sent' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>{entry.status}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Create User Dialog */}

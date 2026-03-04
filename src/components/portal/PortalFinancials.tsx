@@ -109,12 +109,12 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const response = await fetch(`${supabaseUrl}/functions/v1/get-document-url`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file_path: doc.file_path, token }),
+        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+        body: JSON.stringify({ token, documentId: doc.id, filePath: doc.file_path }),
       });
       if (!response.ok) throw new Error('Failed to get download URL');
-      const { url } = await response.json();
-      window.open(url, '_blank');
+      const result = await response.json();
+      if (result.signedUrl) window.open(result.signedUrl, '_blank');
     } catch (error) {
       console.error('Download error:', error);
     }

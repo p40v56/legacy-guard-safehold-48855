@@ -9,6 +9,7 @@ import UpgradePrompt from '@/components/UpgradePrompt';
 import FinancialSummary from '@/components/financials/FinancialSummary';
 import FinancialAssetCard from '@/components/financials/FinancialAssetCard';
 import FinancialAssetForm from '@/components/financials/FinancialAssetForm';
+import SearchInput from '@/components/ui/search-input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import type { FinancialAsset, FinancialCategory, FinancialAssetInsert } from '@/types/financial';
@@ -22,18 +23,32 @@ const FinancialsTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FinancialAsset | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isFree = plan === 'free';
   const canAdd = !isFree || assets.length < FREE_MAX_FINANCIAL_ASSETS;
 
+  const filteredAssets = useMemo(() => {
+    return assets.filter(asset => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        asset.name?.toLowerCase().includes(q) ||
+        asset.institution?.toLowerCase().includes(q) ||
+        asset.category?.toLowerCase().includes(q) ||
+        asset.notes?.toLowerCase().includes(q)
+      );
+    });
+  }, [assets, searchQuery]);
+
   const grouped = useMemo(() => {
     const groups: Record<string, FinancialAsset[]> = {};
-    assets.forEach(a => {
+    filteredAssets.forEach(a => {
       if (!groups[a.category]) groups[a.category] = [];
       groups[a.category].push(a);
     });
     return groups;
-  }, [assets]);
+  }, [filteredAssets]);
 
   const handleSubmit = async (data: FinancialAssetInsert) => {
     if (editingAsset) {
@@ -105,24 +120,39 @@ const FinancialsTab: React.FC = () => {
       {/* Summary */}
       <FinancialSummary assets={assets} />
 
+      {/* Search */}
+      {assets.length > 0 && (
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search financial assets..."
+        />
+      )}
+
       {/* Grouped assets */}
-      {assets.length === 0 && !showForm ? (
-        <Card className="bg-card border-border">
-          <CardContent className="p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6">
-                <PoundSterling className="w-12 h-12 text-muted-foreground" />
+      {filteredAssets.length === 0 && !showForm ? (
+        searchQuery.trim() ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No assets match "{searchQuery}"</p>
+          </div>
+        ) : (
+          <Card className="bg-card border-border">
+            <CardContent className="p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6">
+                  <PoundSterling className="w-12 h-12 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-3">No financial assets documented yet</h3>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  Adding your financial information here will help your loved ones know exactly where to find what matters.
+                </p>
+                <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 shadow-lg font-semibold">
+                  <Plus className="w-4 h-4 mr-2" />Add your first asset
+                </Button>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">No financial assets documented yet</h3>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Adding your financial information here will help your loved ones know exactly where to find what matters.
-              </p>
-              <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 shadow-lg font-semibold">
-                <Plus className="w-4 h-4 mr-2" />Add your first asset
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )
       ) : (
         <div className="space-y-4">
           {(Object.entries(grouped) as [FinancialCategory, FinancialAsset[]][]).map(([cat, catAssets]) => (

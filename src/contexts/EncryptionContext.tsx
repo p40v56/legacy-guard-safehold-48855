@@ -15,7 +15,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, ShieldCheck } from 'lucide-react';
 
-const AUTO_LOCK_MS = 15 * 60 * 1000; // 15 minutes
+const getAutoLockMs = () => {
+  const stored = localStorage.getItem('vault_auto_lock_minutes');
+  const minutes = stored ? parseInt(stored) : 15;
+  return minutes * 60 * 1000;
+};
 
 interface EncryptionContextType {
   vaultKey: CryptoKey | null;
@@ -178,7 +182,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const checkInactivity = setInterval(() => {
-      if (Date.now() - lastActivityRef.current > AUTO_LOCK_MS) {
+      if (Date.now() - lastActivityRef.current > getAutoLockMs()) {
         lock();
       }
     }, 30_000);
@@ -186,7 +190,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
     const handleVisibility = () => {
       if (document.hidden) return;
       // Check on tab return
-      if (Date.now() - lastActivityRef.current > AUTO_LOCK_MS) {
+      if (Date.now() - lastActivityRef.current > getAutoLockMs()) {
         lock();
       }
     };

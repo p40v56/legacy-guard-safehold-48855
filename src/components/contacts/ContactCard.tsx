@@ -349,13 +349,40 @@ const ContactCard: React.FC<ContactCardProps> = ({
                       )}
                     </div>
                     {portalLink && (
-                      <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                        <p className="text-sm text-primary truncate flex-1">{portalLink}</p>
-                        <Button size="sm" variant="ghost" className="text-primary flex-shrink-0" onClick={() => { navigator.clipboard.writeText(portalLink); toast({ title: "Copied!", description: "Portal link copied to clipboard." }); }}>
-                          Copy
-                        </Button>
-                      </div>
+                      <>
+                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+                          <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                          <p className="text-sm text-primary truncate flex-1">{portalLink}</p>
+                          <Button size="sm" variant="ghost" className="text-primary flex-shrink-0" onClick={() => { navigator.clipboard.writeText(portalLink); toast({ title: "Copied!", description: "Portal link copied to clipboard." }); }}>
+                            Copy
+                          </Button>
+                        </div>
+                        {contact.email ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const subject = encodeURIComponent('Important: Access to your trusted contact portal');
+                              const body = encodeURIComponent(
+                                `Hi ${contact.name},\n\n` +
+                                `You have been designated as a trusted contact. ` +
+                                `This link gives you access to important information and documents that have been prepared for you.\n\n` +
+                                `Access your portal here:\n${portalLink}\n\n` +
+                                `This link is private and intended only for you. Please keep it secure.\n\n` +
+                                `If you have questions about this, please contact the person who set this up.\n\n` +
+                                `Important: Bookmark this link. You may need it in the future.`
+                              );
+                              window.open(`mailto:${contact.email}?subject=${subject}&body=${body}`, '_blank');
+                            }}
+                            className="rounded-xl"
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            Send link to {contact.name} by email
+                          </Button>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No email address on file for {contact.name}</p>
+                        )}
+                      </>
                     )}
                     {hasActiveShare && !portalLink && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">

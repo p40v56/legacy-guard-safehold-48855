@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { useContacts } from '@/hooks/useContacts';
@@ -90,6 +90,20 @@ const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Auto-lock timeout
+  const [autoLockMinutes, setAutoLockMinutes] = useState(15);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('vault_auto_lock_minutes');
+    if (stored) setAutoLockMinutes(parseInt(stored));
+  }, []);
+
+  const handleAutoLockChange = (minutes: number) => {
+    setAutoLockMinutes(minutes);
+    localStorage.setItem('vault_auto_lock_minutes', minutes.toString());
+    toast({ title: 'Auto-lock updated', description: `Vault will lock after ${minutes === 60 ? '1 hour' : minutes === 240 ? '4 hours' : `${minutes} minutes`} of inactivity.` });
+  };
 
   // GDPR state
   const [exporting, setExporting] = useState(false);
@@ -375,6 +389,32 @@ const Settings = () => {
                 <Button onClick={handleChangePassword} disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword} variant="default">
                   {changingPassword ? (<><LoadingSpinner size="sm" className="mr-2" />Changing...</>) : (<><Lock className="w-4 h-4 mr-2" />Change Password</>)}
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/30 border-none rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Security</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-foreground font-medium">Vault Auto-Lock Timeout</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Your vault automatically locks after this period of inactivity, clearing encryption keys from memory.
+                  </p>
+                  <Select value={autoLockMinutes.toString()} onValueChange={(v) => handleAutoLockChange(parseInt(v))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 minutes</SelectItem>
+                      <SelectItem value="15">15 minutes (default)</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="240">4 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

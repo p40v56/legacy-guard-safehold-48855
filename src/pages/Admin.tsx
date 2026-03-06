@@ -75,7 +75,7 @@ const Admin = () => {
         supabase.rpc('admin_list_profiles'),
         supabase.rpc('admin_get_stats'),
         supabase.rpc('admin_get_user_emails' as any, { row_limit: 500 }),
-        supabase.from('sent_notifications').select('id, user_id, contact_id, created_at, status').eq('notification_type', 'portal_accessed').order('created_at', { ascending: false }).limit(50),
+        supabase.from('sent_notifications').select('id, user_id, contact_id, created_at, status, acknowledged_at').eq('notification_type', 'portal_accessed').order('created_at', { ascending: false }).limit(50),
       ]);
 
       if (profilesResult.data) {
@@ -423,12 +423,13 @@ const Admin = () => {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">User</th>
-                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Contact</th>
-                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Time</th>
-                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Status</th>
-                    </tr>
+                     <tr className="border-b border-border">
+                       <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">User</th>
+                       <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Contact</th>
+                       <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Time</th>
+                       <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Status</th>
+                       <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Ack</th>
+                     </tr>
                   </thead>
                   <tbody>
                     {portalAccessLog.map((entry) => (
@@ -437,7 +438,8 @@ const Admin = () => {
                         <td className="p-3 text-muted-foreground font-mono text-xs">{entry.contact_id?.slice(0,8)}...</td>
                         <td className="p-3 text-muted-foreground text-xs">{new Date(entry.created_at).toLocaleString('en-GB')}</td>
                         <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded-full ${entry.status === 'sent' ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>{entry.status}</span></td>
-                      </tr>
+                        <td className="p-3 text-center">{entry.acknowledged_at ? <span className="text-success">✓</span> : <span className="text-muted-foreground">—</span>}</td>
+                       </tr>
                     ))}
                   </tbody>
                 </table>

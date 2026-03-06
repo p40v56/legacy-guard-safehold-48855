@@ -25,6 +25,13 @@ const CONTENT_PREVIEW_LENGTH = 300;
 
 const isHtml = (str: string) => /<[a-z][\s\S]*>/i.test(str);
 
+const LEGAL_DISCLAIMERS: Record<string, string> = {
+  will: 'A digital copy of a will is not legally enforceable. The original signed and witnessed document is required for probate. Contact the solicitor or check physical storage for the original.',
+  power_of_attorney: 'A digital copy of a power of attorney is for reference only. The original registered document is required to act on behalf of the estate.',
+  insurance: 'Contact the insurance provider directly with the original policy documents. They may require an original death certificate before processing a claim.',
+  property: 'Property deeds and title documents must be obtained from HM Land Registry. This document is for reference only.',
+};
+
 const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -74,6 +81,11 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
               <div key={doc.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <h5 className="text-gray-900 font-medium mb-1">{doc.title}</h5>
                 {doc.description && <p className="text-gray-500 text-sm mb-3">{doc.description}</p>}
+                {LEGAL_DISCLAIMERS[doc.document_type] && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                    <p className="text-amber-800 text-xs leading-relaxed">⚠️ {LEGAL_DISCLAIMERS[doc.document_type]}</p>
+                  </div>
+                )}
                 {doc.content && (
                   <div className="mb-3">
                     {isHtml(doc.content) ? (

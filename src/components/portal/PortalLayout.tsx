@@ -115,6 +115,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ portalData, token, children
             <p className="text-gray-300 text-xs">
               If you need help or have questions, contact <a href="mailto:support@legacyvault.app" className="text-gray-400 underline hover:text-gray-500">support@legacyvault.app</a>.
             </p>
+            <p className="text-gray-300 text-xs">
+              <a href="/terms" className="text-gray-400 underline hover:text-gray-500">Terms</a>
+              {' · '}
+              <a href="/privacy" className="text-gray-400 underline hover:text-gray-500">Privacy</a>
+            </p>
           </div>
         </div>
       </div>

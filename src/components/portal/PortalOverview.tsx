@@ -101,6 +101,30 @@ const PortalOverview: React.FC<PortalOverviewProps> = ({ portalData }) => {
         </div>
       )}
 
+      {/* Immediate steps — first 24 hours */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg">⏱</span>
+          <h3 className="text-sm font-semibold text-gray-900">Immediate Steps — First 24 Hours</h3>
+        </div>
+        <div className="space-y-2">
+          {[
+            { step: '1', text: 'Contact the GP or hospital to obtain a medical certificate of cause of death' },
+            { step: '2', text: 'Register the death at your local register office within 5 days (England/Wales) or 8 days (Scotland)' },
+            { step: '3', text: 'Order at least 10 certified copies of the death certificate — most institutions require an original' },
+            { step: '4', text: 'Locate the original will — check with the solicitor listed under Key Professionals, or at home in a safe or filing cabinet' },
+            { step: '5', text: 'Notify the bank to freeze accounts and prevent further transactions until probate is granted' },
+            { step: '6', text: 'Contact HMRC and DWP to stop benefits and tax credits' },
+          ].map(item => (
+            <div key={item.step} className="flex items-start gap-3 text-sm">
+              <span className="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{item.step}</span>
+              <span className="text-gray-700">{item.text}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-gray-400 text-xs mt-4">This guidance applies to England and Wales. Procedures may differ in Scotland, Northern Ireland, and other jurisdictions.</p>
+      </div>
+
       {/* Help block */}
       <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
         <h4 className="text-gray-700 font-medium text-sm mb-2">Not sure where to start?</h4>

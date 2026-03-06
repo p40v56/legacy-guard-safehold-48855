@@ -429,6 +429,28 @@ const handler = async (req: Request): Promise<Response> => {
       return await servePortalResponse(supabase, tokenData, contact, bodyToken, corsHeaders);
     }
 
+    // ── acknowledge ──────────────────────────────────────
+    if (action === "acknowledge" && token) {
+      console.log(`Portal acknowledge request for token: ${token.substring(0, 8)}...`);
+      const { data: tokenData, error: tokenError } = await lookupToken(supabase, token);
+      if (tokenError || !tokenData) {
+        return new Response(`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:500px;margin:40px auto;text-align:center"><h2 style="color:#dc2626">Invalid or expired link</h2><p>This acknowledgment link is no longer valid.</p></body></html>`, { status: 403, headers: { "Content-Type": "text/html", ...corsHeaders } });
+      }
+      const { data: contact } = await supabase.from("contacts").select("name, email").eq("id", tokenData.contact_id).single();
+      const contactName = contact?.name || contact?.email || "Trusted Contact";
+
+      // Update acknowledged_at on the most recent switch_triggered notification for this contact
+      await supabase
+        .from("sent_notifications")
+        .update({ acknowledged_at: new Date().toISOString() })
+        .eq("user_id", tokenData.user_id)
+        .eq("contact_id", tokenData.contact_id)
+        .eq("notification_type", "switch_triggered")
+        .is("acknowledged_at", null);
+
+      return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:-apple-system,sans-serif;margin:0;background:#f8fafc"><div style="background:linear-gradient(135deg,#1A9BD7,#0D6EA8);color:white;padding:40px 20px;text-align:center"><h1 style="margin:0;font-size:28px">✓ Acknowledged</h1></div><div style="max-width:500px;margin:40px auto;text-align:center;padding:20px"><p style="font-size:18px;color:#374151">Thank you, <strong>${contactName}</strong>.</p><p style="color:#6b7280">Your acknowledgment has been recorded. The vault owner has been notified that you received this message.</p></div></body></html>`, { status: 200, headers: { "Content-Type": "text/html", ...corsHeaders } });
+    }
+
     // ── verify token ───────────────────────────────────────
     if (action === "verify" && token) {
       console.log(`Portal verify request for token: ${token.substring(0, 8)}...`);

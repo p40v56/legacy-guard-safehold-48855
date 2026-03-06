@@ -19,6 +19,8 @@ import Settings from "./pages/Settings";
 import Portal from "./pages/Portal";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -91,6 +93,8 @@ const App = () => (
                 } 
               />
               <Route path="/portal/:token/*" element={<Portal />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

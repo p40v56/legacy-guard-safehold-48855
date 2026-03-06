@@ -205,8 +205,11 @@ const Dashboard = () => {
     },
   ];
 
+  const autoLockMinutes = parseInt(localStorage.getItem('vault_auto_lock_minutes') || '15');
+  const autoLockLabel = autoLockMinutes >= 60 ? `${autoLockMinutes / 60} hour${autoLockMinutes > 60 ? 's' : ''}` : `${autoLockMinutes} minutes`;
+
   const securityItems = [
-    { label: 'Vault Auto-Lock', enabled: true, explanation: 'Your vault automatically locks after 15 minutes of inactivity, clearing encryption keys from memory.' },
+    { label: 'Vault Auto-Lock', enabled: true, explanation: `Your vault automatically locks after ${autoLockLabel} of inactivity, clearing encryption keys from memory.` },
     { label: 'Data Encryption', enabled: true, explanation: 'All data is encrypted client-side with AES-256-GCM before reaching our servers. We operate on a zero-knowledge basis.' },
     { label: 'Backup Status', enabled: true, explanation: 'Your encrypted data is automatically backed up and replicated across multiple zones.' },
     { label: 'Emergency Contacts', enabled: stats.contactsCount > 0, explanation: `You have configured ${stats.contactsCount} trusted contact${stats.contactsCount !== 1 ? 's' : ''}.` },

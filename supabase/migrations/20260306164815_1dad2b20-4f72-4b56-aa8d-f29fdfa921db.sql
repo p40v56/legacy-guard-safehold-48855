@@ -1,0 +1,1 @@
+ALTER TABLE public.sent_notifications ADD COLUMN IF NOT EXISTS acknowledged_at timestamptz;

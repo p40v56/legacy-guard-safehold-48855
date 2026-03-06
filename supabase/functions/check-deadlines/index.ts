@@ -534,6 +534,55 @@ const handler = async (req: Request): Promise<Response> => {
         const graceResult = await startGracePeriod(supabase, supabaseUrl, supabaseServiceKey, settings, profile);
         results.gracePeriodStarted.push({ userId, ...graceResult });
       }
+
+      // Pre-deadline reminder: warn at 48h and 24h before deadline
+      if (deadline && !settings.grace_period_active && !settings.switch_triggered) {
+        const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+        if (hoursUntilDeadline > 0 && hoursUntilDeadline <= 48) {
+          const reminderKey = hoursUntilDeadline <= 24 ? 'reminder_24h' : 'reminder_48h';
+          const { data: existingReminder } = await supabase
+            .from('sent_notifications')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('notification_type', reminderKey)
+            .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+            .limit(1);
+
+          if (!existingReminder || existingReminder.length === 0) {
+            const userEmail = await getUserEmail(supabase, userId);
+            if (userEmail) {
+              const hoursLabel = hoursUntilDeadline <= 24 ? '24 hours' : '48 hours';
+              const checkInUrl = `${APP_BASE_URL}/switch`;
+
+              await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+                body: JSON.stringify({
+                  notificationType: 'grace_period_warning',
+                  recipientEmail: userEmail,
+                  recipientName: 'Vault Owner',
+                  gracePeriodHours: hoursLabel,
+                  graceEndDate: deadline.toISOString(),
+                  userName: userEmail,
+                  isPreDeadlineReminder: true,
+                  checkInUrl,
+                }),
+              });
+
+              // Use a dummy contact_id for system notifications to the user themselves
+              await supabase.from('sent_notifications').insert({
+                user_id: userId,
+                contact_id: userId,
+                notification_type: reminderKey,
+                status: 'sent',
+              });
+
+              (results as any).preDeadlineRemindersSent = ((results as any).preDeadlineRemindersSent || 0) + 1;
+            }
+          }
+        }
+      }
     }
 
     console.log(

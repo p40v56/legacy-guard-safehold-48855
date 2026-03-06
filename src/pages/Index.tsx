@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
@@ -224,12 +224,33 @@ const Index = () => {
               <p className="lv-footer-tagline">Secure your digital legacy.<br />Protect your loved ones.</p>
               <div className="lv-zk" style={{ fontSize: 10, padding: '5px 12px' }}><div className="lv-zk-dot" />Zero-Knowledge</div>
             </div>
-            {[{ t: 'Product', l: ['Features', 'Security', 'Pricing', 'FAQ'] }, { t: 'Company', l: ['About', 'Contact', 'Privacy', 'Terms'] }, { t: 'Security', l: ['Encryption', 'Zero-knowledge', 'Compliance', 'Bug bounty'] }].map(({ t, l }) =>
-            <div key={t} className="lv-footer-col">
-                <h4>{t}</h4>
-                <ul>{l.map((x) => <li key={x}><a href="#">{x}</a></li>)}</ul>
-              </div>
-            )}
+            <div className="lv-footer-col">
+              <h4>Product</h4>
+              <ul>
+                <li><a href="#">Features</a></li>
+                <li><a href="#">Security</a></li>
+                <li><a href="#">Pricing</a></li>
+                <li><a href="#">FAQ</a></li>
+              </ul>
+            </div>
+            <div className="lv-footer-col">
+              <h4>Company</h4>
+              <ul>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Contact</a></li>
+                <li><Link to="/privacy">Privacy</Link></li>
+                <li><Link to="/terms">Terms</Link></li>
+              </ul>
+            </div>
+            <div className="lv-footer-col">
+              <h4>Security</h4>
+              <ul>
+                <li><a href="#">Encryption</a></li>
+                <li><a href="#">Zero-knowledge</a></li>
+                <li><a href="#">Compliance</a></li>
+                <li><a href="#">Bug bounty</a></li>
+              </ul>
+            </div>
           </div>
           <div className="lv-footer-bottom">
             <span className="lv-footer-copy">© {new Date().getFullYear()} LegacyVault. All rights reserved.</span>

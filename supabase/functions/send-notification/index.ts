@@ -179,7 +179,10 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   let portalHtml = "";
   if (portalToken) {
     const portalUrl = `${portalBaseUrl || ""}/portal/${portalToken}`;
-    portalHtml = `<div style="background-color: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;"><h3 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px;">🔐 Access Your Document Portal</h3><p style="color: #047857; margin: 0 0 16px 0; font-size: 14px;">You can also view your authorized documents online at any time using the secure link below:</p><a href="${portalUrl}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Open Document Portal →</a><p style="color: #6b7280; margin: 12px 0 0 0; font-size: 12px;">This link is private and unique to you. Do not share it with others.</p></div>`;
+    const ackUrl = `${portalBaseUrl || ""}/portal/${portalToken}/acknowledge`;
+    portalHtml = `<div style="background-color: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;"><h3 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px;">🔐 Access Your Document Portal</h3><p style="color: #047857; margin: 0 0 16px 0; font-size: 14px;">You can also view your authorized documents online at any time using the secure link below:</p><a href="${portalUrl}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Open Document Portal →</a><p style="color: #6b7280; margin: 12px 0 0 0; font-size: 12px;">This link is private and unique to you. Do not share it with others.</p></div><div style="text-align: center; margin: 16px 0;"><a href="${ackUrl}" style="display: inline-block; background-color: #059669; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">✓ Confirm I have received this message</a><p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 11px;">Clicking this lets the system know you have seen this notification.</p></div>`;
+  } else {
+    portalHtml += `<div style="background-color: #fef3c7; border: 1px solid #f59e0b; padding: 16px; border-radius: 8px; margin: 24px 0; text-align: center;"><p style="color: #92400e; margin: 0; font-size: 13px;">Your portal link was not included in this notification. Please contact the sender.</p></div>`;
   }
 
   if (!sectionsHtml) {
@@ -246,12 +249,20 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
     } else if (notificationType === "grace_period_warning") {
-      const warningData = data as GracePeriodWarningRequest;
-      emailHtml = generateGracePeriodWarningHtml(warningData);
+      const warningData = data as any;
+      const isPreDeadline = warningData.isPreDeadlineReminder === true;
+      if (isPreDeadline) {
+        const checkInUrl = warningData.checkInUrl || '#';
+        const hoursLabel = warningData.gracePeriodHours || '48 hours';
+        subject = `⏰ Reminder: Your LegacyVault check-in is due in ${hoursLabel}`;
+        emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin: 0; font-size: 24px; font-weight: 600;">⏰ Check-in Reminder</h1><p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Your deadline is approaching</p></div><div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p style="font-size: 16px; margin: 0 0 20px 0;">Hello,</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">This is a reminder that your Dead Man's Switch check-in deadline is approaching. Please check in within <strong>${hoursLabel}</strong> to prevent your switch from activating.</p><div style="text-align: center; margin: 32px 0;"><a href="${checkInUrl}" style="display: inline-block; background-color: #1A9BD7; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Check In Now →</a></div><p style="font-size: 13px; color: #9ca3af; margin: 24px 0 0 0; text-align: center;">If you do not check in before the deadline, a grace period will start, followed by automatic notification of your contacts.</p></div></body></html>`;
+      } else {
+        emailHtml = generateGracePeriodWarningHtml(warningData as GracePeriodWarningRequest);
+        subject = warningData.emailTemplate?.email_grace_subject || "⚠️ Grace Period Started - Check In Required";
+      }
       recipientEmail = warningData.recipientEmail;
       recipientName = warningData.recipientName;
-      subject = warningData.emailTemplate?.email_grace_subject || "⚠️ Grace Period Started - Check In Required";
-      console.log(`Sending grace period warning to ${recipientName} (${recipientEmail})`);
+      console.log(`Sending ${isPreDeadline ? 'pre-deadline reminder' : 'grace period warning'} to ${recipientName} (${recipientEmail})`);
     } else {
       const triggerData = data as SwitchTriggeredRequest | LegacyNotificationRequest;
       emailHtml = generateSwitchTriggeredHtml(triggerData);

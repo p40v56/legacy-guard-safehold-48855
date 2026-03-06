@@ -1,5 +1,5 @@
-import React from 'react';
-import { Globe, Monitor, Mail, ArrowLeft, FileText, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { Globe, Monitor, Mail, ArrowLeft, FileText, Download, Lock } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface AttachedDocument {
@@ -18,6 +18,7 @@ interface DigitalAccount {
   email: string | null;
   website_url: string | null;
   notes: string | null;
+  credentials?: string | null;
   closure_action: string | null;
   importance: string | null;
   updated_at?: string | null;
@@ -49,6 +50,7 @@ interface PortalAccountsProps {
 const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
   const { token } = useParams();
   const navigate = useNavigate();
+  const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
 
   if (accounts.length === 0) return null;
 
@@ -142,6 +144,24 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
                   <div>
                     <h5 className="text-gray-900 font-medium">{acct.platform || acct.account_name}</h5>
                     {acct.username && <p className="text-gray-500 text-sm">Username: {acct.username}</p>}
+                    {acct.credentials && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Lock className="w-3 h-3 text-gray-400" />
+                        <span className="text-gray-500 text-sm">
+                          {revealedCredentials.has(acct.id) ? acct.credentials : '••••••••'}
+                        </span>
+                        <button
+                          onClick={() => setRevealedCredentials(prev => {
+                            const next = new Set(prev);
+                            next.has(acct.id) ? next.delete(acct.id) : next.add(acct.id);
+                            return next;
+                          })}
+                          className="text-blue-500 text-xs hover:underline ml-1"
+                        >
+                          {revealedCredentials.has(acct.id) ? 'Hide' : 'Reveal'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                   {acct.importance && (
                     <span className={`text-xs px-2 py-0.5 rounded-full ${

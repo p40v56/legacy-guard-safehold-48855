@@ -245,6 +245,7 @@ export async function createPortalShares(
       id: a.id, account_name: a.account_name, platform: a.platform, username: a.username,
       email: a.email, account_type: a.account_type, importance: a.importance,
       closure_action: a.closure_action, notes: a.notes, website_url: a.website_url,
+      credentials: a.credentials || null,
       updated_at: a.updated_at,
       attached_documents: resolveAttachedDocs(a.attached_document_ids),
     })),

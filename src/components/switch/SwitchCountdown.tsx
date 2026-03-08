@@ -61,7 +61,7 @@ const SwitchCountdown = ({
   // Grace period mode
   if (gracePeriodActive && gracePeriodEnd) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-warning glass-strong transition-all duration-500 animate-pulse-subtle">
+      <div className={`relative overflow-hidden rounded-2xl border-2 border-warning glass-strong transition-all duration-500 animate-pulse-subtle ring-2 ring-destructive/50 ring-offset-2 ring-offset-background`}>
         <div className="absolute inset-0 bg-gradient-to-br from-warning/30 to-destructive/20" />
         
         {/* Warning pattern overlay */}
@@ -128,7 +128,7 @@ const SwitchCountdown = ({
 
   // Normal countdown mode
   return (
-    <div className={`relative overflow-hidden rounded-2xl border-2 ${colors.border} glass-strong transition-all duration-500 hover:scale-[1.01] ${colors.pulse}`}>
+    <div className={`relative overflow-hidden rounded-2xl border-2 ${colors.border} glass-strong transition-all duration-500 hover:scale-[1.01] ${colors.pulse} ${urgencyLevel === 'critical' ? 'animate-pulse' : ''}`}>
       <div className={`absolute inset-0 bg-gradient-to-br ${
         urgencyLevel === 'critical' ? 'from-destructive/20 to-transparent' : 
         urgencyLevel === 'urgent' ? 'from-warning/20 to-transparent' : 
@@ -142,7 +142,7 @@ const SwitchCountdown = ({
       <div className="relative p-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl ${urgencyLevel === 'critical' ? 'bg-destructive/20' : urgencyLevel === 'urgent' ? 'bg-warning/20' : 'bg-primary/20'} animate-pulse-subtle`}>
+            <div className={`p-2 rounded-xl ${urgencyLevel === 'critical' ? 'bg-destructive/20 animate-pulse' : urgencyLevel === 'urgent' ? 'bg-warning/20' : 'bg-primary/20'} animate-pulse-subtle`}>
               <Timer className={`w-6 h-6 ${colors.text}`} />
             </div>
             <span className="text-2xl font-display font-semibold">
@@ -198,7 +198,7 @@ const SwitchCountdown = ({
               Deadline: {formatDateEU(currentDeadline)}
             </p>
             <p className="text-muted-foreground text-xs">
-              Grace period: {gracePeriodHours === 0 ? 'none — triggers immediately' : `${gracePeriodHours}h`}
+              Grace period: {gracePeriodHours === 0 ? 'No grace period — fires immediately' : `${gracePeriodHours}h`}
             </p>
           </div>
         )}

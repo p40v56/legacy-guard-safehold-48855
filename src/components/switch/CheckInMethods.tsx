@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Mail, Phone, PhoneCall, Lock, MessageSquare, ChevronDown, CheckCircle } from 'lucide-react';
+import { Mail, CheckCircle, ChevronDown } from 'lucide-react';
 
 interface CheckInMethodsProps {
   smsCheckinEnabled: boolean;
@@ -40,7 +40,6 @@ const CheckInMethods = ({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="mt-6 space-y-5">
-            {/* Email link check-in — Active */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <CheckCircle className="w-5 h-5 text-success" />
@@ -55,29 +54,9 @@ const CheckInMethods = ({
               <Badge className="bg-success/20 text-success border-success/30 text-xs">Active</Badge>
             </div>
 
-            <div className="flex items-center justify-between opacity-60">
-              <div className="flex items-center gap-3">
-                <PhoneCall className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <Label className="text-foreground">Check-in via a call</Label>
-                  <p className="text-xs text-muted-foreground">Call a number to confirm your check-in</p>
-                </div>
-                {!isPaidPlan && <Badge variant="outline" className="text-xs ml-2"><Lock className="w-3 h-3 mr-1" />Paid</Badge>}
-              </div>
-              <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Coming soon</Badge>
-            </div>
-
-            <div className="flex items-center justify-between opacity-60">
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <Label className="text-foreground">Check-in via SMS</Label>
-                  <p className="text-xs text-muted-foreground">Send an SMS to confirm your check-in</p>
-                </div>
-                {!isPaidPlan && <Badge variant="outline" className="text-xs ml-2"><Lock className="w-3 h-3 mr-1" />Paid</Badge>}
-              </div>
-              <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Coming soon</Badge>
-            </div>
+            <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border">
+              SMS and voice check-in methods are planned for a future release.
+            </p>
           </div>
         </CollapsibleContent>
       </div>

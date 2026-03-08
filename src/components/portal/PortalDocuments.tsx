@@ -83,7 +83,7 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
 
-      {documents.length >= 5 && (
+      {documents.length >= 3 && (
         <input
           type="text"
           value={searchQuery}

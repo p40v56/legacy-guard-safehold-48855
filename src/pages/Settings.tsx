@@ -70,6 +70,21 @@ const contactTypeLabels: Record<ContactCategory, string> = {
   financial: 'Financial',
 };
 
+const getPasswordStrength = (password: string): { label: string; color: string; width: string } => {
+  if (password.length === 0) return { label: '', color: '', width: '0%' };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  if (score <= 1) return { label: 'Weak', color: 'bg-destructive', width: '20%' };
+  if (score === 2) return { label: 'Fair', color: 'bg-orange-500', width: '40%' };
+  if (score === 3) return { label: 'Good', color: 'bg-yellow-500', width: '60%' };
+  if (score === 4) return { label: 'Strong', color: 'bg-primary', width: '80%' };
+  return { label: 'Very Strong', color: 'bg-success', width: '100%' };
+};
+
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -569,6 +584,20 @@ const Settings = () => {
                     <div>
                       <Label className="text-foreground">New Password</Label>
                       <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password" />
+                      {newPassword.length > 0 && (() => {
+                        const s = getPasswordStrength(newPassword);
+                        return (
+                          <div className="mt-2 space-y-1">
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${s.color}`}
+                                style={{ width: s.width }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">{s.label}</p>
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div>
                       <Label className="text-foreground">Confirm New Password</Label>

@@ -81,7 +81,7 @@ const Settings = () => {
     activationRules, setActivationRules, typePermissions, setTypePermissions,
     loading, saving, saveProfile, saveNotifications, saveActivationRules,
     addActivationRule, updateActivationRule, deleteActivationRule,
-    emailTemplate, setEmailTemplate, saveEmailTemplate,
+    emailTemplate, setEmailTemplate, saveEmailTemplate, saveTypePermissions,
   } = useSettings();
 
   const { contacts: emergencyContacts, loading: contactsLoading } = useContacts();
@@ -234,14 +234,8 @@ const Settings = () => {
     }
   };
 
-  const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
-    try {
-      setTypePermissions(updatedPermissions);
-      toast({ title: "Success", description: "Default permissions updated successfully" });
-    } catch (error) {
-      console.error('Error updating type permissions:', error);
-      toast({ title: "Error", description: "Failed to update default permissions", variant: "destructive" });
-    }
+  const handleSaveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
+    await saveTypePermissions(updatedPermissions);
   };
 
   const toggleContactSelection = (ruleId: string, contactId: string) => {
@@ -513,7 +507,7 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="permissions" className="space-y-6 mt-6">
-            <ContactTypePermissions typePermissions={typePermissions} onUpdate={saveTypePermissions} />
+            <ContactTypePermissions typePermissions={typePermissions} onUpdate={handleSaveTypePermissions} />
             <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
           </TabsContent>
 

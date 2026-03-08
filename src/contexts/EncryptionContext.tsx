@@ -50,6 +50,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   const tabHiddenAtRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
   const unlockingRef = useRef(false);
+  const wasUnlockedRef = useRef(false); // tracks if vault was ever unlocked this session
 
   const isUnlocked = vaultKey !== null;
 

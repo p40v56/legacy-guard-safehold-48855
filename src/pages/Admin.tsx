@@ -104,7 +104,7 @@ const Admin = () => {
   const handleSetPlan = async (userProfile: UserProfile, newPlan: string) => {
     try {
       const updates: any = { plan: newPlan };
-      if (newPlan === 'paid') {
+      if (newPlan === 'essential' || newPlan === 'family') {
         const expiresAt = new Date();
         expiresAt.setFullYear(expiresAt.getFullYear() + 1);
         updates.plan_expires_at = expiresAt.toISOString();

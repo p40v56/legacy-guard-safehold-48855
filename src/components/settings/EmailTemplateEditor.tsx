@@ -52,6 +52,7 @@ const VariablesInset = () => (
 
 const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'John' }: EmailTemplateEditorProps) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [previewType, setPreviewType] = useState<'switch_triggered' | 'grace_period'>('switch_triggered');
   const [sendingTest, setSendingTest] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -195,27 +196,65 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
           </CardTitle>
         </CardHeader>
         {showPreview && (
-          <CardContent>
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="bg-destructive p-6 text-center">
-                <h2 className="text-xl font-semibold text-destructive-foreground">{template.email_header_title}</h2>
-                <p className="text-destructive-foreground/80 text-sm mt-1">{template.email_header_subtitle}</p>
-              </div>
-              <div className="bg-card p-6 space-y-4">
-                <p className="text-foreground">Dear <strong>Contact Name</strong>,</p>
-                <p className="text-muted-foreground text-sm">{resolveVariable(template.email_intro_message)}</p>
-                <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
-                  <h3 className="text-warning font-medium text-sm">⚠️ Emergency Instructions</h3>
-                  <p className="text-muted-foreground text-xs mt-1">Your emergency instructions will appear here...</p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded">
-                  <h3 className="text-foreground font-medium text-sm">📄 Documents</h3>
-                  <p className="text-muted-foreground text-xs mt-1">Shared documents will appear here...</p>
-                </div>
-                <hr className="border-border" />
-                <p className="text-muted-foreground text-xs text-center">{template.email_footer_message}</p>
-              </div>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Button
+                variant={previewType === 'switch_triggered' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPreviewType('switch_triggered')}
+                className="rounded-xl"
+              >
+                Switch Triggered
+              </Button>
+              <Button
+                variant={previewType === 'grace_period' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPreviewType('grace_period')}
+                className="rounded-xl"
+              >
+                Grace Period Warning
+              </Button>
             </div>
+
+            {previewType === 'switch_triggered' ? (
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="bg-destructive p-6 text-center">
+                  <h2 className="text-xl font-semibold text-destructive-foreground">{template.email_header_title}</h2>
+                  <p className="text-destructive-foreground/80 text-sm mt-1">{template.email_header_subtitle}</p>
+                </div>
+                <div className="bg-card p-6 space-y-4">
+                  <p className="text-foreground">Dear <strong>Contact Name</strong>,</p>
+                  <p className="text-muted-foreground text-sm">{resolveVariable(template.email_intro_message)}</p>
+                  <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
+                    <h3 className="text-warning font-medium text-sm">⚠️ Emergency Instructions</h3>
+                    <p className="text-muted-foreground text-xs mt-1">Your emergency instructions will appear here...</p>
+                  </div>
+                  <div className="bg-muted/50 p-4 rounded">
+                    <h3 className="text-foreground font-medium text-sm">📄 Documents</h3>
+                    <p className="text-muted-foreground text-xs mt-1">Shared documents will appear here...</p>
+                  </div>
+                  <hr className="border-border" />
+                  <p className="text-muted-foreground text-xs text-center">{template.email_footer_message}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="bg-warning p-6 text-center">
+                  <h2 className="text-xl font-semibold text-warning-foreground">⚠️ Grace Period Started</h2>
+                  <p className="text-warning-foreground/80 text-sm mt-1">Dead Man's Switch Warning</p>
+                </div>
+                <div className="bg-card p-6 space-y-4">
+                  <p className="text-foreground">Hello <strong>{userName}</strong>,</p>
+                  <p className="text-muted-foreground text-sm">{resolveVariable(template.email_grace_intro)}</p>
+                  <div className="bg-destructive/10 border-2 border-destructive p-5 rounded-lg text-center">
+                    <p className="text-destructive font-semibold text-sm">⏰ GRACE PERIOD ENDS:</p>
+                    <p className="text-destructive text-lg font-bold mt-1">{new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString()}</p>
+                  </div>
+                  <hr className="border-border" />
+                  <p className="text-muted-foreground text-xs text-center">This email was sent by your Dead Man's Switch system.</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         )}
       </Card>

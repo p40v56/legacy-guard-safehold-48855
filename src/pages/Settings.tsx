@@ -562,7 +562,7 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            <ThemeSelector />
+            
           </TabsContent>
 
           {/* ─── SECURITY TAB ─── */}

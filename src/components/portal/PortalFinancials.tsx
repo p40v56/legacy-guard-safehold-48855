@@ -7,6 +7,8 @@ interface AttachedDocument {
   title: string;
   file_path: string | null;
   document_type: string;
+  file_data?: string | null;
+  file_type?: string | null;
 }
 
 interface FinancialAsset {

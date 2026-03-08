@@ -58,9 +58,11 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [lastPortalAccess, setLastPortalAccess] = useState<string | null>(null);
   const [portalAccessCount, setPortalAccessCount] = useState(0);
 
-  // Check if an active share exists on mount
+  // Check if an active share exists and fetch portal access info
   useEffect(() => {
     if (!user || isFree) return;
+    
+    // Check active share
     supabase
       .from('contact_shares')
       .select('id')
@@ -68,6 +70,32 @@ const ContactCard: React.FC<ContactCardProps> = ({
       .eq('user_id', user.id)
       .limit(1)
       .then(({ data }) => setHasActiveShare((data?.length ?? 0) > 0));
+
+    // Fetch last portal access from contact_access_tokens
+    supabase
+      .from('contact_access_tokens')
+      .select('last_accessed_at')
+      .eq('contact_id', contact.id)
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0 && data[0].last_accessed_at) {
+          setLastPortalAccess(data[0].last_accessed_at);
+        }
+      });
+
+    // Count portal access events from sent_notifications
+    supabase
+      .from('sent_notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('contact_id', contact.id)
+      .eq('user_id', user.id)
+      .eq('notification_type', 'portal_accessed')
+      .then(({ count }) => {
+        setPortalAccessCount(count || 0);
+      });
   }, [contact.id, user, isFree]);
 
   // Auto-regenerate portal shares when permissions change

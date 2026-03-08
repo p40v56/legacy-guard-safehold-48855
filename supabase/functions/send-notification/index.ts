@@ -358,6 +358,38 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       </body></html>`;
       console.log(`Sending account deletion email to ${recipientEmail} (deleted by: ${deletedBy})`);
+    } else if (notificationType === "plan_upgrade") {
+      const { recipientEmail: puEmail, planLabel, expiresAt } = data as any;
+      const expiryDate = new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      recipientEmail = puEmail;
+      recipientName = puEmail;
+      subject = `🎉 Welcome to LegacyVault ${planLabel}!`;
+      emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#374151;max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#1A9BD7 0%,#0D6EA8 100%);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0;">
+          <h1 style="margin:0;font-size:24px;font-weight:600;">🎉 Welcome to ${planLabel}!</h1>
+          <p style="margin:12px 0 0;opacity:.9;font-size:14px;">Your plan has been upgraded</p>
+        </div>
+        <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+          <p style="font-size:16px;margin:0 0 20px;">Hello,</p>
+          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">Thank you for upgrading to <strong>LegacyVault ${planLabel}</strong>! Your payment has been processed successfully.</p>
+          <div style="background-color:#ecfdf5;border-left:4px solid #10b981;padding:16px;margin:20px 0;border-radius:4px;">
+            <p style="color:#065f46;margin:0;font-size:14px;font-weight:600;">What's included:</p>
+            <ul style="color:#065f46;margin:8px 0 0;padding-left:20px;font-size:14px;">
+              <li>${planLabel === 'Family' ? 'Unlimited' : 'Up to 5'} emergency contacts</li>
+              <li>${planLabel === 'Family' ? 'Unlimited' : 'Up to 20'} documents & ${planLabel === 'Family' ? '5GB' : '500MB'} storage</li>
+              <li>Custom email templates & security questions</li>
+              <li>Advanced activation rules</li>
+            </ul>
+          </div>
+          <div style="background-color:#f0f9ff;border:1px solid #bae6fd;padding:16px;border-radius:8px;margin:20px 0;text-align:center;">
+            <p style="color:#0c4a6e;margin:0;font-size:14px;">Your plan is valid until <strong>${expiryDate}</strong></p>
+          </div>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+          <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · Thank you for your trust.</p>
+        </div>
+      </body></html>`;
+      console.log(`Sending plan upgrade confirmation to ${recipientEmail}`);
     } else {
       const triggerData = data as SwitchTriggeredRequest | LegacyNotificationRequest;
       emailHtml = generateSwitchTriggeredHtml(triggerData);

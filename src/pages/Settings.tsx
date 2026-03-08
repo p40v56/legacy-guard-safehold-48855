@@ -18,7 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database, ChevronDown, Info, Check, ShieldCheck, LogOut, Monitor, Smartphone, Laptop, Globe, Trash } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database, ChevronDown, Info, Check, ShieldCheck, LogOut, Monitor, Smartphone, Laptop, Globe, Trash, PartyPopper, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
@@ -111,6 +112,9 @@ const Settings = () => {
 
   // Stripe checkout
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [upgradedPlan, setUpgradedPlan] = useState<string | null>(null);
+  const [upgradedExpiry, setUpgradedExpiry] = useState<string | null>(null);
 
   const handleStripeCheckout = async (tier: PlanTier) => {
     if (tier === 'free') return;
@@ -142,8 +146,11 @@ const Settings = () => {
           const { data, error } = await supabase.functions.invoke('verify-payment');
           if (error) throw error;
           if (data?.paid) {
-            toast({ title: 'Payment successful ✓', description: `Your plan has been upgraded to ${PLAN_LABELS[data.plan as PlanTier] || data.plan}.` });
-            window.location.href = '/settings?tab=account';
+            setUpgradedPlan(PLAN_LABELS[data.plan as PlanTier] || data.plan);
+            setUpgradedExpiry(data.expires_at);
+            setShowPaymentSuccess(true);
+            // Clean URL without full reload
+            navigate('/settings?tab=account', { replace: true });
           }
         } catch (error: any) {
           toast({ title: 'Verification pending', description: 'Your payment is being processed. Please refresh in a moment.', variant: 'default' });
@@ -1265,6 +1272,69 @@ const Settings = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Payment Success Dialog */}
+      <Dialog open={showPaymentSuccess} onOpenChange={setShowPaymentSuccess}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-foreground text-xl">
+              <div className="p-2.5 rounded-xl bg-primary/15">
+                <Crown className="w-6 h-6 text-primary" />
+              </div>
+              Welcome to {upgradedPlan}!
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5 mt-2">
+            <div className="text-center py-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/15 mb-4">
+                <PartyPopper className="w-8 h-8 text-success" />
+              </div>
+              <h3 className="text-lg font-semibold text-card-foreground mb-1">Payment Successful!</h3>
+              <p className="text-muted-foreground text-sm">
+                Thank you for upgrading to <strong className="text-foreground">{upgradedPlan}</strong>.
+              </p>
+            </div>
+
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-card-foreground">Your plan is now active</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-card-foreground">All premium features unlocked</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-card-foreground">Increased storage & limits</span>
+              </div>
+              {upgradedExpiry && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-card-foreground">
+                    Valid until {formatDateEUShort(upgradedExpiry)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              A confirmation email has been sent to your registered email address.
+            </p>
+
+            <Button
+              className="w-full"
+              onClick={() => {
+                setShowPaymentSuccess(false);
+                window.location.reload();
+              }}
+            >
+              Start Exploring
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

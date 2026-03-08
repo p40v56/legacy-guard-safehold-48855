@@ -72,6 +72,7 @@ const Documents = () => {
     title: '',
     document_type: 'legal',
     description: '',
+    content: '',
     is_public: false,
   });
   const [uploading, setUploading] = useState(false);

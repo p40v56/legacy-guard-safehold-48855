@@ -714,42 +714,73 @@ const Settings = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="space-y-4 pt-0">
-                    {/* Current session info */}
-                    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                          <span className="text-sm font-medium text-foreground">Current session</span>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">Active</Badge>
+                    {sessionsLoading ? (
+                      <div className="flex justify-center py-4"><LoadingSpinner /></div>
+                    ) : trackedSessions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No sessions tracked yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {trackedSessions.map((s) => (
+                          <div key={s.id} className="rounded-xl border border-border bg-card p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {s.is_mobile ? (
+                                  <Smartphone className="w-4 h-4 text-muted-foreground" />
+                                ) : (
+                                  <Monitor className="w-4 h-4 text-muted-foreground" />
+                                )}
+                                <span className="text-sm font-medium text-foreground">
+                                  {s.device_name || 'Unknown device'}
+                                </span>
+                                {s.is_current && (
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                                    <span className="text-xs text-success font-medium">Current</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={s.is_current ? 'default' : 'secondary'} className="text-xs">
+                                  {s.is_current ? 'Active' : 'Tracked'}
+                                </Badge>
+                                {!s.is_current && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => revokeSession(s.id)}
+                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Browser: </span>
+                                <span className="text-foreground">{s.browser || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">OS: </span>
+                                <span className="text-foreground">{s.os || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Last active: </span>
+                                <span className="text-foreground">
+                                  {new Date(s.last_active_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">First seen: </span>
+                                <span className="text-foreground">
+                                  {new Date(s.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Email: </span>
-                          <span className="text-foreground">{user?.email || '—'}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Last sign-in: </span>
-                          <span className="text-foreground">
-                            {user?.last_sign_in_at
-                              ? new Date(user.last_sign_in_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                              : '—'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Provider: </span>
-                          <span className="text-foreground capitalize">{user?.app_metadata?.provider || 'email'}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Account created: </span>
-                          <span className="text-foreground">
-                            {user?.created_at
-                              ? new Date(user.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                              : '—'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    )}
 
                     <Separator />
 

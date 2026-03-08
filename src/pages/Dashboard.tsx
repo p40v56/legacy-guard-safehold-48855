@@ -247,14 +247,20 @@ const Dashboard = () => {
               <h2 className="text-xl font-medium text-card-foreground">System Status</h2>
               <p className={`text-sm font-medium ${statusDisplay.color}`}>{statusDisplay.label}</p>
             </div>
-            <Button
-              onClick={handleToggleSystem}
-              variant={settings?.is_active ? "destructive" : "default"}
-              disabled={saving}
-              className={`rounded-full px-6 ${settings?.is_active ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'}`}
-            >
-              {saving ? 'Saving...' : settings?.is_active ? 'Deactivate System' : 'Activate System'}
-            </Button>
+            {!settings?.is_active ? (
+              <Link to="/switch">
+                <Button size="sm" className="bg-primary hover:bg-primary/90 rounded-full px-5">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Check in to activate
+                </Button>
+              </Link>
+            ) : (countdown.isOverdue || settings?.grace_period_active) && !settings?.switch_triggered ? (
+              <Link to="/switch">
+                <Button size="sm" variant="destructive" className="rounded-full px-5 animate-pulse">
+                  Check in now
+                </Button>
+              </Link>
+            ) : null}
           </div>
 
           {/* Warning Banners */}

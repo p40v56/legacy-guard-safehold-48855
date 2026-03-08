@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Mail, Phone, PhoneCall, Lock, MessageSquare, ChevronDown } from 'lucide-react';
+import { Mail, Phone, PhoneCall, Lock, MessageSquare, ChevronDown, CheckCircle } from 'lucide-react';
 
 interface CheckInMethodsProps {
   smsCheckinEnabled: boolean;
@@ -40,16 +40,19 @@ const CheckInMethods = ({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="mt-6 space-y-5">
-            <div className="flex items-center justify-between opacity-60">
+            {/* Email link check-in — Active */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                <CheckCircle className="w-5 h-5 text-success" />
                 <div>
-                  <Label className="text-foreground">Check-in via email</Label>
-                  <p className="text-xs text-muted-foreground">Reply to an email to confirm your check-in</p>
+                  <Label className="text-foreground">Check-in via email link</Label>
+                  <p className="text-xs text-muted-foreground">
+                    A check-in link is included in every grace period reminder email.
+                    Click it to confirm you're alive without opening the app.
+                  </p>
                 </div>
-                {!isPaidPlan && <Badge variant="outline" className="text-xs ml-2"><Lock className="w-3 h-3 mr-1" />Paid</Badge>}
               </div>
-              <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Coming soon</Badge>
+              <Badge className="bg-success/20 text-success border-success/30 text-xs">Active</Badge>
             </div>
 
             <div className="flex items-center justify-between opacity-60">

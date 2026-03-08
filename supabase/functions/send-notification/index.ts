@@ -51,6 +51,7 @@ interface GracePeriodWarningRequest {
   gracePeriodHours: number;
   graceEndDate: string;
   emailTemplate?: EmailTemplate;
+  checkInUrl?: string | null;
 }
 
 interface SwitchTriggeredRequest {
@@ -104,11 +105,16 @@ function resolveTemplate(text: string, vars: Record<string, string>): string {
 }
 
 function generateGracePeriodWarningHtml(data: GracePeriodWarningRequest): string {
-  const { recipientName, gracePeriodHours, graceEndDate, userName, emailTemplate } = data;
+  const { recipientName, gracePeriodHours, graceEndDate, userName, emailTemplate, checkInUrl } = data;
   const graceIntro = resolveTemplate(
     emailTemplate?.email_grace_intro || "Your Dead Man's Switch has detected that you did not check in by your scheduled deadline.",
     { userName }
   );
+  const checkInButtonHtml = checkInUrl ? `
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${checkInUrl}" style="display: inline-block; background-color: #059669; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">✓ I'm alive — check in now</a>
+          <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 12px;">Clicking this counts as your check-in. This link expires in 7 days.</p>
+        </div>` : '';
   return `
     <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -126,6 +132,7 @@ function generateGracePeriodWarningHtml(data: GracePeriodWarningRequest): string
           <p style="color: #991b1b; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">⏰ GRACE PERIOD ENDS:</p>
           <p style="color: #dc2626; margin: 0; font-size: 18px; font-weight: 700;">${formatDateTime(graceEndDate)}</p>
         </div>
+        ${checkInButtonHtml}
         <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;"><strong>What happens next?</strong><br>If you do not perform a check-in before the grace period ends, your emergency contacts will be automatically notified with the information you have configured.</p>
         <div style="text-align: center; margin: 32px 0;"><p style="font-size: 16px; color: #059669; font-weight: 600; margin: 0;">✅ Log in to your account and perform a check-in to cancel this alert.</p></div>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">

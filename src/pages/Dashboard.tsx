@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Monitor, FileText, Shield, Timer, ArrowRight, Check, AlertTriangle, CheckCircle, ChevronDown, Landmark } from 'lucide-react';
+import { Users, Monitor, FileText, Shield, Timer, ArrowRight, Check, AlertTriangle, CheckCircle, ChevronDown, Landmark, History } from 'lucide-react';
 import SecurityBadge from '@/components/dashboard/SecurityBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -377,6 +377,17 @@ const Dashboard = () => {
               )}
             </div>
           )}
+
+          {/* Check-in history link */}
+          <div className="mt-3 flex justify-end">
+            <Link
+              to="/switch#history"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              <History className="w-3.5 h-3.5" />
+              View check-in history
+            </Link>
+          </div>
         </div>
 
         {/* Quick Actions */}

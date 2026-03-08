@@ -18,6 +18,7 @@ interface PermissionsConfigProps {
   useTypeDefaults: boolean;
   onUseTypeDefaultsChange: (useDefaults: boolean) => void;
   disabled?: boolean;
+  hideDefaultsToggle?: boolean;
 }
 
 const digitalAccountCategories: { value: DigitalAccountCategory; label: string }[] = [

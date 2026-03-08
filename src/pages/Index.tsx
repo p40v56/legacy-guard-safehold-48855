@@ -300,20 +300,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* FINAL CTA */}
-        <section className="lv-final-cta">
-          <div className="lv-container">
-            <div className="reveal">
-              <h2 className="lv-h2" style={{ marginBottom: 16 }}>Ready to protect<br /><em>what matters most?</em></h2>
-              <p className="lv-body" style={{ color: 'rgba(255,255,255,.5)', margin: '0 auto 40px', textAlign: 'center' }}>Set up your encrypted vault in under 10 minutes. No credit card required.</p>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button className="lv-btn-primary" onClick={() => navigate('/auth?mode=signup')}>Get started free</button>
-                <button className="lv-btn-ghost" onClick={() => navigate('/auth')}>Sign in</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* FOOTER */}
         <footer className="lv-footer">
           <div className="lv-footer-top">

@@ -371,7 +371,6 @@ const Settings = () => {
                   })}
                 </div>
               </CardContent>
-              </CardContent>
             </Card>
 
             <Card className="bg-muted/30 border-none rounded-2xl">

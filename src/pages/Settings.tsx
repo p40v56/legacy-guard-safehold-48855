@@ -28,6 +28,7 @@ import RichTextEditor from '@/components/ui/rich-text-editor';
 import EmailTemplateEditor, { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
 import NotificationTimeline from '@/components/settings/NotificationTimeline';
 import UpgradePrompt from '@/components/UpgradePrompt';
+import ThemeSelector from '@/components/settings/ThemeSelector';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { decryptFields } from '@/lib/crypto';

@@ -75,6 +75,18 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
 
   const updateCsf = (key: string, value: any) => setCsf(prev => ({ ...prev, [key]: value }));
 
+  const handleValueChange = (raw: string) => {
+    const stripped = stripFormatting(raw);
+    // Only allow digits and one decimal point
+    const clean = stripped.replace(/[^\d.]/g, '');
+    const parts = clean.split('.');
+    const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : clean;
+    setEstimatedValue(sanitized);
+    setDisplayValue(formatNumberWithSeparators(sanitized));
+  };
+
+  const selectedCurrency = getCurrency(currency);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({

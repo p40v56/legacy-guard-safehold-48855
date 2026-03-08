@@ -32,6 +32,12 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
   const [name, setName] = useState(initialData?.name || '');
   const [institution, setInstitution] = useState(initialData?.institution || '');
   const [estimatedValue, setEstimatedValue] = useState(initialData?.estimated_value?.toString() || '');
+  const [displayValue, setDisplayValue] = useState(
+    initialData?.estimated_value ? formatNumberWithSeparators(initialData.estimated_value.toString()) : ''
+  );
+  const [currency, setCurrency] = useState<CurrencyCode>(
+    (initialData?.category_specific_fields as any)?.currency || DEFAULT_CURRENCY
+  );
   const [contactName, setContactName] = useState(initialData?.contact_name || '');
   const [contactPhone, setContactPhone] = useState(initialData?.contact_phone || '');
   const [contactEmail, setContactEmail] = useState(initialData?.contact_email || '');

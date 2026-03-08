@@ -684,7 +684,7 @@ const Documents = () => {
             </div>
           )}
         </div>
-        </>)}
+        </>}
 
         <ConfirmationDialog
           open={!!deleteTargetId}

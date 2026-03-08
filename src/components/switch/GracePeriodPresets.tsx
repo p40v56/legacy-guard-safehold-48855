@@ -101,9 +101,9 @@ const GracePeriodPresets = ({ gracePeriodHours, onGracePeriodChange }: GracePeri
       )}
 
       {gracePeriodHours === 0 && selectValue === '0' && (
-        <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg mt-2">
-          <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-          <p className="text-xs text-destructive">
+        <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mt-2">
+          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-600 dark:text-amber-400">
             With no grace period, your switch will trigger the moment your deadline passes with no warning email.
           </p>
         </div>

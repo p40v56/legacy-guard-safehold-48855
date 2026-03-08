@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Mail, Eye, EyeOff, Save, Info, Send, RefreshCw, ChevronDown } from 'lucide-react';
+import { Mail, Eye, EyeOff, Save, Info, Send, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,9 +52,8 @@ const VariablesInset = () => (
 );
 
 const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'John' }: EmailTemplateEditorProps) => {
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewType, setPreviewType] = useState<'switch_triggered' | 'grace_period'>('switch_triggered');
-  const [previewKey, setPreviewKey] = useState(0);
+  const [showGracePreview, setShowGracePreview] = useState(false);
+  const [showTriggeredPreview, setShowTriggeredPreview] = useState(false);
   const [sendingTest, setSendingTest] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -97,7 +96,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
 
   return (
     <div className="space-y-4 relative pb-20">
-      {/* Grace Period Warning Email — FIRST (chronological order) */}
+      {/* Grace Period Warning Email */}
       <Collapsible defaultOpen={false}>
         <Card className="bg-muted/30 border-none rounded-2xl">
           <CollapsibleTrigger className="w-full text-left">
@@ -127,22 +126,53 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                 <RichTextEditor value={template.email_grace_intro} onChange={v => updateField('email_grace_intro', v)} placeholder="Grace period intro text..." className="[&_.ql-editor]:!min-h-[100px]" />
                 <VariablesInset />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => sendTestEmail('grace_period')}
-                disabled={!!sendingTest}
-                className="rounded-xl"
-              >
-                {sendingTest === 'grace_period' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                Send test email
-              </Button>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => sendTestEmail('grace_period')}
+                  disabled={!!sendingTest}
+                  className="rounded-xl"
+                >
+                  {sendingTest === 'grace_period' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  Send test email
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowGracePreview(p => !p)}
+                  className="rounded-xl"
+                >
+                  {showGracePreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                  {showGracePreview ? 'Hide' : 'Show'} Preview
+                </Button>
+              </div>
+
+              {showGracePreview && (
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <div className="bg-warning p-6 text-center">
+                    <h2 className="text-xl font-semibold text-warning-foreground">⚠️ Grace Period Started</h2>
+                    <p className="text-warning-foreground/80 text-sm mt-1">Dead Man's Switch Warning</p>
+                  </div>
+                  <div className="bg-card p-6 space-y-4">
+                    <p className="text-foreground">Hello <strong>{userName}</strong>,</p>
+                    <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_grace_intro) }} />
+                    <div className="bg-destructive/10 border-2 border-destructive p-5 rounded-lg text-center">
+                      <p className="text-destructive font-semibold text-sm">⏰ GRACE PERIOD ENDS:</p>
+                      <p className="text-destructive text-lg font-bold mt-1">{new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString()}</p>
+                    </div>
+                    <hr className="border-border" />
+                    <p className="text-muted-foreground text-xs text-center">This email was sent by your Dead Man's Switch system.</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </CollapsibleContent>
         </Card>
       </Collapsible>
 
-      {/* Switch Triggered Email — SECOND */}
+      {/* Switch Triggered Email */}
       <Collapsible defaultOpen={false}>
         <Card className="bg-muted/30 border-none rounded-2xl">
           <CollapsibleTrigger className="w-full text-left">
@@ -186,105 +216,55 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                 <Label className="text-foreground">Footer Message</Label>
                 <RichTextEditor value={template.email_footer_message} onChange={v => updateField('email_footer_message', v)} placeholder="Footer text..." className="[&_.ql-editor]:!min-h-[100px]" />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => sendTestEmail('switch_triggered')}
-                disabled={!!sendingTest}
-                className="rounded-xl"
-              >
-                {sendingTest === 'switch_triggered' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                Send test email
-              </Button>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => sendTestEmail('switch_triggered')}
+                  disabled={!!sendingTest}
+                  className="rounded-xl"
+                >
+                  {sendingTest === 'switch_triggered' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  Send test email
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTriggeredPreview(p => !p)}
+                  className="rounded-xl"
+                >
+                  {showTriggeredPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                  {showTriggeredPreview ? 'Hide' : 'Show'} Preview
+                </Button>
+              </div>
+
+              {showTriggeredPreview && (
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <div className="bg-destructive p-6 text-center">
+                    <h2 className="text-xl font-semibold text-destructive-foreground">{template.email_header_title}</h2>
+                    <p className="text-destructive-foreground/80 text-sm mt-1">{template.email_header_subtitle}</p>
+                  </div>
+                  <div className="bg-card p-6 space-y-4">
+                    <p className="text-foreground">Dear <strong>Contact Name</strong>,</p>
+                    <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_intro_message) }} />
+                    <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
+                      <h3 className="text-warning font-medium text-sm">⚠️ Emergency Instructions</h3>
+                      <p className="text-muted-foreground text-xs mt-1">Your emergency instructions will appear here...</p>
+                    </div>
+                    <div className="bg-muted/50 p-4 rounded">
+                      <h3 className="text-foreground font-medium text-sm">📄 Documents</h3>
+                      <p className="text-muted-foreground text-xs mt-1">Shared documents will appear here...</p>
+                    </div>
+                    <hr className="border-border" />
+                    <div className="text-muted-foreground text-xs text-center" dangerouslySetInnerHTML={{ __html: template.email_footer_message }} />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </CollapsibleContent>
         </Card>
       </Collapsible>
-
-      {/* Preview */}
-      <Card className="bg-muted/30 border-none rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center justify-between">
-            <div className="flex items-center">
-              <Eye className="w-5 h-5 mr-2 text-primary" />
-              Email Preview
-            </div>
-            <div className="flex gap-2">
-              {showPreview && (
-                <Button variant="outline" size="sm" onClick={() => setPreviewKey(k => k + 1)} className="rounded-xl">
-                  <RefreshCw className="w-4 h-4 mr-2" />Refresh
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="rounded-xl">
-                {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                {showPreview ? 'Hide' : 'Show'} Preview
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        {showPreview && (
-          <CardContent className="space-y-4" key={previewKey}>
-            <div className="flex gap-2">
-              <Button
-                variant={previewType === 'grace_period' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPreviewType('grace_period')}
-                className="rounded-xl"
-              >
-                Grace Period Warning
-              </Button>
-              <Button
-                variant={previewType === 'switch_triggered' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPreviewType('switch_triggered')}
-                className="rounded-xl"
-              >
-                Switch Triggered
-              </Button>
-            </div>
-
-            {previewType === 'switch_triggered' ? (
-              <div className="rounded-xl border border-border overflow-hidden">
-                <div className="bg-destructive p-6 text-center">
-                  <h2 className="text-xl font-semibold text-destructive-foreground">{template.email_header_title}</h2>
-                  <p className="text-destructive-foreground/80 text-sm mt-1">{template.email_header_subtitle}</p>
-                </div>
-                <div className="bg-card p-6 space-y-4">
-                  <p className="text-foreground">Dear <strong>Contact Name</strong>,</p>
-                  <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_intro_message) }} />
-                  <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
-                    <h3 className="text-warning font-medium text-sm">⚠️ Emergency Instructions</h3>
-                    <p className="text-muted-foreground text-xs mt-1">Your emergency instructions will appear here...</p>
-                  </div>
-                  <div className="bg-muted/50 p-4 rounded">
-                    <h3 className="text-foreground font-medium text-sm">📄 Documents</h3>
-                    <p className="text-muted-foreground text-xs mt-1">Shared documents will appear here...</p>
-                  </div>
-                  <hr className="border-border" />
-                  <div className="text-muted-foreground text-xs text-center" dangerouslySetInnerHTML={{ __html: template.email_footer_message }} />
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border overflow-hidden">
-                <div className="bg-warning p-6 text-center">
-                  <h2 className="text-xl font-semibold text-warning-foreground">⚠️ Grace Period Started</h2>
-                  <p className="text-warning-foreground/80 text-sm mt-1">Dead Man's Switch Warning</p>
-                </div>
-                <div className="bg-card p-6 space-y-4">
-                  <p className="text-foreground">Hello <strong>{userName}</strong>,</p>
-                  <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_grace_intro) }} />
-                  <div className="bg-destructive/10 border-2 border-destructive p-5 rounded-lg text-center">
-                    <p className="text-destructive font-semibold text-sm">⏰ GRACE PERIOD ENDS:</p>
-                    <p className="text-destructive text-lg font-bold mt-1">{new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString()}</p>
-                  </div>
-                  <hr className="border-border" />
-                  <p className="text-muted-foreground text-xs text-center">This email was sent by your Dead Man's Switch system.</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        )}
-      </Card>
 
       {/* Info box */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-3">

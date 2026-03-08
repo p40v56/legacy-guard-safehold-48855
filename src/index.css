@@ -834,49 +834,54 @@ body:has(#lv-root) {
 
 /* ── Process ── */
 #lv-root .lv-process {
-  background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%);
-  padding: 120px 48px; position: relative; overflow: hidden;
+  background: linear-gradient(160deg, #1A9BD7 0%, #0D6EA8 60%, #072a42 100%);
+  padding: 140px 48px; position: relative; overflow: hidden;
 }
 #lv-root .lv-process::before {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,255,255,0.1) 0%, transparent 60%);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,255,255,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 80% 80%, rgba(26,155,215,0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+#lv-root .lv-process::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 120px;
+  background: linear-gradient(to bottom, transparent, #0D1B2A);
   pointer-events: none;
 }
 #lv-root .lv-steps {
   display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 32px; margin-top: 64px; position: relative; z-index: 1;
+  gap: 32px; margin-top: 72px; position: relative; z-index: 1;
 }
 #lv-root .lv-connector {
   position: absolute; top: 28px; left: 10%; right: 10%;
   height: 0; border-top: 2px dashed rgba(255,255,255,0.2); overflow: hidden;
 }
-#lv-root .lv-connector-fill {
-  display: none;
-}
+#lv-root .lv-connector-fill { display: none; }
 #lv-root .lv-step { text-align: center; }
 #lv-root .lv-step-circle {
-  width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%;
+  width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%;
   border: 1px solid rgba(255,255,255,0.4) !important;
-  background: rgba(255,255,255,0.12) !important;
-  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,0.1) !important;
+  backdrop-filter: blur(12px);
   display: flex; align-items: center; justify-content: center;
-  font-weight: 500; font-size: 18px; color: white !important;
-  transition: all 0.4s cubic-bezier(0.22,1,0.36,1);
-  box-shadow: none !important;
+  font-weight: 600; font-size: 20px; color: white !important;
+  transition: all 0.5s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 0 30px rgba(255,255,255,0.05) !important;
 }
 #lv-root .lv-step:hover .lv-step-circle {
   background: rgba(255,255,255,0.25) !important;
   border-color: rgba(255,255,255,0.8) !important;
-  transform: scale(1.1);
-  box-shadow: 0 0 30px rgba(255,255,255,0.15) !important;
+  transform: scale(1.15) translateY(-4px);
+  box-shadow: 0 0 50px rgba(255,255,255,0.2), 0 20px 40px rgba(0,0,0,0.15) !important;
 }
 #lv-root .lv-step-lbl {
-  color: white !important; font-weight: 500; font-size: 14px;
-  margin-bottom: 4px; font-family: 'DM Sans', sans-serif;
+  color: white !important; font-weight: 600; font-size: 15px;
+  margin-bottom: 6px; font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-step-desc {
   color: rgba(255,255,255,0.5) !important; font-size: 12px;
-  line-height: 1.4; font-family: 'DM Sans', sans-serif;
+  line-height: 1.5; font-family: 'DM Sans', sans-serif;
 }
 
 /* ── Pricing card upgrades ── */

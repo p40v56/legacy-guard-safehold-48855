@@ -142,7 +142,7 @@ const SwitchCountdown = ({
       <div className="relative p-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl ${urgencyLevel === 'critical' ? 'bg-destructive/20' : urgencyLevel === 'urgent' ? 'bg-warning/20' : 'bg-primary/20'} animate-pulse-subtle`}>
+            <div className={`p-2 rounded-xl ${urgencyLevel === 'critical' ? 'bg-destructive/20 animate-pulse' : urgencyLevel === 'urgent' ? 'bg-warning/20' : 'bg-primary/20'} animate-pulse-subtle`}>
               <Timer className={`w-6 h-6 ${colors.text}`} />
             </div>
             <span className="text-2xl font-display font-semibold">

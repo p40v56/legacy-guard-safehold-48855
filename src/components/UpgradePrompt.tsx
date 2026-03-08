@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { PlanTier, PLAN_LABELS, PLAN_PRICES } from '@/hooks/usePlan';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface UpgradePromptProps {
   message: string;
@@ -23,10 +26,28 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
 
 const UpgradePrompt = ({ message, featureKey, requiredPlan = 'essential', className = '' }: UpgradePromptProps) => {
   const { user } = useAuth();
-  const userEmail = user?.email || '';
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const planLabel = PLAN_LABELS[requiredPlan];
   const planPrice = PLAN_PRICES[requiredPlan];
-  const mailtoLink = `mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault upgrade request — ${planLabel} plan`)}&body=${encodeURIComponent(`I'd like to upgrade to the ${planLabel} plan (${planPrice}). My account email is: ${userEmail}`)}`;
+
+  const handleUpgrade = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: requiredPlan },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Could not start checkout', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className={`bg-muted/30 border border-border rounded-2xl p-5 flex items-start gap-4 ${className}`}>
@@ -42,14 +63,15 @@ const UpgradePrompt = ({ message, featureKey, requiredPlan = 'essential', classN
         )}
         <p className="text-xs text-muted-foreground mb-3">{planLabel} — {planPrice}</p>
         <div className="flex items-center gap-3 flex-wrap">
-          <a
-            href={mailtoLink}
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          <button
+            onClick={handleUpgrade}
+            disabled={loading}
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
           >
-            Upgrade to {planLabel} →
-          </a>
+            {loading ? 'Loading...' : `Upgrade to ${planLabel} →`}
+          </button>
           <Link
-            to="/settings?tab=profile"
+            to="/settings?tab=account"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             View plan details

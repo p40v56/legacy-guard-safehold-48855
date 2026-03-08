@@ -264,7 +264,7 @@ const Index = () => {
                     style={{ width: '100%', marginTop: 28 }}
                     onClick={() => {
                       if (name === 'Free') navigate('/auth?mode=signup');
-                      else window.location.href = `mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault upgrade — ${name} plan`)}`;
+                      else navigate(`/auth?mode=signup&plan=${name.toLowerCase()}`);
                     }}
                   >
                     {cta}

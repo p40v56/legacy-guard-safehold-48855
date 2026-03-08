@@ -109,6 +109,53 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // Stripe checkout
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  const handleStripeCheckout = async (tier: PlanTier) => {
+    if (tier === 'free') return;
+    setCheckoutLoading(tier);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: tier },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Could not start checkout', variant: 'destructive' });
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  // Handle payment success redirect
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const paymentPlan = searchParams.get('plan');
+    const checkoutPlan = searchParams.get('checkout');
+
+    if (paymentStatus === 'success' && paymentPlan) {
+      const verifyPayment = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('verify-payment');
+          if (error) throw error;
+          if (data?.paid) {
+            toast({ title: 'Payment successful ✓', description: `Your plan has been upgraded to ${PLAN_LABELS[data.plan as PlanTier] || data.plan}.` });
+            window.location.href = '/settings?tab=account';
+          }
+        } catch (error: any) {
+          toast({ title: 'Verification pending', description: 'Your payment is being processed. Please refresh in a moment.', variant: 'default' });
+        }
+      };
+      verifyPayment();
+    } else if (checkoutPlan && (checkoutPlan === 'essential' || checkoutPlan === 'family')) {
+      // Auto-trigger checkout after signup/login with plan param
+      handleStripeCheckout(checkoutPlan as PlanTier);
+    }
+  }, []);
+
   // Auto-lock timeout
   const [autoLockMinutes, setAutoLockMinutes] = useState(15);
 
@@ -646,16 +693,16 @@ const Settings = () => {
                           const tierOrder = planOrder[tier] || 0;
                           const isUpgrade = tierOrder > currentOrder;
                           const isDowngrade = tierOrder < currentOrder;
-                          const actionLabel = isUpgrade ? `Upgrade to ${PLAN_LABELS[tier]}` : isDowngrade ? `Switch to ${PLAN_LABELS[tier]}` : '';
-                          const subjectAction = isUpgrade ? 'upgrade' : 'plan change';
-                          const bodyAction = isUpgrade ? `upgrade to` : `switch to`;
+                          if (tier === 'free') return null;
+                          const actionLabel = isUpgrade ? `Upgrade to ${PLAN_LABELS[tier]}` : `Switch to ${PLAN_LABELS[tier]}`;
                           return (
-                            <a
-                              href={`mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault ${subjectAction} request — ${PLAN_LABELS[tier]} plan`)}&body=${encodeURIComponent(`I'd like to ${bodyAction} the ${PLAN_LABELS[tier]} plan (${PLAN_PRICES[tier]}). My account email is: ${userEmail}`)}`}
-                              className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${isDowngrade ? 'text-muted-foreground hover:text-foreground' : 'text-primary hover:text-primary/80'}`}
+                            <button
+                              onClick={() => handleStripeCheckout(tier)}
+                              disabled={checkoutLoading === tier}
+                              className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${isDowngrade ? 'text-muted-foreground hover:text-foreground' : 'text-primary hover:text-primary/80'}`}
                             >
-                              {actionLabel} →
-                            </a>
+                              {checkoutLoading === tier ? 'Redirecting...' : `${actionLabel} →`}
+                            </button>
                           );
                         })()}
                       </div>

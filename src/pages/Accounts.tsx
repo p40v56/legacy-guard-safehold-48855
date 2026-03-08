@@ -240,14 +240,14 @@ const Accounts = () => {
                 <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
                   All
                 </TabsTrigger>
+                <TabsTrigger value="financials" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
+                  Financial
+                </TabsTrigger>
                 {categoryTabs.map(cat => (
                   <TabsTrigger key={cat} value={cat} className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
                     {ACCOUNT_TYPE_LABELS[cat as AccountType] || cat}
                   </TabsTrigger>
                 ))}
-                <TabsTrigger value="financials" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
-                  <PoundSterling className="w-4 h-4 mr-1" />Financials
-                </TabsTrigger>
               </TabsList>
             </div>
             {activeTab !== 'financials' && (

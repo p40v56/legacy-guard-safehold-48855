@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Routes, Route, Navigate } from 'react-router-dom';
-import { Shield, Lock, KeyRound, Loader2, X, Eye } from 'lucide-react';
+import { Shield, Lock, KeyRound, Loader2, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +45,7 @@ const Portal = () => {
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [securityChallenge, setSecurityChallenge] = useState<SecurityChallenge | null>(null);
   const [answer, setAnswer] = useState('');
+  const [showAnswer, setShowAnswer] = useState(false);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -224,13 +225,23 @@ const Portal = () => {
           <form onSubmit={handleAnswerSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label className="text-gray-900 font-medium">{securityChallenge.question}</Label>
-              <Input
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Your answer..."
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                autoFocus
-              />
+              <div className="relative">
+                <Input
+                  type={showAnswer ? 'text' : 'password'}
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Your answer..."
+                  className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 pr-10"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAnswer(!showAnswer)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showAnswer ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             {answerError && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">

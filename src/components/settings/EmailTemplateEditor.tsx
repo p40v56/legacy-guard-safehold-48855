@@ -165,7 +165,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
           </div>
           <div>
             <Label className="text-foreground">Introduction Message</Label>
-            <Textarea value={template.email_grace_intro} onChange={e => updateField('email_grace_intro', e.target.value)} placeholder="Grace period intro text..." rows={3} className="resize-none" />
+            <RichTextEditor value={template.email_grace_intro} onChange={v => updateField('email_grace_intro', v)} placeholder="Grace period intro text..." />
             <VariablesInset />
           </div>
           <Button

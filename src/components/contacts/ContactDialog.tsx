@@ -156,6 +156,17 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
             </div>
           </div>
 
+          {/* Custom Message */}
+          <div className="space-y-2">
+            <Label className="text-card-foreground font-medium">Personal Message <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <p className="text-xs text-muted-foreground">A personal message included in the notification email sent to this contact when the switch fires.</p>
+            <RichTextEditor
+              value={contactData.custom_message || ''}
+              onChange={(value) => setContactData({ ...contactData, custom_message: value })}
+              placeholder="Write a personal message for this contact..."
+            />
+          </div>
+
           <Button
             onClick={onSubmit} 
             className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"

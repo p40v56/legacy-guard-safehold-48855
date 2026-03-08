@@ -18,6 +18,7 @@ interface PermissionsConfigProps {
   useTypeDefaults: boolean;
   onUseTypeDefaultsChange: (useDefaults: boolean) => void;
   disabled?: boolean;
+  hideDefaultsToggle?: boolean;
 }
 
 const digitalAccountCategories: { value: DigitalAccountCategory; label: string }[] = [
@@ -46,7 +47,8 @@ const PermissionsConfig = ({
   onChange, 
   useTypeDefaults, 
   onUseTypeDefaultsChange,
-  disabled = false 
+  disabled = false,
+  hideDefaultsToggle = false
 }: PermissionsConfigProps) => {
   const updateDigitalAccounts = (updates: Partial<typeof permissions.digital_accounts>) => {
     onChange({
@@ -89,18 +91,19 @@ const PermissionsConfig = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Use Type Defaults Toggle */}
-        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-          <div>
-            <Label className="text-foreground">Use Contact Type Defaults</Label>
-            <p className="text-xs text-muted-foreground">Use default permissions for this contact type instead of custom settings</p>
+        {!hideDefaultsToggle && (
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <div>
+              <Label className="text-foreground">Use Contact Type Defaults</Label>
+              <p className="text-xs text-muted-foreground">Use default permissions for this contact type instead of custom settings</p>
+            </div>
+            <Switch
+              checked={useTypeDefaults}
+              onCheckedChange={onUseTypeDefaultsChange}
+              disabled={disabled}
+            />
           </div>
-          <Switch
-            checked={useTypeDefaults}
-            onCheckedChange={onUseTypeDefaultsChange}
-            disabled={disabled}
-          />
-        </div>
+        )}
 
         {!useTypeDefaults && (
           <>

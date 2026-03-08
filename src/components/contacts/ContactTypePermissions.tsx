@@ -106,6 +106,7 @@ const ContactTypePermissions = ({ typePermissions, onUpdate }: ContactTypePermis
         useTypeDefaults={false}
         onUseTypeDefaultsChange={() => {}}
         disabled={false}
+        hideDefaultsToggle
       />
     </div>
   );

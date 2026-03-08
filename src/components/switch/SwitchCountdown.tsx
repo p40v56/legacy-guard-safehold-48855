@@ -61,7 +61,7 @@ const SwitchCountdown = ({
   // Grace period mode
   if (gracePeriodActive && gracePeriodEnd) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-warning glass-strong transition-all duration-500 animate-pulse-subtle">
+      <div className={`relative overflow-hidden rounded-2xl border-2 border-warning glass-strong transition-all duration-500 animate-pulse-subtle ring-2 ring-destructive/50 ring-offset-2 ring-offset-background`}>
         <div className="absolute inset-0 bg-gradient-to-br from-warning/30 to-destructive/20" />
         
         {/* Warning pattern overlay */}

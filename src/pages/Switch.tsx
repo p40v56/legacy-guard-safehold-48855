@@ -152,6 +152,16 @@ const Switch = () => {
 
   const handleActivateAndCheckIn = async () => {
     if (!user) return;
+
+    // Guard: if custom deadline is stale, don't activate
+    const currentDeadline = settings?.next_check_in_due || settings?.custom_deadline;
+    const deadlineIsStale = !currentDeadline || new Date(currentDeadline) <= new Date();
+    if (deadlineIsStale && settings?.deadline_mode === 'custom') {
+      toast({ title: 'Deadline has passed', description: 'Please set a new custom deadline before activating.', variant: 'destructive' });
+      setShowActivationDialog(false);
+      return;
+    }
+
     try {
       await SettingsService.updateSettings(user.id, { is_active: true });
       await SettingsService.checkIn(user.id);
@@ -364,7 +374,7 @@ const Switch = () => {
               System Deactivated
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Your Dead Man's Switch is currently deactivated. Would you like to activate it now and proceed with the check-in?
+              Your Dead Man's Switch is currently deactivated. Activating will perform a check-in and start your countdown from now.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

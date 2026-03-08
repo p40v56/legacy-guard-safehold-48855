@@ -257,7 +257,7 @@ async function startGracePeriod(
         expires_at: tokenExpiry,
         method: 'email_link',
       });
-      checkInUrl = `${APP_BASE_URL}/functions/v1/check-in-via-token?token=${checkInToken}`;
+      checkInUrl = `${supabaseUrl}/functions/v1/check-in-via-token?token=${checkInToken}`;
     } catch (tokenErr) {
       console.error("Failed to generate check-in token:", tokenErr);
     }

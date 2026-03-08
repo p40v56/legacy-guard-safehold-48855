@@ -110,7 +110,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
           <div className="mb-4 p-4 rounded-xl bg-muted/30">
             <p className="text-sm text-muted-foreground mb-1">
               Total Estimated Value
-              {isMultiCurrency && <span className="ml-1 text-xs">(converted to {mainCurrency})</span>}
+              {needsConversion && <span className="ml-1 text-xs">(converted to {mainCurrency})</span>}
             </p>
             <div className="flex items-center gap-2">
               <p className="text-2xl font-bold text-foreground">

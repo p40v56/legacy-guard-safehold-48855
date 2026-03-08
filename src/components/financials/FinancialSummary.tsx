@@ -36,7 +36,16 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   const withContact = assets.filter(a => a.contact_name || a.contact_phone || a.contact_email).length;
   const withDocs = assets.filter(a => a.attached_document_ids && a.attached_document_ids.length > 0).length;
 
-  const formatCurrency = (v: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
+  // Determine predominant currency
+  const currencyCounts: Record<string, number> = {};
+  assets.forEach(a => {
+    const cur = (a.category_specific_fields as any)?.currency || 'GBP';
+    currencyCounts[cur] = (currencyCounts[cur] || 0) + 1;
+  });
+  const mainCurrency = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'GBP';
+  const mainCurrencyInfo = getCurrency(mainCurrency);
+
+  const formatCurrency = (v: number, cur?: string) => formatCurrencyValue(v, cur || mainCurrency);
 
   return (
     <Card className="bg-card border-border">

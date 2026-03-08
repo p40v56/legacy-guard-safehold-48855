@@ -263,6 +263,13 @@ const handler = async (req: Request): Promise<Response> => {
       recipientEmail = warningData.recipientEmail;
       recipientName = warningData.recipientName;
       console.log(`Sending ${isPreDeadline ? 'pre-deadline reminder' : 'grace period warning'} to ${recipientName} (${recipientEmail})`);
+    } else if (notificationType === "welcome") {
+      const { recipientEmail: wEmail, appUrl } = data as any;
+      emailHtml = buildWelcomeHtml(wEmail, appUrl || 'https://legacy-guard-safehold-48855.lovable.app');
+      recipientEmail = wEmail;
+      recipientName = wEmail;
+      subject = 'Welcome to LegacyVault — get started in 5 steps';
+      console.log(`Sending welcome email to ${recipientEmail}`);
     } else {
       const triggerData = data as SwitchTriggeredRequest | LegacyNotificationRequest;
       emailHtml = generateSwitchTriggeredHtml(triggerData);

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import LoadingSpinner from '@/components/ui/loading-spinner';
-import { Shield, Mail, Lock, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Shield, Mail, Lock, ArrowLeft, AlertTriangle, Smartphone } from 'lucide-react';
 
 const getPasswordStrength = (password: string): { label: string; color: string; width: string; score: number } => {
   if (password.length === 0) return { label: '', color: '', width: '0%', score: 0 };

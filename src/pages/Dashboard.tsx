@@ -79,6 +79,13 @@ const Dashboard = () => {
     return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
 
+  useEffect(() => {
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      const verified = data?.totp?.find(f => f.status === 'verified');
+      setMfaEnabled(!!verified);
+    });
+  }, []);
+
   const fetchStats = async () => {
     if (!user) return;
     try {

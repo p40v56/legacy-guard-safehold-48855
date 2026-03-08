@@ -216,17 +216,25 @@ const Accounts = () => {
           {['all', ...categoryTabs].map(tab => (
             <TabsContent key={tab} value={tab}>
               <div className="space-y-6">
-                {!isFreeBlocked && (
-                  <div className="flex justify-end">
-                    <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
-                      <Plus className="w-5 h-5 mr-2" />Add Account
-                    </Button>
-                  </div>
-                )}
+                  {!isFreeBlocked && !isAtAccountLimit && (
+                    <div className="flex justify-end">
+                      <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
+                        <Plus className="w-5 h-5 mr-2" />Add Account
+                      </Button>
+                    </div>
+                  )}
 
-                {isFreeBlocked && accounts.length === 0 && (
-                  <UpgradePrompt message="Upgrade to store and share digital account information with your contacts." />
-                )}
+                  {isAtAccountLimit && (
+                    <UpgradePrompt
+                      message={`Your plan allows up to ${limits.maxAccounts} accounts. Upgrade to add more.`}
+                      featureKey="accounts"
+                      requiredPlan={plan === 'essential' ? 'family' : 'essential'}
+                    />
+                  )}
+
+                  {isFreeBlocked && accounts.length === 0 && (
+                    <UpgradePrompt message="Upgrade to store and share digital account information with your contacts." featureKey="accounts" />
+                  )}
 
                 {(!isFreeBlocked || accounts.length > 0) && (
                   <>

@@ -52,7 +52,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="flex items-center gap-2">
             <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
             <span className="text-lg lg:text-xl font-semibold text-white">LegacyVault</span>
-            {plan === 'paid' && (
+            {plan !== 'free' && (
               <Crown className="w-4 h-4 text-yellow-400" />
             )}
           </div>

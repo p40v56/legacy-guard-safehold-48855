@@ -45,6 +45,7 @@ const Portal = () => {
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [securityChallenge, setSecurityChallenge] = useState<SecurityChallenge | null>(null);
   const [answer, setAnswer] = useState('');
+  const [showAnswer, setShowAnswer] = useState(false);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);

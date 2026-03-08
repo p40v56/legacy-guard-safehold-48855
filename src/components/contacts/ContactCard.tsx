@@ -429,14 +429,12 @@ const ContactCard: React.FC<ContactCardProps> = ({
                             <Eye className="w-3.5 h-3.5" />
                             <span>{portalAccessCount} access{portalAccessCount !== 1 ? 'es' : ''}</span>
                           </div>
-                          {lastPortalAccess ? (
+                          {portalAccessCount > 0 && lastPortalAccess ? (
                             <div className="flex items-center gap-1.5">
                               <span className="text-muted-foreground/60">Last:</span>
                               <span>{formatDateEU(lastPortalAccess)}</span>
                             </div>
-                          ) : (
-                            <span className="italic">Never accessed</span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     )}

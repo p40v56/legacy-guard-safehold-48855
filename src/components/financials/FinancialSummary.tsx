@@ -161,9 +161,9 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
                 <p className="text-sm font-medium text-foreground">
                   {data.count} {data.count === 1 ? 'asset' : 'assets'}
                   {data.value > 0 && (
-                    <span className="text-muted-foreground ml-1">
-                      · {isMultiCurrency ? '≈ ' : ''}{formatCurrencyValue(data.value, mainCurrency)}
-                    </span>
+                     <span className="text-muted-foreground ml-1">
+                       · {needsConversion ? '≈ ' : ''}{formatCurrencyValue(data.value, mainCurrency)}
+                     </span>
                   )}
                 </p>
               </div>

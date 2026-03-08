@@ -32,6 +32,7 @@ import ThemeSelector from '@/components/settings/ThemeSelector';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { decryptFields } from '@/lib/crypto';
+import { useSessionTracker } from '@/hooks/useSessionTracker';
 
 interface Profile {
   id: string;

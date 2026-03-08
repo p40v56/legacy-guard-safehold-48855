@@ -456,12 +456,12 @@ const Settings = () => {
                           <span className="text-sm font-semibold text-card-foreground">{PLAN_PRICES[tier]}</span>
                         </div>
                         <div className="text-xs text-muted-foreground space-y-1">
-                          <p>👥 {lim.maxContacts === Infinity ? 'Unlimited' : lim.maxContacts} contacts</p>
-                          <p>📄 {lim.maxDocuments === Infinity ? 'Unlimited' : lim.maxDocuments} documents</p>
-                          <p>💰 {lim.maxFinancialAssets === Infinity ? 'Unlimited' : lim.maxFinancialAssets} financial assets</p>
-                          <p>🌐 {lim.maxAccounts === Infinity ? 'Unlimited' : lim.maxAccounts === 0 ? 'No' : lim.maxAccounts} accounts</p>
-                          <p>💾 {lim.maxStorageMb === 0 ? 'No file storage' : lim.maxStorageMb >= 1024 ? `${lim.maxStorageMb / 1024} GB` : `${lim.maxStorageMb} MB`} storage</p>
-                          <p>{lim.portalAccess ? '✓' : '✗'} Contact portals</p>
+                          <p>👥 {lim.maxContacts === Infinity ? 'Unlimited contacts' : `${lim.maxContacts} trusted ${lim.maxContacts === 1 ? 'contact' : 'contacts'}`}</p>
+                          <p>📄 {lim.maxDocuments === Infinity ? 'Unlimited documents' : `${lim.maxDocuments} ${lim.maxDocuments === 1 ? 'document' : 'documents'}`}</p>
+                          <p>💰 {lim.maxFinancialAssets === Infinity ? 'Unlimited financial assets' : `${lim.maxFinancialAssets} financial ${lim.maxFinancialAssets === 1 ? 'asset' : 'assets'}`}</p>
+                          <p>🌐 {lim.maxAccounts === Infinity ? 'Unlimited digital accounts' : lim.maxAccounts === 0 ? 'No digital accounts' : `${lim.maxAccounts} digital ${lim.maxAccounts === 1 ? 'account' : 'accounts'}`}</p>
+                          <p>💾 {lim.maxStorageMb === 0 ? 'No file storage' : lim.maxStorageMb >= 1024 ? `${lim.maxStorageMb / 1024} GB storage` : `${lim.maxStorageMb} MB storage`}</p>
+                          <p>{lim.portalAccess ? '✓ Contact portals' : '✗ No contact portals'}</p>
                         </div>
                         {!isCurrent && tier !== 'free' && (
                           <a

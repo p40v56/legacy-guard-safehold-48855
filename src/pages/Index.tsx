@@ -220,7 +220,7 @@ const Index = () => {
                 },
                 {
                   name: 'Family', price: '£99', period: 'per year', highlight: false,
-                  features: ['Unlimited contacts', 'Unlimited documents', '5 GB storage', 'Unlimited financial assets', 'Unlimited accounts', 'Everything in Essential'],
+                  features: ['Unlimited contacts', 'Unlimited documents', '5 GB storage', 'Unlimited financial assets', 'Unlimited digital accounts', 'Everything in Essential'],
                   cta: 'Upgrade to Family',
                 },
               ].map(({ name, price, period, features, cta, highlight }) => (

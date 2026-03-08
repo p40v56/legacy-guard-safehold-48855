@@ -139,25 +139,37 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
         </div>
 
         {/* Institution & Value */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label className="text-card-foreground">Institution / Provider</Label>
             <Input value={institution} onChange={e => setInstitution(e.target.value)} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="e.g. Barclays, Aviva" />
           </div>
           <div className="space-y-2">
-            <Label className="text-card-foreground">Estimated Value (£)</Label>
+            <Label className="text-card-foreground">Estimated Value</Label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">£</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{selectedCurrency.symbol}</span>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={estimatedValue}
-                onChange={e => setEstimatedValue(e.target.value)}
-                placeholder="0.00"
+                type="text"
+                inputMode="decimal"
+                value={displayValue}
+                onChange={e => handleValueChange(e.target.value)}
+                placeholder="0"
                 className="pl-8 h-12 bg-muted/50 border-border rounded-xl"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-card-foreground">Currency</Label>
+            <Select value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)}>
+              <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border">
+                {CURRENCIES.map(c => (
+                  <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

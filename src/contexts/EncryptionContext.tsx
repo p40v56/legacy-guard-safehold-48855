@@ -89,6 +89,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
 
       setVaultKey(decryptedVaultKey);
       userIdRef.current = userId;
+      wasUnlockedRef.current = true;
       lastActivityRef.current = Date.now();
       setShowReauth(false);
       setReauthPassword('');

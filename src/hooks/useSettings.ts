@@ -265,6 +265,32 @@ export const useSettings = () => {
     }
   };
 
+  const saveTypePermissions = async (updatedPermissions: any[]) => {
+    if (!user) return;
+    
+    try {
+      await Promise.all(updatedPermissions.map((tp: any) =>
+        ContactTypePermissionsService.upsertContactTypePermission(
+          user.id,
+          tp.contact_type,
+          tp.default_permissions
+        )
+      ));
+      setTypePermissions(updatedPermissions);
+      toast({
+        title: "Success",
+        description: "Default permissions updated successfully"
+      });
+    } catch (error) {
+      console.error('Error saving type permissions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save default permissions",
+        variant: "destructive"
+      });
+    }
+  };
+
   const saveActivationRules = async () => {
     if (!user) return;
     if (!vaultKey) {

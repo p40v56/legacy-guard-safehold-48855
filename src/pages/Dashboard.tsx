@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { decryptFields } from '@/lib/crypto';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,7 @@ import SecurityBadge from '@/components/dashboard/SecurityBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DashboardStats } from '@/types/common';
-import { DashboardService, SettingsService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
+import { DashboardService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountdown } from '@/hooks/useCountdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -19,7 +19,7 @@ import { formatDateEU } from '@/utils/dateUtils';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  
   const { vaultKey } = useEncryption();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
@@ -29,7 +29,6 @@ const Dashboard = () => {
     userSettings: null
   });
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [wizardDismissed, setWizardDismissed] = useState(true);
   const [rulesCount, setRulesCount] = useState(0);
   const [testEmailSent, setTestEmailSent] = useState(false);
@@ -109,68 +108,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleToggleSystem = async () => {
-    if (!user || !settings) return;
-
-    // If trying to activate and switch is not set up or deadline is stale
-    if (!settings.is_active) {
-      const deadline = settings.next_check_in_due || settings.custom_deadline;
-      const deadlineIsStale = !deadline || new Date(deadline) <= new Date();
-
-      if (deadlineIsStale && settings.deadline_mode === 'frequency') {
-        // Recalculate deadline from now before activating
-        setSaving(true);
-        try {
-          const nextDue = new Date();
-          switch (settings.check_in_frequency) {
-            case 'daily': nextDue.setDate(nextDue.getDate() + 1); break;
-            case 'weekly': nextDue.setDate(nextDue.getDate() + 7); break;
-            case 'biweekly': nextDue.setDate(nextDue.getDate() + 14); break;
-            case 'monthly': nextDue.setMonth(nextDue.getMonth() + 1); break;
-            default: nextDue.setDate(nextDue.getDate() + 7);
-          }
-          await SettingsService.updateSettings(user.id, {
-            is_active: true,
-            next_check_in_due: nextDue.toISOString(),
-            last_check_in: new Date().toISOString(),
-            grace_period_active: false,
-            grace_period_end: null,
-            switch_triggered: false,
-            switch_triggered_at: null,
-          });
-          await fetchStats();
-          const freqLabel = settings.check_in_frequency === 'daily' ? '1 day' : settings.check_in_frequency === 'weekly' ? '7 days' : settings.check_in_frequency === 'biweekly' ? '14 days' : '1 month';
-          toast({ title: 'System Activated', description: `Your Dead Man's Switch is now active. Next check-in due in ${freqLabel}.` });
-        } catch (error) {
-          console.error('Error activating system:', error);
-          toast({ title: "Error", description: "Failed to activate system", variant: "destructive" });
-        } finally {
-          setSaving(false);
-        }
-        return;
-      } else if (deadlineIsStale && settings.deadline_mode === 'custom') {
-        toast({ title: 'Deadline has passed', description: 'Your custom deadline has passed. Please set a new deadline before activating.' });
-        navigate('/switch');
-        setSaving(false);
-        return;
-      }
-    }
-
-    setSaving(true);
-    try {
-      await SettingsService.updateSettings(user.id, { is_active: !settings.is_active });
-      await fetchStats();
-      toast({
-        title: settings.is_active ? "System Deactivated" : "System Activated",
-        description: settings.is_active ? "Your Dead Man's Switch has been deactivated" : "Your Dead Man's Switch is now active",
-      });
-    } catch (error) {
-      console.error('Error toggling system:', error);
-      toast({ title: "Error", description: "Failed to update system status", variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleDismissWizard = async () => {
     if (!user) return;
@@ -219,7 +156,11 @@ const Dashboard = () => {
       contextInfo: settings?.is_active
         ? `Next check-in in ${countdown.days > 0 ? `${countdown.days}d ` : ''}${countdown.hours}h ${countdown.minutes}m`
         : 'System inactive',
-      actionLabel: settings?.is_active ? 'Check-in now' : 'Activate',
+      actionLabel: !settings?.is_active
+        ? 'Check in to activate'
+        : countdown.isOverdue || settings?.grace_period_active
+          ? '⚠️ Check in urgently'
+          : 'Check in now',
     },
     {
       name: 'Contacts',
@@ -310,14 +251,20 @@ const Dashboard = () => {
               <h2 className="text-xl font-medium text-card-foreground">System Status</h2>
               <p className={`text-sm font-medium ${statusDisplay.color}`}>{statusDisplay.label}</p>
             </div>
-            <Button
-              onClick={handleToggleSystem}
-              variant={settings?.is_active ? "destructive" : "default"}
-              disabled={saving}
-              className={`rounded-full px-6 ${settings?.is_active ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'}`}
-            >
-              {saving ? 'Saving...' : settings?.is_active ? 'Deactivate System' : 'Activate System'}
-            </Button>
+            {!settings?.is_active ? (
+              <Link to="/switch">
+                <Button size="sm" className="bg-primary hover:bg-primary/90 rounded-full px-5">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Check in to activate
+                </Button>
+              </Link>
+            ) : (countdown.isOverdue || settings?.grace_period_active) && !settings?.switch_triggered ? (
+              <Link to="/switch">
+                <Button size="sm" variant="destructive" className="rounded-full px-5 animate-pulse">
+                  Check in now
+                </Button>
+              </Link>
+            ) : null}
           </div>
 
           {/* Warning Banners */}

@@ -3,7 +3,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePlan } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, AlertTriangle, CheckCircle, Settings, Mail, Send } from 'lucide-react';
@@ -23,7 +22,7 @@ const Switch = () => {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showActivationDialog, setShowActivationDialog] = useState(false);
+  
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [customTime, setCustomTime] = useState('12:00');
   const [hasPhone, setHasPhone] = useState(false);
@@ -133,45 +132,62 @@ const Switch = () => {
 
   const performCheckIn = async () => {
     if (!user) return;
-    if (!settings?.is_active) { setShowActivationDialog(true); return; }
     try {
+      const wasInactive = !settings?.is_active;
+
+      // Guard: if custom deadline is stale, don't activate
+      if (wasInactive && settings?.deadline_mode === 'custom') {
+        const currentDl = settings?.next_check_in_due || settings?.custom_deadline;
+        const deadlineIsStale = !currentDl || new Date(currentDl) <= new Date();
+        if (deadlineIsStale) {
+          toast({ title: 'Deadline has passed', description: 'Please set a new custom deadline before activating.', variant: 'destructive' });
+          return;
+        }
+      }
+
+      if (wasInactive) {
+        await SettingsService.updateSettings(user.id, { is_active: true });
+      }
       await SettingsService.checkIn(user.id);
       const freshSettings = await SettingsService.getUserSettings(user.id);
       setSettings(freshSettings);
-      toast({
-        title: "Check-in Successful! ✅",
-        description: settings.deadline_mode === 'custom'
-          ? "Your check-in has been recorded. Custom deadline remains unchanged."
-          : "Your next check-in has been scheduled",
-      });
+      if (wasInactive) {
+        toast({
+          title: 'System activated ✅',
+          description: 'Your Dead Man\'s Switch is now active. Your countdown has started.',
+        });
+      } else {
+        toast({
+          title: 'Check-in successful ✅',
+          description: settings?.deadline_mode === 'custom'
+            ? 'Check-in recorded. Custom deadline unchanged.'
+            : 'Your countdown has been reset.',
+        });
+      }
     } catch (error) {
       console.error('Error performing check-in:', error);
-      toast({ title: "Error", description: "Failed to perform check-in", variant: "destructive" });
+      toast({ title: 'Error', description: 'Failed to perform check-in', variant: 'destructive' });
     }
   };
 
-  const handleActivateAndCheckIn = async () => {
+  const handleDeactivate = async () => {
     if (!user) return;
-
-    // Guard: if custom deadline is stale, don't activate
-    const currentDeadline = settings?.next_check_in_due || settings?.custom_deadline;
-    const deadlineIsStale = !currentDeadline || new Date(currentDeadline) <= new Date();
-    if (deadlineIsStale && settings?.deadline_mode === 'custom') {
-      toast({ title: 'Deadline has passed', description: 'Please set a new custom deadline before activating.', variant: 'destructive' });
-      setShowActivationDialog(false);
-      return;
-    }
-
     try {
-      await SettingsService.updateSettings(user.id, { is_active: true });
-      await SettingsService.checkIn(user.id);
+      await SettingsService.updateSettings(user.id, {
+        is_active: false,
+        grace_period_active: false,
+        grace_period_end: null,
+        switch_triggered: false,
+        switch_triggered_at: null,
+      });
       const freshSettings = await SettingsService.getUserSettings(user.id);
       setSettings(freshSettings);
-      setShowActivationDialog(false);
-      toast({ title: "System Activated & Check-in Successful! ✅", description: "Your Dead Man's Switch is now active" });
+      toast({
+        title: 'System deactivated',
+        description: 'Your Dead Man\'s Switch is now off. Check in to reactivate.',
+      });
     } catch (error) {
-      console.error('Error activating and checking in:', error);
-      toast({ title: "Error", description: "Failed to activate system and perform check-in", variant: "destructive" });
+      toast({ title: 'Error', description: 'Failed to deactivate', variant: 'destructive' });
     }
   };
 
@@ -309,15 +325,43 @@ const Switch = () => {
             switchTriggered={settings?.switch_triggered || false}
           />
 
-          <div className="flex justify-center gap-3">
-            <Button
-              onClick={performCheckIn}
-              size="lg"
-              className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium shadow-lg shadow-primary/20"
-            >
-              <CheckCircle className="w-5 h-5 mr-2" />
-              Perform Check-in Now
-            </Button>
+          <div className="flex flex-col items-center gap-1">
+            {settings?.is_active ? (
+              <Button
+                onClick={performCheckIn}
+                size="lg"
+                className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium shadow-lg shadow-primary/20"
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Check in now
+              </Button>
+            ) : (
+              <div className="text-center space-y-3">
+                <Button
+                  onClick={performCheckIn}
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium shadow-lg shadow-primary/20"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  Activate & check in
+                </Button>
+                <p className="text-muted-foreground text-sm">
+                  Your first check-in will activate the switch and start your countdown.
+                </p>
+              </div>
+            )}
+            {settings?.is_active && (
+              <div className="flex justify-center mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeactivate}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+                >
+                  Deactivate system
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -365,26 +409,6 @@ const Switch = () => {
         {/* Section 4: Check-in History */}
         <CheckInHistory />
       </div>
-
-      <AlertDialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
-        <AlertDialogContent className="glass-strong border-none rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-card-foreground flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2 text-warning" />
-              System Deactivated
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Your Dead Man's Switch is currently deactivated. Activating will perform a check-in and start your countdown from now.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleActivateAndCheckIn} className="bg-primary hover:bg-primary/90 rounded-xl">
-              Activate & Check-in
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Email Preview Dialog */}
       <Dialog open={showEmailPreview} onOpenChange={(open) => { if (!open) handleCloseEmailPreview(); }}>

@@ -7,11 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PRODUCT_TO_PLAN: Record<string, string> = {
-  "prod_U73ncBe5gTNjZT": "essential",
-  "prod_U73ncw0ds80Lqh": "family",
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,12 +33,12 @@ serve(async (req) => {
     });
 
     // Find completed checkout sessions for this user
-    const sessions = await stripe.checkout.sessions.list({
-      limit: 10,
-    });
+    const sessions = await stripe.checkout.sessions.list({ limit: 10 });
 
     let latestPaidPlan: string | null = null;
     let paymentDate: string | null = null;
+    let isProrated = false;
+    let keepExpiry: string | null = null;
 
     for (const session of sessions.data) {
       if (
@@ -52,14 +47,23 @@ serve(async (req) => {
       ) {
         latestPaidPlan = session.metadata?.plan || null;
         paymentDate = new Date((session.created || 0) * 1000).toISOString();
+        isProrated = session.metadata?.prorated === "true";
+        keepExpiry = session.metadata?.keep_expiry || null;
         break;
       }
     }
 
     if (latestPaidPlan) {
-      // Calculate expiry: 1 year from payment
-      const expiresAt = new Date(paymentDate!);
-      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+      let expiresAt: Date;
+
+      if (isProrated && keepExpiry) {
+        // Prorated upgrade: keep the existing expiry date
+        expiresAt = new Date(keepExpiry);
+      } else {
+        // New purchase: 1 year from payment
+        expiresAt = new Date(paymentDate!);
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+      }
 
       // Update the user's profile
       const { error: updateError } = await supabaseAdmin
@@ -92,6 +96,7 @@ serve(async (req) => {
         paid: true,
         plan: latestPaidPlan,
         expires_at: expiresAt.toISOString(),
+        prorated: isProrated,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

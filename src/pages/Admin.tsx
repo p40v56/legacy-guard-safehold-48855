@@ -39,6 +39,7 @@ interface AdminStats {
   family_users: number;
   active_switches: number;
   checked_in_today: number;
+  triggered_switches: number;
 }
 
 const Admin = () => {

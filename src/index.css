@@ -740,13 +740,10 @@ body:has(#lv-root) {
   font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-enc-line {
-  position: absolute; top: 50%; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg,
-    transparent 0%, rgba(26,155,215,0.5) 20%,
-    rgba(26,155,215,0.8) 50%, rgba(52,211,153,0.5) 80%, transparent 100%);
+  position: absolute; top: 50%; left: 5%; right: 5%;
+  height: 0;
+  border-top: 2px dashed rgba(26,155,215,0.35);
   transform: translateY(-50%);
-  animation: lvFlowPulse 3s ease-in-out infinite;
   pointer-events: none; z-index: 0;
 }
 /* Data particle traveling the line */

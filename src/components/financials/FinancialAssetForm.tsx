@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { PoundSterling, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
+import { CURRENCIES, getCurrency, DEFAULT_CURRENCY, formatNumberWithSeparators, stripFormatting } from '@/lib/currency';
+import type { CurrencyCode } from '@/lib/currency';
 import type { FinancialAsset, FinancialCategory, FinancialAssetInsert } from '@/types/financial';
 import { CATEGORY_LABELS } from '@/types/financial';
 import { useContacts } from '@/hooks/useContacts';
@@ -30,6 +32,12 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
   const [name, setName] = useState(initialData?.name || '');
   const [institution, setInstitution] = useState(initialData?.institution || '');
   const [estimatedValue, setEstimatedValue] = useState(initialData?.estimated_value?.toString() || '');
+  const [displayValue, setDisplayValue] = useState(
+    initialData?.estimated_value ? formatNumberWithSeparators(initialData.estimated_value.toString()) : ''
+  );
+  const [currency, setCurrency] = useState<CurrencyCode>(
+    (initialData?.category_specific_fields as any)?.currency || DEFAULT_CURRENCY
+  );
   const [contactName, setContactName] = useState(initialData?.contact_name || '');
   const [contactPhone, setContactPhone] = useState(initialData?.contact_phone || '');
   const [contactEmail, setContactEmail] = useState(initialData?.contact_email || '');
@@ -67,6 +75,18 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
 
   const updateCsf = (key: string, value: any) => setCsf(prev => ({ ...prev, [key]: value }));
 
+  const handleValueChange = (raw: string) => {
+    const stripped = stripFormatting(raw);
+    // Only allow digits and one decimal point
+    const clean = stripped.replace(/[^\d.]/g, '');
+    const parts = clean.split('.');
+    const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : clean;
+    setEstimatedValue(sanitized);
+    setDisplayValue(formatNumberWithSeparators(sanitized));
+  };
+
+  const selectedCurrency = getCurrency(currency);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -79,7 +99,7 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
       contact_email: contactEmail || null,
       reference_number: referenceNumber || null,
       notes: notes || null,
-      category_specific_fields: csf,
+      category_specific_fields: { ...csf, currency },
       visible_to: visibleToAll ? null : (selectedContactIds.length > 0 ? selectedContactIds : null),
       attached_document_ids: attachedDocIds.length > 0 ? attachedDocIds : null,
     });
@@ -90,8 +110,8 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
   return (
     <div className="bg-muted/30 rounded-2xl p-6">
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-          <PoundSterling className="w-6 h-6 text-primary" />
+        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-xl font-bold text-primary">
+          {selectedCurrency.symbol}
         </div>
         <h3 className="text-xl font-medium text-card-foreground">
           {initialData ? 'Edit Financial Asset' : 'Add Financial Asset'}
@@ -119,25 +139,37 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
         </div>
 
         {/* Institution & Value */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label className="text-card-foreground">Institution / Provider</Label>
             <Input value={institution} onChange={e => setInstitution(e.target.value)} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="e.g. Barclays, Aviva" />
           </div>
           <div className="space-y-2">
-            <Label className="text-card-foreground">Estimated Value (£)</Label>
+            <Label className="text-card-foreground">Estimated Value</Label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">£</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{selectedCurrency.symbol}</span>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={estimatedValue}
-                onChange={e => setEstimatedValue(e.target.value)}
-                placeholder="0.00"
+                type="text"
+                inputMode="decimal"
+                value={displayValue}
+                onChange={e => handleValueChange(e.target.value)}
+                placeholder="0"
                 className="pl-8 h-12 bg-muted/50 border-border rounded-xl"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-card-foreground">Currency</Label>
+            <Select value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)}>
+              <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border">
+                {CURRENCIES.map(c => (
+                  <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

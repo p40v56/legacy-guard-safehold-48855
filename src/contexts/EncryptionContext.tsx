@@ -49,6 +49,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   const lastActivityRef = useRef(Date.now());
   const tabHiddenAtRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const unlockingRef = useRef(false);
 
   const isUnlocked = vaultKey !== null;
 

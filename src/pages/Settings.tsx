@@ -234,14 +234,8 @@ const Settings = () => {
     }
   };
 
-  const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
-    try {
-      setTypePermissions(updatedPermissions);
-      toast({ title: "Success", description: "Default permissions updated successfully" });
-    } catch (error) {
-      console.error('Error updating type permissions:', error);
-      toast({ title: "Error", description: "Failed to update default permissions", variant: "destructive" });
-    }
+  const handleSaveTypePermissions = async (updatedPermissions: ContactTypePermissionsType[]) => {
+    await saveTypePermissions(updatedPermissions);
   };
 
   const toggleContactSelection = (ruleId: string, contactId: string) => {

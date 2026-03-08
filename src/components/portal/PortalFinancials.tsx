@@ -192,7 +192,7 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
               <span className="text-gray-700">{doc.title}</span>
               <span className="text-gray-400 text-xs bg-gray-100 px-1.5 py-0.5 rounded">{DOC_TYPE_LABELS[doc.document_type] || doc.document_type}</span>
             </div>
-            {doc.file_path && (
+            {doc.file_data && (
               <button
                 onClick={() => handleDocDownload(doc)}
                 className="text-blue-600 hover:underline text-xs flex items-center gap-1"

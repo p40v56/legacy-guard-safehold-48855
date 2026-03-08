@@ -52,7 +52,7 @@ type ContactCategory = 'immediate_family' | 'extended_family' | 'close_friends' 
 
 interface ActivationRule {
   id: string;
-  target_type: 'category' | 'contacts';
+  target_type: 'all' | 'category' | 'contacts';
   contact_category?: ContactCategory;
   contact_ids?: string[];
   delay_hours: number;

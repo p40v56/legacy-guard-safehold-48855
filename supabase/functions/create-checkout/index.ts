@@ -7,11 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PRICE_IDS: Record<string, string> = {
-  essential: "price_1T8pfk4l2Z69KbrEXeZwfhtT",
-  family: "price_1T8pgN4l2Z69KbrELUqkRtcG",
-};
-
 // Annual prices in pence (GBP)
 const PLAN_PRICES_PENCE: Record<string, number> = {
   free: 0,
@@ -29,6 +24,38 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // --- Env-var validation ---
+  const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+  if (!stripeSecretKey) {
+    return new Response(
+      JSON.stringify({ error: "Stripe is not configured. Set STRIPE_SECRET_KEY in Edge Function secrets." }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  const essentialPriceId = Deno.env.get("STRIPE_ESSENTIAL_PRICE_ID");
+  const familyPriceId = Deno.env.get("STRIPE_FAMILY_PRICE_ID");
+  if (!essentialPriceId || !familyPriceId) {
+    return new Response(
+      JSON.stringify({ error: "Stripe price IDs are not configured. Set STRIPE_ESSENTIAL_PRICE_ID and STRIPE_FAMILY_PRICE_ID in Edge Function secrets." }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  const PRICE_IDS: Record<string, string> = {
+    essential: essentialPriceId,
+    family: familyPriceId,
+  };
+
+  // --- Auth ---
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -36,7 +63,6 @@ serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseAdmin.auth.getUser(token);
     const user = data.user;
@@ -45,7 +71,9 @@ serve(async (req) => {
     const { plan } = await req.json();
     if (!plan || !PRICE_IDS[plan]) throw new Error(`Invalid plan: ${plan}`);
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const priceId = plan === "family" ? familyPriceId : essentialPriceId;
+
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2025-08-27.basil",
     });
 
@@ -56,7 +84,7 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    const origin = req.headers.get("origin") || "https://legacy-guard-safehold-48855.lovable.app";
+    const appBaseUrl = Deno.env.get("APP_BASE_URL") || req.headers.get("origin") || "https://legacy-guard-safehold-48855.lovable.app";
 
     // Check current plan for prorated upgrade
     const { data: profile } = await supabaseAdmin
@@ -74,24 +102,23 @@ serve(async (req) => {
 
     let lineItems: any[];
     let metadata: Record<string, string> = {
-      user_id: user.id,
+      supabase_user_id: user.id,
       plan: plan,
     };
 
     if (isProrated) {
-      // Calculate remaining fraction of the current plan
       const now = new Date();
       const expiryDate = new Date(currentExpiry);
       const msRemaining = expiryDate.getTime() - now.getTime();
 
       if (msRemaining <= 0) {
         // Plan already expired, charge full price
-        lineItems = [{ price: PRICE_IDS[plan], quantity: 1 }];
+        lineItems = [{ price: priceId, quantity: 1 }];
       } else {
         const msInYear = 365.25 * 24 * 60 * 60 * 1000;
         const fractionRemaining = Math.min(msRemaining / msInYear, 1);
         const priceDifference = targetPrice - currentPrice;
-        const proratedAmount = Math.max(Math.round(priceDifference * fractionRemaining), 100); // minimum £1
+        const proratedAmount = Math.max(Math.round(priceDifference * fractionRemaining), 100);
 
         const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
 
@@ -109,10 +136,10 @@ serve(async (req) => {
 
         metadata.prorated = "true";
         metadata.previous_plan = currentPlan;
-        metadata.keep_expiry = currentExpiry; // keep the same expiry date
+        metadata.keep_expiry = currentExpiry;
       }
     } else {
-      lineItems = [{ price: PRICE_IDS[plan], quantity: 1 }];
+      lineItems = [{ price: priceId, quantity: 1 }];
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -121,8 +148,8 @@ serve(async (req) => {
       client_reference_id: user.id,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${origin}/settings?tab=account&payment=success&plan=${plan}`,
-      cancel_url: `${origin}/settings?tab=account&payment=cancelled`,
+      success_url: `${appBaseUrl}/settings?tab=account&upgraded=true`,
+      cancel_url: `${appBaseUrl}/settings?tab=account`,
       metadata,
     });
 

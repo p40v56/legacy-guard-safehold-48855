@@ -501,45 +501,50 @@ body:has(#lv-root) {
 }
 #lv-root .lv-btn-primary {
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 14px 36px; border-radius: 99px;
-  background: white; color: #0D6EA8;
-  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+  padding: 16px 40px; border-radius: 99px;
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  color: #0D6EA8;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700;
   border: none; cursor: pointer;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.15), 0 0 0 0 rgba(255,255,255,0);
-  transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+  box-shadow: 0 8px 32px rgba(26,155,215,0.25), 0 0 0 0 rgba(255,255,255,0), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
   position: relative; overflow: hidden;
+  letter-spacing: 0.01em;
 }
 #lv-root .lv-btn-primary::after {
   content: '';
   position: absolute; top: -50%; left: -100%; width: 60%; height: 200%;
-  background: linear-gradient(90deg, transparent, rgba(26,155,215,0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(26,155,215,0.2), transparent);
   transform: skewX(-15deg);
-  animation: lvShimmer 3s ease-in-out infinite;
+  animation: lvShimmer 2.5s ease-in-out infinite;
 }
 @keyframes lvShimmer {
   0%,100% { left: -100%; }
   50% { left: 150%; }
 }
 #lv-root .lv-btn-primary:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.2), 0 0 40px rgba(255,255,255,0.1);
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 16px 48px rgba(26,155,215,0.35), 0 0 60px rgba(255,255,255,0.12);
+}
+#lv-root .lv-btn-primary:active {
+  transform: translateY(-1px) scale(1.01);
 }
 #lv-root .lv-btn-ghost {
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 14px 32px; border-radius: 99px;
-  background: rgba(255,255,255,0.08);
+  padding: 16px 36px; border-radius: 99px;
+  background: rgba(255,255,255,0.06);
   color: white;
   font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
-  border: 1px solid rgba(255,255,255,0.2) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
-  backdrop-filter: blur(8px);
+  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+  backdrop-filter: blur(12px);
 }
 #lv-root .lv-btn-ghost:hover {
-  background: rgba(255,255,255,0.16);
-  border-color: rgba(255,255,255,0.35) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.4) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(255,255,255,0.06);
 }
 #lv-root .lv-scroll {
   position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);

@@ -5,6 +5,8 @@ export type DigitalAccountCategory = 'banking' | 'social_media' | 'email' | 'sho
 
 export type DocumentCategory = 'legal' | 'financial' | 'medical' | 'personal' | 'insurance' | 'property' | 'other';
 
+export type FinancialAssetAccessCategory = 'bank_account' | 'insurance' | 'investment' | 'pension' | 'property' | 'debt' | 'other';
+
 export interface DigitalAccountAccess {
   all_accounts: boolean;
   by_category: DigitalAccountCategory[];
@@ -17,9 +19,16 @@ export interface DocumentAccess {
   specific_documents: string[]; // Document IDs
 }
 
+export interface FinancialAssetAccess {
+  all_assets: boolean;
+  by_category: FinancialAssetAccessCategory[];
+  specific_assets: string[]; // Asset IDs
+}
+
 export interface ContactPermissions {
   digital_accounts: DigitalAccountAccess;
   legacy_documents: DocumentAccess;
+  financial_assets: FinancialAssetAccess;
   contact_information: boolean;
   emergency_instructions: boolean;
   can_modify_information: boolean;

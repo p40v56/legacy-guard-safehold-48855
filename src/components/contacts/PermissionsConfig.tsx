@@ -1,16 +1,11 @@
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Shield, FileText, CreditCard, Users, Settings } from 'lucide-react';
-import { ContactPermissions, DigitalAccountCategory, DocumentCategory } from '@/types/access-control';
+import { Shield } from 'lucide-react';
+import { ContactPermissions, DigitalAccountCategory, DocumentCategory, FinancialAssetAccessCategory } from '@/types/access-control';
 
 interface PermissionsConfigProps {
   permissions: ContactPermissions;
@@ -42,6 +37,16 @@ const documentCategories: { value: DocumentCategory; label: string }[] = [
   { value: 'other', label: 'Other Documents' },
 ];
 
+const financialAssetCategories: { value: FinancialAssetAccessCategory; label: string }[] = [
+  { value: 'bank_account', label: 'Bank Accounts' },
+  { value: 'insurance', label: 'Insurance Policies' },
+  { value: 'investment', label: 'Investments' },
+  { value: 'pension', label: 'Pensions & Retirement' },
+  { value: 'property', label: 'Properties' },
+  { value: 'debt', label: 'Debts & Liabilities' },
+  { value: 'other', label: 'Other' },
+];
+
 const PermissionsConfig = ({ 
   permissions, 
   onChange, 
@@ -50,6 +55,9 @@ const PermissionsConfig = ({
   disabled = false,
   hideDefaultsToggle = false
 }: PermissionsConfigProps) => {
+  // Ensure financial_assets exists (backwards compat)
+  const financialAssets = permissions.financial_assets || { all_assets: false, by_category: [], specific_assets: [] };
+
   const updateDigitalAccounts = (updates: Partial<typeof permissions.digital_accounts>) => {
     onChange({
       ...permissions,
@@ -64,12 +72,18 @@ const PermissionsConfig = ({
     });
   };
 
+  const updateFinancialAssets = (updates: Partial<typeof financialAssets>) => {
+    onChange({
+      ...permissions,
+      financial_assets: { ...financialAssets, ...updates }
+    });
+  };
+
   const toggleDigitalAccountCategory = (category: DigitalAccountCategory) => {
     const currentCategories = permissions.digital_accounts.by_category;
     const newCategories = currentCategories.includes(category)
       ? currentCategories.filter(c => c !== category)
       : [...currentCategories, category];
-    
     updateDigitalAccounts({ by_category: newCategories });
   };
 
@@ -78,8 +92,15 @@ const PermissionsConfig = ({
     const newCategories = currentCategories.includes(category)
       ? currentCategories.filter(c => c !== category)
       : [...currentCategories, category];
-    
     updateDocuments({ by_category: newCategories });
+  };
+
+  const toggleFinancialCategory = (category: FinancialAssetAccessCategory) => {
+    const currentCategories = financialAssets.by_category;
+    const newCategories = currentCategories.includes(category)
+      ? currentCategories.filter(c => c !== category)
+      : [...currentCategories, category];
+    updateFinancialAssets({ by_category: newCategories });
   };
 
   return (
@@ -108,8 +129,9 @@ const PermissionsConfig = ({
         {!useTypeDefaults && (
           <>
             <Tabs defaultValue="digital" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/50 border-border">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/50 border-border">
                 <TabsTrigger value="digital">Digital Accounts</TabsTrigger>
+                <TabsTrigger value="financial">Financial</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="general">General</TabsTrigger>
               </TabsList>
@@ -134,6 +156,37 @@ const PermissionsConfig = ({
                             <Checkbox
                               checked={permissions.digital_accounts.by_category.includes(category.value)}
                               onCheckedChange={() => toggleDigitalAccountCategory(category.value)}
+                              disabled={disabled}
+                            />
+                            <Label className="text-muted-foreground text-sm">{category.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="financial" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Access to All Financial Assets</Label>
+                    <Switch
+                      checked={financialAssets.all_assets}
+                      onCheckedChange={(checked) => updateFinancialAssets({ all_assets: checked })}
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  {!financialAssets.all_assets && (
+                    <div className="space-y-3">
+                      <Label className="text-foreground">Access by Category</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {financialAssetCategories.map((category) => (
+                          <div key={category.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={financialAssets.by_category.includes(category.value)}
+                              onCheckedChange={() => toggleFinancialCategory(category.value)}
                               disabled={disabled}
                             />
                             <Label className="text-muted-foreground text-sm">{category.label}</Label>

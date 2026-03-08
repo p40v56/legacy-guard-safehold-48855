@@ -110,6 +110,7 @@ const Settings = () => {
   const [exporting, setExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Account activity
@@ -266,7 +267,9 @@ const Settings = () => {
     if (!user) return;
     setDeletingAccount(true);
     try {
-      const { data, error } = await supabase.functions.invoke('delete-own-account');
+      const { data, error } = await supabase.functions.invoke('delete-own-account', {
+        body: { password: deletePassword },
+      });
       if (error) throw error;
       await supabase.auth.signOut();
       toast({ title: "Account deleted", description: "Your account has been permanently deleted." });
@@ -278,6 +281,7 @@ const Settings = () => {
       setDeletingAccount(false);
       setShowDeleteConfirm(false);
       setDeleteConfirmText('');
+      setDeletePassword('');
     }
   };
 
@@ -718,13 +722,23 @@ const Settings = () => {
                           className="bg-background border-destructive/30 rounded-xl"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Enter your password to confirm</Label>
+                        <Input
+                          type="password"
+                          value={deletePassword}
+                          onChange={e => setDeletePassword(e.target.value)}
+                          placeholder="Your current password"
+                          className="bg-background border-destructive/30 rounded-xl"
+                        />
+                      </div>
                       <div className="flex gap-3">
-                        <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} className="rounded-xl">
+                        <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeletePassword(''); }} className="rounded-xl">
                           Cancel
                         </Button>
                         <Button
                           variant="destructive"
-                          disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
+                          disabled={deleteConfirmText !== 'DELETE' || !deletePassword || deletingAccount}
                           onClick={handleDeleteAccount}
                         >
                           {deletingAccount ? <LoadingSpinner size="sm" className="mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}

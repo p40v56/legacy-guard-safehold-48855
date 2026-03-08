@@ -31,7 +31,12 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const url = new URL(req.url);
-    const token = url.searchParams.get("token");
+    // Support both /check-in-via-token/[token] path and ?token= query string
+    const pathParts = url.pathname.split('/');
+    const pathToken = pathParts[pathParts.length - 1];
+    const token = (pathToken && pathToken !== 'check-in-via-token')
+      ? pathToken
+      : url.searchParams.get("token");
 
     if (!token) {
       return new Response(generateHtml("❌ Invalid Link", "No token provided."), {

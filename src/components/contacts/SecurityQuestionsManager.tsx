@@ -37,6 +37,7 @@ interface SecurityQuestionsManagerProps {
 
 const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuestionsManagerProps) => {
   const { user } = useAuth();
+  const [confirmDeleteQId, setConfirmDeleteQId] = useState<string | null>(null);
   const { toast } = useToast();
   const [questions, setQuestions] = useState<SecurityQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -324,9 +325,17 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
                       <Button variant="ghost" size="sm" onClick={() => startEdit(q)} className="text-muted-foreground hover:text-foreground">
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(q.id)} className="text-destructive hover:text-destructive/80">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {confirmDeleteQId === q.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-destructive">Delete?</span>
+                          <button onClick={() => { handleDelete(q.id); setConfirmDeleteQId(null); }} className="text-xs text-destructive hover:underline font-medium">Yes</button>
+                          <button onClick={() => setConfirmDeleteQId(null)} className="text-xs text-muted-foreground hover:underline">No</button>
+                        </div>
+                      ) : (
+                        <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteQId(q.id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}

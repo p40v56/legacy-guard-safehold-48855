@@ -57,6 +57,7 @@ const WaveCard = ({
 }) => {
   const isImmediate = rule.delay_hours === 0;
   const [showMessage, setShowMessage] = useState(!!rule.custom_message && rule.custom_message !== '<p><br></p>' && rule.custom_message.replace(/<[^>]*>/g, '').trim().length > 0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const waveLabel = isImmediate ? '⚡ Immediate notification' : `⏱ After ${rule.delay_hours} hours`;
 
   return (
@@ -197,10 +198,28 @@ const WaveCard = ({
 
           {/* Delete button */}
           <div className="flex justify-end pt-2 border-t border-border">
-            <button onClick={() => deleteActivationRule(rule.id)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors">
-              <Trash2 className="w-3.5 h-3.5" />
-              Remove wave
-            </button>
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive">Delete this wave?</span>
+                <button
+                  onClick={() => { deleteActivationRule(rule.id); setConfirmDelete(false); }}
+                  className="text-xs text-destructive hover:underline font-medium"
+                >
+                  Yes, delete
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors">
+                <Trash2 className="w-3.5 h-3.5" />
+                Remove wave
+              </button>
+            )}
           </div>
         </div>
       </CollapsibleContent>

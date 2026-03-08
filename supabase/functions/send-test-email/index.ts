@@ -72,6 +72,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { templateType, action } = await req.json();
 
+    // Rate limiting: check cooldown before proceeding
+    const { data: rateLimitProfile } = await supabase
+      .from('profiles')
+      .select('last_test_email_sent_at')
+      .eq('user_id', user.id)
+      .single();
+
+    if (rateLimitProfile?.last_test_email_sent_at) {
+      const lastSent = new Date(rateLimitProfile.last_test_email_sent_at).getTime();
+      const secondsSince = (Date.now() - lastSent) / 1000;
+      if (secondsSince < 60) {
+        return new Response(
+          JSON.stringify({ error: `Please wait ${Math.ceil(60 - secondsSince)} seconds before sending another test email.` }),
+          { status: 429, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+    }
+
     const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
     const userName = "the vault owner";
     const userEmail = user.email;

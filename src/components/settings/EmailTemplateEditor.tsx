@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -251,7 +252,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                     </div>
                     <div
                       className="bg-white rounded-b-lg"
-                      dangerouslySetInnerHTML={{ __html: gracePreviewHtml }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(gracePreviewHtml) }}
                     />
                   </div>
                 </div>
@@ -337,7 +338,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                     </div>
                     <div
                       className="bg-white rounded-b-lg"
-                      dangerouslySetInnerHTML={{ __html: triggeredPreviewHtml }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(triggeredPreviewHtml) }}
                     />
                   </div>
                 </div>

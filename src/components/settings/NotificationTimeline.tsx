@@ -73,7 +73,7 @@ const WaveCard = ({
           </div>
           {/* Summary when collapsed: show target info */}
           <span className="text-xs text-muted-foreground">
-            {rule.target_type === 'category' && rule.contact_category ? contactTypeLabels[rule.contact_category] : rule.target_type === 'contacts' ? `${(rule.contact_ids || []).length} contact(s)` : ''}
+            {rule.target_type === 'all' ? 'All contacts' : rule.target_type === 'category' && rule.contact_category ? contactTypeLabels[rule.contact_category] : rule.target_type === 'contacts' ? `${(rule.contact_ids || []).length} contact(s)` : 'All contacts'}
           </span>
         </div>
       </CollapsibleTrigger>

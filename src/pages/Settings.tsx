@@ -27,6 +27,7 @@ import SecurityQuestionsManager from '@/components/contacts/SecurityQuestionsMan
 import { ContactTypePermissions as ContactTypePermissionsType } from '@/types/access-control';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import EmailTemplateEditor, { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
+import UpgradePrompt from '@/components/UpgradePrompt';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { decryptFields } from '@/lib/crypto';

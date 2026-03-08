@@ -34,6 +34,7 @@ const Dashboard = () => {
   const [testEmailSent, setTestEmailSent] = useState(false);
   const [hasPortalLinks, setHasPortalLinks] = useState(false);
   const [firstName, setFirstName] = useState('');
+  const [mfaEnabled, setMfaEnabled] = useState(false);
 
   const settings = stats.userSettings;
   const currentDeadline = settings?.deadline_mode === 'custom' && settings?.custom_deadline

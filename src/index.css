@@ -448,34 +448,36 @@ body:has(#lv-root) {
   color: #6ee7b7; font-size: 11px; font-weight: 600;
   letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 32px;
   backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(52,211,153,0.1);
 }
 #lv-root .lv-zk-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: #34d399;
   animation: lvPulseDot 2s ease-in-out infinite;
-  box-shadow: 0 0 8px rgba(52,211,153,0.6);
+  box-shadow: 0 0 12px rgba(52,211,153,0.8);
 }
 @keyframes lvPulseDot {
-  0%,100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(52,211,153,0.6); }
-  50% { opacity: 0.5; transform: scale(0.8); box-shadow: 0 0 16px rgba(52,211,153,0.4); }
+  0%,100% { opacity: 1; transform: scale(1); box-shadow: 0 0 12px rgba(52,211,153,0.8); }
+  50% { opacity: 0.4; transform: scale(0.7); box-shadow: 0 0 24px rgba(52,211,153,0.5); }
 }
 #lv-root .lv-h1 {
   font-family: 'DM Serif Display', serif !important;
-  font-size: clamp(56px, 8vw, 96px) !important;
-  line-height: 0.95 !important; color: white !important;
-  margin-bottom: 28px; font-weight: 400 !important; letter-spacing: -0.01em !important;
+  font-size: clamp(60px, 9vw, 110px) !important;
+  line-height: 0.92 !important; color: white !important;
+  margin-bottom: 32px; font-weight: 400 !important; letter-spacing: -0.02em !important;
+  text-shadow: 0 0 80px rgba(26,155,215,0.3), 0 0 160px rgba(26,155,215,0.15);
 }
 #lv-root .lv-h1 em {
   font-style: italic !important; font-weight: 300 !important;
-  background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.65) 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.5) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 #lv-root .lv-hero-sub {
-  font-size: clamp(16px, 2vw, 20px);
-  color: rgba(255,255,255,0.68); font-weight: 300;
-  max-width: 560px; margin: 0 auto 48px; line-height: 1.65;
+  font-size: clamp(17px, 2.2vw, 21px);
+  color: rgba(255,255,255,0.6); font-weight: 300;
+  max-width: 560px; margin: 0 auto 48px; line-height: 1.7;
   font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-trust {

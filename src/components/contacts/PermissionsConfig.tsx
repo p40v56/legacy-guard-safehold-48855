@@ -47,7 +47,8 @@ const PermissionsConfig = ({
   onChange, 
   useTypeDefaults, 
   onUseTypeDefaultsChange,
-  disabled = false 
+  disabled = false,
+  hideDefaultsToggle = false
 }: PermissionsConfigProps) => {
   const updateDigitalAccounts = (updates: Partial<typeof permissions.digital_accounts>) => {
     onChange({

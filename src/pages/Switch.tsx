@@ -351,12 +351,12 @@ const Switch = () => {
               </div>
             )}
             {settings?.is_active && (
-              <div className="flex justify-center mt-2">
+              <div className="flex justify-center mt-3">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={handleDeactivate}
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-5"
                 >
                   Deactivate system
                 </Button>

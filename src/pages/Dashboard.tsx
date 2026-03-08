@@ -286,20 +286,20 @@ const Dashboard = () => {
                   </Button>
                 </Link>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={handleDeactivate}
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-4"
                 >
                   Deactivate
                 </Button>
               </div>
             ) : (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={handleDeactivate}
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+                className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-4"
               >
                 Deactivate
               </Button>

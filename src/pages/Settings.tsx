@@ -596,7 +596,76 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            
+
+  const handleEnableMfa = async () => {
+    setMfaLoading(true);
+    setMfaVerifyError(null);
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: 'LegacyVault Authenticator',
+      });
+      if (error) throw error;
+      setQrCode(data.totp.qr_code);
+      setMfaSecret(data.totp.secret);
+      setMfaFactorId(data.id);
+      setShowMfaSetup(true);
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleVerifyMfa = async () => {
+    if (!mfaFactorId || mfaVerifyCode.length !== 6) return;
+    setMfaVerifying(true);
+    setMfaVerifyError(null);
+    try {
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: mfaFactorId,
+      });
+      if (challengeError) throw challengeError;
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: challengeData.id,
+        code: mfaVerifyCode,
+      });
+      if (verifyError) {
+        setMfaVerifyError('Incorrect code. Please try again.');
+        return;
+      }
+
+      setMfaEnabled(true);
+      setShowMfaSetup(false);
+      setQrCode(null);
+      setMfaSecret(null);
+      setMfaVerifyCode('');
+      toast({ title: '2FA enabled ✓', description: 'Two-factor authentication is now active on your account.' });
+    } catch (error: any) {
+      setMfaVerifyError(error.message || 'Verification failed');
+    } finally {
+      setMfaVerifying(false);
+    }
+  };
+
+  const handleDisableMfa = async () => {
+    if (!mfaFactorId) return;
+    setMfaLoading(true);
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
+      if (error) throw error;
+      setMfaEnabled(false);
+      setMfaFactorId(null);
+      toast({ title: '2FA disabled', description: 'Two-factor authentication has been removed.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
           </TabsContent>
 
           {/* ─── SECURITY TAB ─── */}

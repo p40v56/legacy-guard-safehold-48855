@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import { useToast } from '@/hooks/use-toast';
-import { Users, CreditCard, FileText, Shield, Timer, ArrowRight, Check, AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react';
+import { Users, Monitor, FileText, Shield, Timer, ArrowRight, Check, AlertTriangle, CheckCircle, ChevronDown, Landmark } from 'lucide-react';
 import SecurityBadge from '@/components/dashboard/SecurityBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -190,18 +190,18 @@ const Dashboard = () => {
       actionLabel: stats.contactsCount < 3 ? 'Add a contact' : 'Manage',
     },
     {
-      name: 'Financial Assets',
-      href: '/accounts?tab=financials',
-      icon: Shield,
-      contextInfo: 'Estate & legacy assets',
-      actionLabel: 'Manage',
-    },
-    {
-      name: 'Accounts',
+      name: 'Digital Accounts',
       href: '/accounts',
-      icon: CreditCard,
+      icon: Monitor,
       contextInfo: `${stats.accountsCount} account${stats.accountsCount !== 1 ? 's' : ''}`,
       actionLabel: stats.accountsCount === 0 ? 'Add an account' : 'Manage',
+    },
+    {
+      name: 'Financial Assets',
+      href: '/financials',
+      icon: Landmark,
+      contextInfo: 'Estate & legacy assets',
+      actionLabel: 'Manage',
     },
     {
       name: 'Documents',

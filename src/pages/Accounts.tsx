@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSearchParams } from 'react-router-dom';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePlan } from '@/hooks/usePlan';
 import { useEncryption } from '@/contexts/EncryptionContext';
@@ -16,11 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Plus, Edit, Trash2, PoundSterling, FileText, Mail, Users, Landmark, Briefcase, Play, Globe, AlertTriangle } from 'lucide-react';
+import { Monitor, Plus, Edit, Trash2, FileText, Mail, Users, Landmark, Briefcase, Play, Globe, AlertTriangle } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
-import FinancialsTab from '@/components/financials/FinancialsTab';
 import { Link } from 'react-router-dom';
 
 type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'other';
@@ -43,7 +41,7 @@ const ACCOUNT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; bg: string; i
   work: { icon: <Briefcase className="w-5 h-5" />, bg: 'bg-amber-500/15', iconColor: 'text-amber-500' },
   entertainment: { icon: <Play className="w-5 h-5" />, bg: 'bg-pink-500/15', iconColor: 'text-pink-500' },
   cloud: { icon: <Globe className="w-5 h-5" />, bg: 'bg-cyan-500/15', iconColor: 'text-cyan-500' },
-  subscription: { icon: <CreditCard className="w-5 h-5" />, bg: 'bg-orange-500/15', iconColor: 'text-orange-500' },
+  subscription: { icon: <Monitor className="w-5 h-5" />, bg: 'bg-orange-500/15', iconColor: 'text-orange-500' },
   other: { icon: <Globe className="w-5 h-5" />, bg: 'bg-gray-500/15', iconColor: 'text-gray-500' },
 };
 
@@ -77,15 +75,13 @@ interface AccountFormData {
 
 const Accounts = () => {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
   const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const { plan, limits, isFree } = usePlan();
   const { vaultKey } = useEncryption();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const defaultTab = searchParams.get('tab') || 'all';
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState('all');
   const [formData, setFormData] = useState<AccountFormData>({
     platform: '', username: '', email: '', account_type: 'social',
     importance: 'medium', closure_action: 'memorialize', notes: '', credentials: '',
@@ -95,7 +91,6 @@ const Accounts = () => {
   const [availableDocs, setAvailableDocs] = useState<{id: string; title: string; document_type: string}[]>([]);
   const [showCredentials, setShowCredentials] = useState<Record<string, boolean>>({});
 
-  // Fetch available documents for linking
   useEffect(() => {
     if (!user) return;
     const fetchDocs = async () => {
@@ -119,7 +114,6 @@ const Accounts = () => {
     fetchDocs();
   }, [user, vaultKey]);
 
-  // Compute dynamic category tabs from accounts
   const categoryTabs = useMemo(() => {
     const categories = new Set<string>();
     accounts.forEach(a => {
@@ -140,7 +134,6 @@ const Accounts = () => {
     });
   }, [accounts, searchTerm, activeTab]);
 
-  // When searching on "All" tab, show all matching results regardless of tab
   const searchResults = useMemo(() => {
     if (!searchTerm || activeTab !== 'all') return filteredAccounts;
     return accounts.filter(account => {
@@ -168,8 +161,8 @@ const Accounts = () => {
       <DashboardLayout>
         <div className="space-y-6">
           <div className="mb-4">
-            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Accounts & Financials</h1>
-            <p className="text-muted-foreground">Manage your digital accounts and financial legacy</p>
+            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Digital Accounts</h1>
+            <p className="text-muted-foreground">Manage your online presence and digital accounts</p>
           </div>
           <UpgradePrompt message="Digital accounts require the Essential plan or higher. Upgrade to catalogue your accounts with closure instructions for your contacts." featureKey="accounts" />
         </div>
@@ -213,7 +206,7 @@ const Accounts = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center animate-pulse">
-            <CreditCard className="w-6 h-6 text-muted-foreground" />
+            <Monitor className="w-6 h-6 text-muted-foreground" />
           </div>
         </div>
       </DashboardLayout>
@@ -228,20 +221,16 @@ const Accounts = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="mb-4">
-          <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Accounts & Financials</h1>
-          <p className="text-muted-foreground">Manage your digital accounts and financial legacy</p>
+          <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Digital Accounts</h1>
+          <p className="text-muted-foreground">Manage your online presence and digital accounts</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Unified control bar: tabs + search + add button */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
             <div className="flex overflow-x-auto gap-1 no-scrollbar flex-shrink-0">
               <TabsList className="bg-muted/50 rounded-xl p-1 flex-wrap h-auto gap-1">
                 <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
                   All
-                </TabsTrigger>
-                <TabsTrigger value="financials" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
-                  Financial
                 </TabsTrigger>
                 {categoryTabs.map(cat => (
                   <TabsTrigger key={cat} value={cat} className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
@@ -250,27 +239,18 @@ const Accounts = () => {
                 ))}
               </TabsList>
             </div>
-            {activeTab !== 'financials' && (
-              <>
-                <div className="flex-1">
-                  <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Search accounts..." className="bg-card/50 border-border" />
-                </div>
-                {!isFreeBlocked && !isAtAccountLimit && (
-                  <div className="flex-shrink-0">
-                    <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
-                      <Plus className="w-5 h-5 mr-2" />Add Account
-                    </Button>
-                  </div>
-                )}
-              </>
+            <div className="flex-1">
+              <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Search accounts..." className="bg-card/50 border-border" />
+            </div>
+            {!isFreeBlocked && !isAtAccountLimit && (
+              <div className="flex-shrink-0">
+                <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
+                  <Plus className="w-5 h-5 mr-2" />Add Account
+                </Button>
+              </div>
             )}
           </div>
 
-          <TabsContent value="financials">
-            <FinancialsTab />
-          </TabsContent>
-
-          {/* All other tabs share the same account list view */}
           {['all', ...categoryTabs].map(tab => (
             <TabsContent key={tab} value={tab}>
               <div className="space-y-6">
@@ -292,7 +272,7 @@ const Accounts = () => {
                       <div className="bg-muted/30 rounded-2xl p-6">
                         <div className="flex items-center gap-4 mb-6">
                           <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                            <CreditCard className="w-6 h-6 text-primary" />
+                            <Monitor className="w-6 h-6 text-primary" />
                           </div>
                           <h3 className="text-xl font-medium text-card-foreground">
                             {editingAccount ? 'Edit Account' : 'Add New Account'}
@@ -404,7 +384,7 @@ const Accounts = () => {
                         <Card className="bg-card border-border backdrop-blur-sm">
                           <CardContent className="p-12 text-center">
                             <div className="max-w-md mx-auto">
-                              <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6"><CreditCard className="w-12 h-12 text-muted-foreground" /></div>
+                              <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6"><Monitor className="w-12 h-12 text-muted-foreground" /></div>
                               <h3 className="text-xl font-semibold text-foreground mb-3">No accounts found</h3>
                               <p className="text-muted-foreground mb-6 leading-relaxed">
                                 {searchTerm ? 'No accounts match your search criteria.' : 'Start adding your digital accounts to create a comprehensive digital legacy plan.'}
@@ -426,13 +406,11 @@ const Accounts = () => {
                                 <CardContent className="p-5">
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex gap-3 flex-1 min-w-0">
-                                      {/* Type icon */}
                                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${typeConfig.bg}`}>
                                         <span className={typeConfig.iconColor}>{typeConfig.icon}</span>
                                       </div>
 
                                       <div className="flex-1 min-w-0">
-                                        {/* Title + badges row */}
                                         <div className="flex items-center gap-2 flex-wrap mb-1">
                                           <h3 className="text-base font-semibold text-foreground truncate">{account.platform}</h3>
                                           <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs font-medium">
@@ -448,7 +426,6 @@ const Accounts = () => {
                                           )}
                                         </div>
 
-                                        {/* Vertical info list */}
                                         <div className="mt-3 space-y-1.5">
                                           {account.email && (
                                             <div className="flex items-center gap-2 text-sm">
@@ -492,7 +469,6 @@ const Accounts = () => {
                                           )}
                                         </div>
 
-                                        {/* Completeness indicator */}
                                         {!account.credentials && !account.notes && (
                                           <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                                             <AlertTriangle className="w-3 h-3" />
@@ -500,14 +476,12 @@ const Accounts = () => {
                                           </p>
                                         )}
 
-                                        {/* Linked documents */}
                                         {account.attached_document_ids && account.attached_document_ids.length > 0 && (
                                           <LinkedDocsPills documentIds={account.attached_document_ids} vaultKey={vaultKey} />
                                         )}
                                       </div>
                                     </div>
 
-                                    {/* Edit/Delete buttons */}
                                     <div className="flex items-center gap-1 flex-shrink-0">
                                       <button
                                         onClick={() => handleEdit(account)}

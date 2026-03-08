@@ -7,8 +7,9 @@ import {
   Shield, 
   LayoutDashboard, 
   Timer, 
-  CreditCard, 
+  Monitor, 
   Users, 
+  Landmark,
   FileText, 
   Settings, 
   LogOut,
@@ -39,7 +40,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Switch', href: '/switch', icon: Timer },
     { name: 'Contacts', href: '/contacts', icon: Users },
-    { name: 'Accounts', href: '/accounts', icon: CreditCard },
+    { name: 'Accounts', href: '/accounts', icon: Monitor },
+    { name: 'Financial', href: '/financials', icon: Landmark },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
@@ -163,7 +165,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Bottom Floating Navigation */}
       <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
         <div className="floating-nav px-2 py-2 flex items-center gap-1">
-          {navigationItems.slice(0, 5).map((item) => {
+          {navigationItems.slice(0, 6).map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             return (

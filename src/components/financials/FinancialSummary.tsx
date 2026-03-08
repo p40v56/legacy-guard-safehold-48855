@@ -24,6 +24,7 @@ interface FinancialSummaryProps {
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   const [fxRates, setFxRates] = useState<FxRates | null>(null);
   const [fxLoading, setFxLoading] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState<string | null>(null);
 
   // Determine currencies used
   const currencyCounts: Record<string, number> = {};
@@ -35,19 +36,21 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   });
 
   const sortedCurrencies = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1]);
-  const mainCurrency = sortedCurrencies[0]?.[0] || 'GBP';
+  const defaultCurrency = sortedCurrencies[0]?.[0] || 'GBP';
+  const mainCurrency = displayCurrency || defaultCurrency;
   const mainCurrencyInfo = getCurrency(mainCurrency);
   const isMultiCurrency = sortedCurrencies.length > 1;
+  const needsConversion = isMultiCurrency || (displayCurrency && displayCurrency !== defaultCurrency);
 
-  // Fetch FX rates when multi-currency
+  // Fetch FX rates when conversion needed
   useEffect(() => {
-    if (!isMultiCurrency) return;
+    if (!needsConversion) return;
     setFxLoading(true);
     fetchFxRates('USD').then(rates => {
       setFxRates(rates);
       setFxLoading(false);
     });
-  }, [isMultiCurrency]);
+  }, [needsConversion]);
 
   if (assets.length === 0) return null;
 

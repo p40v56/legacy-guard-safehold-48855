@@ -462,10 +462,10 @@ const Accounts = () => {
                                               <span className="text-foreground font-mono">{account.username}</span>
                                             </div>
                                           )}
-                                          {account.website_url && (
+                                          {(account as any).website_url && (
                                             <div className="flex items-center gap-2 text-sm">
                                               <span className="text-muted-foreground w-20 shrink-0">Website</span>
-                                              <a href={account.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{account.website_url}</a>
+                                              <a href={(account as any).website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{(account as any).website_url}</a>
                                             </div>
                                           )}
                                           {account.credentials && (

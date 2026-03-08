@@ -114,9 +114,9 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
             </p>
             <div className="flex items-center gap-2">
               <p className="text-2xl font-bold text-foreground">
-                {fxLoading && isMultiCurrency ? '...' : formatCurrencyValue(convertedTotal, mainCurrency)}
+                {fxLoading && needsConversion ? '...' : formatCurrencyValue(convertedTotal, mainCurrency)}
               </p>
-              {isMultiCurrency && fxRates && (
+              {needsConversion && fxRates && (
                 <span className="text-xs text-muted-foreground">≈</span>
               )}
             </div>

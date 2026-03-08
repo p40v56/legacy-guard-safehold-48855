@@ -40,7 +40,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Switch', href: '/switch', icon: Timer },
     { name: 'Contacts', href: '/contacts', icon: Users },
-    { name: 'Accounts', href: '/accounts', icon: CreditCard },
+    { name: 'Accounts', href: '/accounts', icon: Monitor },
+    { name: 'Financial', href: '/financials', icon: Landmark },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];

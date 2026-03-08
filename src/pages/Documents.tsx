@@ -212,6 +212,7 @@ const Documents = () => {
         title: formData.title,
         document_type: formData.document_type,
         description: formData.description,
+        content: formData.content,
         is_public: formData.is_public,
         file_path: (formData as any).file_path || null,
         file_type: (formData as any).file_type || null,

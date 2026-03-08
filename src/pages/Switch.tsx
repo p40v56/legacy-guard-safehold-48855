@@ -374,7 +374,7 @@ const Switch = () => {
               System Deactivated
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Your Dead Man's Switch is currently deactivated. Would you like to activate it now and proceed with the check-in?
+              Your Dead Man's Switch is currently deactivated. Activating will perform a check-in and start your countdown from now.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

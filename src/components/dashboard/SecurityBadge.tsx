@@ -56,9 +56,9 @@ const SecurityBadge = () => {
                 <Key className="w-4 h-4 text-destructive" />
               </div>
               <div>
-                <p className="text-sm font-medium text-card-foreground">No password recovery</p>
+                <p className="text-sm font-medium text-card-foreground">Zero-knowledge encryption</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  If you forget your password, your data cannot be recovered. There is no reset that bypasses encryption.
+                  You can reset your password via email at any time. However, no one — including us — can ever access or decrypt your vault data. Your encryption keys never leave your device.
                 </p>
               </div>
             </div>

@@ -532,12 +532,6 @@ const Accounts = () => {
                         </div>
                       )}
                     </div>
-
-                    {tab === 'all' && (
-                      <div className="mt-8">
-                        <FinancialsTab />
-                      </div>
-                    )}
                   </>
                 )}
               </div>

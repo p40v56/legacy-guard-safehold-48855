@@ -721,9 +721,9 @@ const Settings = () => {
                           // Calculate prorated price for upgrades
                           const PLAN_PRICES_PENCE: Record<string, number> = { free: 0, essential: 4900, family: 9900 };
                           let proratedLabel = '';
-                          if (isUpgrade && plan !== 'free' && profile?.plan_expires_at) {
+                          if (isUpgrade && plan !== 'free' && planExpiresAt) {
                             const now = new Date();
-                            const expiry = new Date(profile.plan_expires_at);
+                            const expiry = new Date(planExpiresAt);
                             const msRemaining = expiry.getTime() - now.getTime();
                             if (msRemaining > 0) {
                               const msInYear = 365.25 * 24 * 60 * 60 * 1000;

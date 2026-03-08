@@ -119,8 +119,26 @@ Deno.serve(async (req) => {
     }
 
     // Delete the auth user
+    const userEmail = user.email;
     const { error } = await adminClient.auth.admin.deleteUser(userId);
     if (error) throw error;
+
+    // Send deletion confirmation email (non-blocking)
+    if (userEmail) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+        await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+          body: JSON.stringify({
+            notificationType: 'account_deleted',
+            recipientEmail: userEmail,
+            deletedBy: 'self',
+          }),
+        });
+      } catch { /* non-blocking */ }
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -38,6 +38,7 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   const { token } = useParams();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   if (documents.length === 0) return null;
 
@@ -52,6 +53,14 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
     setExpanded(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleCategory = (cat: string) => {
+    setOpenCategories(prev => {
+      const next = new Set(prev);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
       return next;
     });
   };

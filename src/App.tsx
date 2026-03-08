@@ -14,6 +14,7 @@ import Confirm from "./pages/Confirm";
 import Dashboard from "./pages/Dashboard";
 import Switch from "./pages/Switch";
 import Accounts from "./pages/Accounts";
+import Financials from "./pages/Financials";
 import Contacts from "./pages/Contacts";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";

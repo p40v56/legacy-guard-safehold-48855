@@ -4,7 +4,7 @@ import { usePlan } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Shield, CheckCircle, Settings, ChevronDown, Smartphone } from 'lucide-react';
+import { Shield, CheckCircle, Settings, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SwitchCountdown from '@/components/switch/SwitchCountdown';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';

@@ -712,6 +712,45 @@ const Settings = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="space-y-4 pt-0">
+                    {/* Current session info */}
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                          <span className="text-sm font-medium text-foreground">Current session</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">Active</Badge>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Email: </span>
+                          <span className="text-foreground">{user?.email || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Last sign-in: </span>
+                          <span className="text-foreground">
+                            {user?.last_sign_in_at
+                              ? new Date(user.last_sign_in_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                              : '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Provider: </span>
+                          <span className="text-foreground capitalize">{user?.app_metadata?.provider || 'email'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Account created: </span>
+                          <span className="text-foreground">
+                            {user?.created_at
+                              ? new Date(user.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                              : '—'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
                     <p className="text-sm text-muted-foreground">
                       If you think your account has been compromised, sign out of all devices immediately.
                     </p>

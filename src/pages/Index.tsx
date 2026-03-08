@@ -198,6 +198,73 @@ const Index = () => {
           </div>
         </section>
 
+        {/* PRICING */}
+        <section className="lv-section" id="pricing" style={{ background: '#0D1B2A' }}>
+          <div className="lv-container">
+            <div className="lv-centered reveal">
+              <span className="lv-label">Pricing</span>
+              <h2 className="lv-h2">Simple, honest pricing.</h2>
+              <p className="lv-body" style={{ color: 'rgba(255,255,255,.55)', margin: '0 auto' }}>One-time annual payment. No monthly fees. No surprises.</p>
+            </div>
+            <div className="lv-grid3" style={{ alignItems: 'stretch' }}>
+              {[
+                {
+                  name: 'Free', price: '£0', period: 'forever', highlight: false,
+                  features: ['1 trusted contact', '1 text document', '2 financial assets', 'Contact portal', 'Basic check-in switch'],
+                  cta: 'Get started',
+                },
+                {
+                  name: 'Essential', price: '£49', period: 'per year', highlight: true,
+                  features: ['5 trusted contacts', '20 documents', '500 MB storage', '10 financial assets', '10 digital accounts', 'Custom email templates', 'Security questions', 'Activation rules'],
+                  cta: 'Upgrade to Essential',
+                },
+                {
+                  name: 'Family', price: '£99', period: 'per year', highlight: false,
+                  features: ['Unlimited contacts', 'Unlimited documents', '5 GB storage', 'Unlimited financial assets', 'Unlimited accounts', 'Everything in Essential'],
+                  cta: 'Upgrade to Family',
+                },
+              ].map(({ name, price, period, features, cta, highlight }) => (
+                <div key={name} className={`lv-card reveal`} style={{
+                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                  border: highlight ? '2px solid #1A9BD7' : undefined,
+                  position: 'relative',
+                }}>
+                  {highlight && (
+                    <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#1A9BD7', color: 'white', fontSize: 11, fontWeight: 600, padding: '3px 14px', borderRadius: 99, letterSpacing: '0.02em' }}>
+                      Most Popular
+                    </div>
+                  )}
+                  <div>
+                    <h3 style={{ marginBottom: 4 }}>{name}</h3>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 16 }}>
+                      <span style={{ fontSize: 32, fontWeight: 700, color: 'white' }}>{price}</span>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,.45)' }}>{period}</span>
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {features.map(f => (
+                        <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 13.5, color: 'rgba(255,255,255,.7)' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button
+                    className={highlight ? 'lv-btn-primary' : 'lv-btn-ghost'}
+                    style={{ width: '100%', marginTop: 24 }}
+                    onClick={() => {
+                      if (name === 'Free') navigate('/auth?mode=signup');
+                      else window.location.href = `mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault upgrade — ${name} plan`)}`;
+                    }}
+                  >
+                    {cta}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* FEATURES */}
         <section className="lv-features">
           <div className="lv-container">

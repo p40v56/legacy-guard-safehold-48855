@@ -425,7 +425,11 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="email" className="space-y-6 mt-6">
-            <EmailTemplateEditor template={emailTemplate} onChange={setEmailTemplate} onSave={saveEmailTemplate} saving={saving} userName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'} />
+            {limits.customEmail ? (
+              <EmailTemplateEditor template={emailTemplate} onChange={setEmailTemplate} onSave={saveEmailTemplate} saving={saving} userName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'} />
+            ) : (
+              <UpgradePrompt message="Custom email templates require the Essential plan or higher." featureKey="customEmail" />
+            )}
           </TabsContent>
 
           <TabsContent value="activation" className="space-y-6 mt-6">

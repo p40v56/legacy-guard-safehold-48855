@@ -403,7 +403,7 @@ const Documents = () => {
               Securely store and manage important documents for your digital legacy
             </p>
           </div>
-          {!isFreeBlocked && (
+          {!isDocLimitReached && (
             <Button 
               onClick={() => setShowAddForm(true)}
               className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20"
@@ -414,11 +414,15 @@ const Documents = () => {
           )}
         </div>
 
-        {isFreeBlocked && (
-          <UpgradePrompt message="Documents are a paid feature. Upgrade to store and share important documents with your trusted contacts securely." featureKey="documents" />
+        {isDocLimitReached && (
+          <UpgradePrompt
+            message={`Your plan allows up to ${limits.maxDocuments} document${limits.maxDocuments === 1 ? '' : 's'}. Upgrade to add more.`}
+            featureKey="documents"
+            requiredPlan={plan === 'essential' ? 'family' : 'essential'}
+          />
         )}
 
-        {!isFreeBlocked && (<>
+        {<>
         {/* Search and Filter */}
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">

@@ -85,11 +85,25 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   return (
     <Card className="bg-card border-border">
       <CardContent className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <span className="text-lg font-bold text-primary">{mainCurrencyInfo.symbol}</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <span className="text-lg font-bold text-primary">{mainCurrencyInfo.symbol}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Financial Summary</h3>
           </div>
-          <h3 className="text-lg font-semibold text-foreground">Financial Summary</h3>
+          <Select value={mainCurrency} onValueChange={setDisplayCurrency}>
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map(c => (
+                <SelectItem key={c.code} value={c.code} className="text-xs">
+                  {c.symbol} {c.code}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {hasValues && (

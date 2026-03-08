@@ -579,123 +579,19 @@ const Settings = () => {
             )}
           </TabsContent>
 
-          {/* ─── ACTIVATION RULES TAB ─── */}
+          {/* ─── NOTIFICATION TIMELINE TAB ─── */}
           <TabsContent value="activation" className="space-y-6 mt-6">
             {limits.activationRules ? (
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center justify-between">
-                  <div className="flex items-center"><AlertTriangle className="w-5 h-5 mr-2 text-destructive" />Activation Rules</div>
-                  <Button onClick={addActivationRule} size="sm" variant="default"><Plus className="w-4 h-4 mr-2" />Add Rule</Button>
-                </CardTitle>
-                <p className="text-muted-foreground text-sm mt-2">Configure what happens when your Dead Man's Switch is triggered. Rules are executed in order based on delay times.</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {activationRules.map((rule, index) => {
-                  const isImmediate = rule.delay_hours === 0;
-                  return (
-                  <div key={rule.id} className="border border-border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Badge variant="outline">Rule {index + 1}</Badge>
-                        <Switch checked={rule.enabled} onCheckedChange={checked => updateActivationRule(rule.id, { enabled: checked })} />
-                        <span className="text-foreground text-sm">{rule.enabled ? 'Enabled' : 'Disabled'}</span>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => deleteActivationRule(rule.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-foreground">Target Type</Label>
-                        <Select value={rule.target_type} onValueChange={value => updateActivationRule(rule.id, { target_type: value as 'category' | 'contacts', contact_category: value === 'category' ? 'immediate_family' : undefined, contact_ids: value === 'contacts' ? [] : undefined })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent><SelectItem value="category">Contact Category</SelectItem><SelectItem value="contacts">Specific Contacts</SelectItem></SelectContent>
-                        </Select>
-                      </div>
-                      {rule.target_type === 'category' && (
-                        <div>
-                          <Label className="text-foreground">Contact Category</Label>
-                          <Select value={rule.contact_category} onValueChange={value => updateActivationRule(rule.id, { contact_category: value as ContactCategory })}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(contactTypeLabels).map(([key, label]) => (<SelectItem key={key} value={key}>{label}</SelectItem>))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Notification timing */}
-                    <div className="space-y-3">
-                      <Label className="text-foreground">Notification timing</Label>
-                      <div className="flex items-center gap-3">
-                        <Switch
-                          checked={isImmediate}
-                          onCheckedChange={checked => updateActivationRule(rule.id, { delay_hours: checked ? 0 : 24 })}
-                        />
-                        <span className="text-sm text-foreground">
-                          {isImmediate ? 'Notify immediately when switch fires' : 'Notify after a delay'}
-                        </span>
-                      </div>
-                      {!isImmediate && (
-                        <div className="flex items-center gap-2 ml-12">
-                          <Input
-                            type="number"
-                            min="1"
-                            max="8760"
-                            value={rule.delay_hours}
-                            onChange={e => updateActivationRule(rule.id, { delay_hours: parseInt(e.target.value) || 1 })}
-                            className="w-24 bg-muted/30 border-border rounded-xl"
-                          />
-                          <span className="text-sm text-muted-foreground">hours after switch fires</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {rule.target_type === 'contacts' && (
-                      <div>
-                        <Label className="text-foreground">Select Contacts</Label>
-                        {emergencyContacts.length === 0 ? (
-                          <p className="text-muted-foreground text-sm mt-2">No contacts available.</p>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
-                            {emergencyContacts.map(contact => (
-                              <div key={contact.id} className="flex items-center space-x-2">
-                                <Checkbox id={`contact-${rule.id}-${contact.id}`} checked={(rule.contact_ids || []).includes(contact.id)} onCheckedChange={() => toggleContactSelection(rule.id, contact.id)} />
-                                <label htmlFor={`contact-${rule.id}-${contact.id}`} className="text-sm text-foreground cursor-pointer flex-1">{contact.name} {contact.relationship && `(${contact.relationship})`}</label>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div>
-                      <Label className="text-foreground">Custom Message</Label>
-                      <div className="mt-1">
-                        <RichTextEditor 
-                          value={rule.custom_message} 
-                          onChange={(value) => updateActivationRule(rule.id, { custom_message: value })} 
-                          placeholder="Message to send to selected targets..." 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  );
-                })}
-                <div className="pt-4 border-t border-border">
-                  <Button onClick={saveActivationRules} variant="default"><Save className="w-4 h-4 mr-2" />Save Activation Rules</Button>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                  <div className="flex items-center space-x-2"><FileText className="w-4 h-4 text-primary" /><span className="text-foreground font-medium">How Activation Works</span></div>
-                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-6">
-                    <li>When your check-in deadline is missed, activation begins</li>
-                    <li>Rules execute based on their delay times (0 hours = immediate)</li>
-                    <li>Each rule targets either a contact category or specific contacts</li>
-                    <li>Contacts receive access according to their individual permissions</li>
-                    <li>Custom messages are sent along with access notifications</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+            <NotificationTimeline
+              activationRules={activationRules}
+              emergencyContacts={emergencyContacts}
+              contactTypeLabels={contactTypeLabels}
+              addActivationRule={addActivationRule}
+              updateActivationRule={updateActivationRule}
+              deleteActivationRule={deleteActivationRule}
+              toggleContactSelection={toggleContactSelection}
+              saveActivationRules={saveActivationRules}
+            />
             ) : (
               <UpgradePrompt message="Activation rules require the Essential plan or higher." featureKey="activationRules" />
             )}

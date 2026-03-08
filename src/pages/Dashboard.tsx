@@ -11,7 +11,7 @@ import SecurityBadge from '@/components/dashboard/SecurityBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DashboardStats } from '@/types/common';
-import { DashboardService, SettingsService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
+import { DashboardService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountdown } from '@/hooks/useCountdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';

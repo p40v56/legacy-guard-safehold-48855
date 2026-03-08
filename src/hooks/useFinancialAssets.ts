@@ -113,13 +113,23 @@ export const useFinancialAssets = () => {
       if (vaultKey) {
         const fieldsToEncrypt: Record<string, string | null | undefined> = {};
         for (const field of ENCRYPTED_FINANCIAL_FIELDS) {
-          if (field in assetData) {
+          if (field === 'category_specific_fields_json') {
+            if ('category_specific_fields' in assetData) {
+              fieldsToEncrypt.category_specific_fields_json = assetData.category_specific_fields
+                ? JSON.stringify(assetData.category_specific_fields)
+                : null;
+            }
+          } else if (field in assetData) {
             fieldsToEncrypt[field] = (assetData as any)[field];
           }
         }
         if (Object.keys(fieldsToEncrypt).length > 0) {
           const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
           dataToUpdate = { ...dataToUpdate, ...encrypted };
+          // If we encrypted category_specific_fields, null out the plaintext column
+          if ('category_specific_fields_json' in fieldsToEncrypt) {
+            dataToUpdate.category_specific_fields = null;
+          }
         }
       }
 

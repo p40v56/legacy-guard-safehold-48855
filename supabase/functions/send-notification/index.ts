@@ -334,6 +334,14 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Sending switch triggered notification to ${recipientName} (${recipientEmail}), customMessage: ${triggerData.customMessage || "none"}`);
     }
 
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not configured in Edge Function secrets');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Email service not configured — RESEND_API_KEY missing. Set this in Supabase Edge Function secrets.' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },

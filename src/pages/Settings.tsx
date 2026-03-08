@@ -433,6 +433,7 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="activation" className="space-y-6 mt-6">
+            {limits.activationRules ? (
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center justify-between">

@@ -98,6 +98,9 @@ const Admin = () => {
       if (portalLogResult.data) {
         setPortalAccessLog(portalLogResult.data);
       }
+      if (triggeredResult.data) {
+        setTriggeredUsers(triggeredResult.data);
+      }
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast({ title: 'Error', description: 'Failed to load admin data', variant: 'destructive' });

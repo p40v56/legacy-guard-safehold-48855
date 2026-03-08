@@ -58,6 +58,8 @@ const Admin = () => {
   const [newUser, setNewUser] = useState({ email: '', password: '', plan: 'free' });
   const [portalAccessLog, setPortalAccessLog] = useState<any[]>([]);
   const [accessLogOpen, setAccessLogOpen] = useState(false);
+  const [triggeredUsers, setTriggeredUsers] = useState<any[]>([]);
+  const [triggeredOpen, setTriggeredOpen] = useState(true);
   
   // Expiry date editor state
   const [showExpiryEditor, setShowExpiryEditor] = useState(false);

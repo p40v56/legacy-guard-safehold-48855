@@ -12,6 +12,8 @@ interface PortalDocument {
   created_at: string;
   updated_at?: string | null;
   file_path?: string | null;
+  file_data?: string | null;
+  file_type?: string | null;
 }
 
 interface PortalDocumentsProps {

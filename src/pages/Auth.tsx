@@ -95,12 +95,30 @@ const Auth = () => {
       if (error) throw error;
 
       // Unlock the encryption vault with the user's password
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const unlocked = await unlock(formData.password, user.id);
+      const { data: { user: signedInUser } } = await supabase.auth.getUser();
+      if (signedInUser) {
+        // Check if MFA is required
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        const verifiedFactor = factorsData?.totp?.find(f => f.status === 'verified');
+
+        if (verifiedFactor) {
+          // MFA is enabled — challenge it
+          const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+            factorId: verifiedFactor.id,
+          });
+          if (challengeError) throw challengeError;
+
+          setMfaFactorId(verifiedFactor.id);
+          setMfaChallengeId(challengeData.id);
+          setMfaRequired(true);
+          setLoading(false);
+          return; // Stop here — wait for MFA code input
+        }
+
+        // No MFA — proceed normally with vault unlock
+        const unlocked = await unlock(formData.password, signedInUser.id);
         if (!unlocked) {
-          // First time after migration — setup encryption
-          await setupNewUser(formData.password, user.id);
+          await setupNewUser(formData.password, signedInUser.id);
         }
       }
 
@@ -108,7 +126,13 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have been signed in successfully.",
       });
-      navigate('/dashboard');
+
+      const planParam = searchParams.get('plan');
+      if (planParam === 'essential' || planParam === 'family') {
+        navigate(`/settings?tab=account&checkout=${planParam}`);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
@@ -117,6 +141,46 @@ const Auth = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaFactorId || !mfaChallengeId || mfaCode.length !== 6) return;
+    setMfaLoading(true);
+    setMfaError(null);
+    try {
+      const { error } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: mfaChallengeId,
+        code: mfaCode,
+      });
+      if (error) {
+        setMfaError('Incorrect code. Please try again.');
+        setMfaCode('');
+        return;
+      }
+
+      // MFA verified — proceed with vault unlock
+      const { data: { user: verifiedUser } } = await supabase.auth.getUser();
+      if (verifiedUser) {
+        const unlocked = await unlock(formData.password, verifiedUser.id);
+        if (!unlocked) {
+          await setupNewUser(formData.password, verifiedUser.id);
+        }
+      }
+      toast({ title: 'Welcome back!', description: 'You have been signed in successfully.' });
+
+      const planParam = searchParams.get('plan');
+      if (planParam === 'essential' || planParam === 'family') {
+        navigate(`/settings?tab=account&checkout=${planParam}`);
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      setMfaError(error.message || 'Verification failed. Please try again.');
+    } finally {
+      setMfaLoading(false);
     }
   };
 

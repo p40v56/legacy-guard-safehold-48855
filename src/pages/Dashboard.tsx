@@ -29,7 +29,6 @@ const Dashboard = () => {
     userSettings: null
   });
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [wizardDismissed, setWizardDismissed] = useState(true);
   const [rulesCount, setRulesCount] = useState(0);
   const [testEmailSent, setTestEmailSent] = useState(false);

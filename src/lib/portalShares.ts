@@ -51,16 +51,16 @@ interface ContactPermissions {
 }
 
 function resolvePermissions(contact: any, typePermissions: any[]): ContactPermissions {
-  let permissions: ContactPermissions = contact.permissions || {};
   if (contact.use_type_defaults) {
     const typeDefault = typePermissions.find(
       (tp: any) => tp.contact_type === contact.contact_type
     );
     if (typeDefault?.default_permissions) {
-      permissions = { ...typeDefault.default_permissions, ...permissions };
+      return typeDefault.default_permissions;
     }
   }
-  return permissions;
+  return contact.permissions || {};
+}
 }
 
 /**

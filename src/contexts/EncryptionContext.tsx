@@ -252,14 +252,12 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       if (event === 'SIGNED_OUT') {
         setVaultKey(null);
         userIdRef.current = null;
+        wasUnlockedRef.current = false;
         setShowReauth(false);
       } else if ((event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
-        // If user is logged in but vault is locked, prompt for password
-        // Skip if unlock is currently in progress (login flow)
-        if (!vaultKey && !unlockingRef.current) {
-          userIdRef.current = session.user.id;
-          setShowReauth(true);
-        }
+        // Just track the user id; don't show reauth popup here.
+        // The reauth popup is only triggered by the auto-lock timer.
+        userIdRef.current = session.user.id;
       }
     });
     return () => subscription.unsubscribe();

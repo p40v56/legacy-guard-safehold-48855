@@ -64,9 +64,14 @@ export const useFinancialAssets = () => {
           contact_name: assetData.contact_name,
           contact_phone: assetData.contact_phone,
           contact_email: assetData.contact_email,
+          category_specific_fields_json: assetData.category_specific_fields
+            ? JSON.stringify(assetData.category_specific_fields)
+            : null,
         };
         const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
         dataToInsert = { ...dataToInsert, ...encrypted };
+        // Null out the plaintext JSONB column since we store encrypted
+        dataToInsert.category_specific_fields = null;
       }
 
       const { data, error } = await supabase

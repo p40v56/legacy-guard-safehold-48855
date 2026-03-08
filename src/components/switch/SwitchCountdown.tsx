@@ -22,6 +22,7 @@ const SwitchCountdown = ({
   gracePeriodActive = false,
   gracePeriodEnd = null,
   switchTriggered = false,
+  gracePeriodHours = 24,
 }: SwitchCountdownProps) => {
   const countdown = useCountdown(isActive, currentDeadline, gracePeriodActive, gracePeriodEnd);
   const urgencyLevel = gracePeriodActive ? 'critical' : getUrgencyLevel(countdown);

@@ -328,6 +328,36 @@ const handler = async (req: Request): Promise<Response> => {
       recipientName = wEmail;
       subject = 'Welcome to LegacyVault — get started in 5 steps';
       console.log(`Sending welcome email to ${recipientEmail}`);
+    } else if (notificationType === "account_deleted") {
+      const { recipientEmail: dEmail, deletedBy } = data as any;
+      const isAdmin = deletedBy === 'admin';
+      recipientEmail = dEmail;
+      recipientName = dEmail;
+      subject = 'Your LegacyVault account has been deleted';
+      emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#374151;max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0;">
+          <h1 style="margin:0;font-size:24px;font-weight:600;">Account Deleted</h1>
+          <p style="margin:12px 0 0;opacity:.9;font-size:14px;">LegacyVault</p>
+        </div>
+        <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+          <p style="font-size:16px;margin:0 0 20px;">Hello,</p>
+          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">Your LegacyVault account (<strong>${dEmail}</strong>) has been permanently deleted${isAdmin ? ' by an administrator' : ''}.</p>
+          <div style="background-color:#fef2f2;border-left:4px solid #ef4444;padding:16px;margin:20px 0;border-radius:4px;">
+            <p style="color:#991b1b;margin:0;font-size:14px;font-weight:600;">What this means:</p>
+            <ul style="color:#991b1b;margin:8px 0 0;padding-left:20px;font-size:14px;">
+              <li>All your stored data has been permanently erased</li>
+              <li>Your encrypted vault and documents have been removed</li>
+              <li>Your emergency contacts will no longer be notified</li>
+              <li>Any active Dead Man's Switch has been deactivated</li>
+            </ul>
+          </div>
+          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">If you did not request this deletion${isAdmin ? '' : ' or believe this was done in error'}, please contact support immediately.</p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+          <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · This is an automated message.</p>
+        </div>
+      </body></html>`;
+      console.log(`Sending account deletion email to ${recipientEmail} (deleted by: ${deletedBy})`);
     } else {
       const triggerData = data as SwitchTriggeredRequest | LegacyNotificationRequest;
       emailHtml = generateSwitchTriggeredHtml(triggerData);

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, ArrowLeft, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package, Copy, Check, FileText, Download, Eye } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, ChevronRight, Phone, Mail, AlertTriangle, ArrowLeft, Landmark, Shield as ShieldIcon, TrendingUp, Wallet, Home, CreditCard, Package, Copy, Check, FileText, Download, Eye, RefreshCw } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { formatCurrencyValue, getCurrency, getAssetCurrency, fetchFxRates, convertCurrency, FxRates } from '@/lib/currency';
 
 interface AttachedDocument {
   id: string;
@@ -58,9 +59,6 @@ interface PortalFinancialsProps {
   financialAssets: FinancialAsset[];
 }
 
-const formatCurrency = (v: number) =>
-  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
-
 const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
@@ -79,8 +77,29 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [fxRates, setFxRates] = useState<FxRates | null>(null);
   const { token } = useParams();
   const navigate = useNavigate();
+
+  // Determine currencies used
+  const currencyCounts: Record<string, number> = {};
+  const currencyTotals: Record<string, number> = {};
+  financialAssets.forEach(a => {
+    const cur = getAssetCurrency(a.category_specific_fields);
+    currencyCounts[cur] = (currencyCounts[cur] || 0) + 1;
+    currencyTotals[cur] = (currencyTotals[cur] || 0) + (a.estimated_value || 0);
+  });
+  const sortedCurrencies = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1]);
+  const mainCurrency = sortedCurrencies[0]?.[0] || 'GBP';
+  const isMultiCurrency = sortedCurrencies.length > 1;
+
+  useEffect(() => {
+    if (!isMultiCurrency) return;
+    fetchFxRates('USD').then(setFxRates);
+  }, [isMultiCurrency]);
+
+  const formatAssetCurrency = (v: number, csf: Record<string, any> | null) =>
+    formatCurrencyValue(v, getAssetCurrency(csf));
 
   if (financialAssets.length === 0) return null;
 
@@ -100,14 +119,6 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
     setOpenCategories(prev => {
       const next = new Set(prev);
       next.has(cat) ? next.delete(cat) : next.add(cat);
-      return next;
-    });
-  };
-
-  const toggleDocExpand = (docId: string) => {
-    setExpandedDocs(prev => {
-      const next = new Set(prev);
-      next.has(docId) ? next.delete(docId) : next.add(docId);
       return next;
     });
   };
@@ -134,20 +145,32 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
     }
   };
 
-  const assetTotal = financialAssets
-    .filter(a => a.category !== 'debt')
-    .reduce((sum, a) => sum + (a.estimated_value || 0), 0);
-  const debtTotal = financialAssets
-    .filter(a => a.category === 'debt')
-    .reduce((sum, a) => {
-      const csf = a.category_specific_fields || {};
-      return sum + (csf.outstanding_balance ? Number(csf.outstanding_balance) : (a.estimated_value || 0));
+  // Calculate totals with FX conversion
+  const calcConvertedTotal = (filterFn: (a: FinancialAsset) => boolean, valueExtractor?: (a: FinancialAsset) => number) => {
+    return financialAssets.filter(filterFn).reduce((sum, a) => {
+      const val = valueExtractor ? valueExtractor(a) : (a.estimated_value || 0);
+      const cur = getAssetCurrency(a.category_specific_fields);
+      if (isMultiCurrency && fxRates) {
+        return sum + convertCurrency(val, cur, mainCurrency, fxRates);
+      }
+      return sum + val;
     }, 0);
+  };
+
+  const assetTotal = calcConvertedTotal(a => a.category !== 'debt');
+  const debtTotal = calcConvertedTotal(
+    a => a.category === 'debt',
+    a => {
+      const csf = a.category_specific_fields || {};
+      return csf.outstanding_balance ? Number(csf.outstanding_balance) : (a.estimated_value || 0);
+    }
+  );
   const netValue = assetTotal - debtTotal;
   const hasDebts = debtTotal > 0;
 
   const renderCategoryFields = (asset: FinancialAsset) => {
     const csf = asset.category_specific_fields || {};
+    const fmtVal = (v: number) => formatAssetCurrency(v, csf);
     const fields: { label: string; value: string }[] = [];
 
     if (asset.category === 'bank_account') {
@@ -157,8 +180,8 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
     } else if (asset.category === 'insurance') {
       if (csf.policy_number) fields.push({ label: 'Policy Number', value: csf.policy_number });
       if (csf.policy_type) fields.push({ label: 'Policy Type', value: csf.policy_type });
-      if (csf.coverage_amount) fields.push({ label: 'Coverage', value: formatCurrency(Number(csf.coverage_amount)) });
-      if (csf.premium) fields.push({ label: 'Premium', value: formatCurrency(Number(csf.premium)) });
+      if (csf.coverage_amount) fields.push({ label: 'Coverage', value: fmtVal(Number(csf.coverage_amount)) });
+      if (csf.premium) fields.push({ label: 'Premium', value: fmtVal(Number(csf.premium)) });
       if (csf.beneficiary) fields.push({ label: 'Beneficiary', value: csf.beneficiary });
       if (csf.expiry_date) fields.push({ label: 'Expiry', value: new Date(csf.expiry_date).toLocaleDateString() });
     } else if (asset.category === 'investment') {
@@ -173,12 +196,12 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       if (csf.address) fields.push({ label: 'Address', value: csf.address });
       if (csf.ownership_type) fields.push({ label: 'Ownership', value: csf.ownership_type });
       if (csf.mortgage_provider) fields.push({ label: 'Mortgage Provider', value: csf.mortgage_provider });
-      if (csf.outstanding_mortgage) fields.push({ label: 'Outstanding Mortgage', value: formatCurrency(Number(csf.outstanding_mortgage)) });
+      if (csf.outstanding_mortgage) fields.push({ label: 'Outstanding Mortgage', value: fmtVal(Number(csf.outstanding_mortgage)) });
       if (csf.co_owner) fields.push({ label: 'Co-owner', value: csf.co_owner });
     } else if (asset.category === 'debt') {
       if (csf.debt_type) fields.push({ label: 'Debt Type', value: csf.debt_type });
-      if (csf.outstanding_balance) fields.push({ label: 'Outstanding', value: formatCurrency(Number(csf.outstanding_balance)) });
-      if (csf.monthly_payment) fields.push({ label: 'Monthly Payment', value: formatCurrency(Number(csf.monthly_payment)) });
+      if (csf.outstanding_balance) fields.push({ label: 'Outstanding', value: fmtVal(Number(csf.outstanding_balance)) });
+      if (csf.monthly_payment) fields.push({ label: 'Monthly Payment', value: fmtVal(Number(csf.monthly_payment)) });
       if (csf.insurance_on_debt != null) fields.push({ label: 'Death Coverage', value: csf.insurance_on_debt ? 'Yes' : 'No' });
     }
 
@@ -227,22 +250,52 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       {(assetTotal > 0 || debtTotal > 0) && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-gray-500 text-sm">Total assets</span>
-            <span className="text-gray-900 font-semibold">{formatCurrency(assetTotal)}</span>
+            <span className="text-gray-500 text-sm">
+              Total assets
+              {isMultiCurrency && <span className="text-xs ml-1">(≈ {mainCurrency})</span>}
+            </span>
+            <span className="text-gray-900 font-semibold">{formatCurrencyValue(assetTotal, mainCurrency)}</span>
           </div>
           {hasDebts && (
             <>
               <div className="flex items-center justify-between">
                 <span className="text-gray-500 text-sm">Total liabilities</span>
-                <span className="text-red-600 font-semibold">−{formatCurrency(debtTotal)}</span>
+                <span className="text-red-600 font-semibold">−{formatCurrencyValue(debtTotal, mainCurrency)}</span>
               </div>
               <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
                 <span className="text-gray-700 text-sm font-medium">Net estate value</span>
                 <span className={`text-lg font-semibold ${netValue >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-                  {netValue >= 0 ? formatCurrency(netValue) : `−${formatCurrency(Math.abs(netValue))}`}
+                  {netValue >= 0 ? formatCurrencyValue(netValue, mainCurrency) : `−${formatCurrencyValue(Math.abs(netValue), mainCurrency)}`}
                 </span>
               </div>
             </>
+          )}
+
+          {/* Per-currency breakdown */}
+          {isMultiCurrency && (
+            <div className="border-t border-gray-200 pt-3 mt-2 space-y-1">
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">By currency</p>
+              {sortedCurrencies.map(([cur]) => {
+                const total = currencyTotals[cur] || 0;
+                if (total === 0) return null;
+                const curInfo = getCurrency(cur);
+                return (
+                  <div key={cur} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">
+                      {curInfo.symbol} {cur}
+                      <span className="text-xs text-gray-400 ml-1">({currencyCounts[cur]} {currencyCounts[cur] === 1 ? 'asset' : 'assets'})</span>
+                    </span>
+                    <span className="text-gray-900 font-medium">{formatCurrencyValue(total, cur)}</span>
+                  </div>
+                );
+              })}
+              {fxRates && (
+                <p className="text-[10px] text-gray-400 pt-1 flex items-center gap-1">
+                  <RefreshCw className="w-2.5 h-2.5" />
+                  FX rates via ECB
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -269,7 +322,7 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
       )}
 
       {CATEGORY_ORDER.filter(cat => grouped[cat]).map(cat => {
-        const assets = grouped[cat];
+        const catAssets = grouped[cat];
         const isOpen = openCategories.has(cat);
 
         return (
@@ -280,13 +333,13 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
             >
               <span className="text-gray-500">{CATEGORY_ICONS[cat]}</span>
               <span className="text-gray-900 font-medium flex-1">{CATEGORY_LABELS[cat] || cat}</span>
-              <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-2">{assets.length}</span>
+              <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-2">{catAssets.length}</span>
               {isOpen ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
             </button>
 
             {isOpen && (
               <div className="border-t border-gray-200 divide-y divide-gray-100">
-                {assets.map(asset => {
+                {catAssets.map(asset => {
                   const categoryFields = renderCategoryFields(asset);
 
                   return (
@@ -298,7 +351,7 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
                         </div>
                         {asset.estimated_value != null && asset.estimated_value > 0 && (
                           <span className="text-gray-900 font-semibold text-sm whitespace-nowrap">
-                            {formatCurrency(asset.estimated_value)}
+                            {formatAssetCurrency(asset.estimated_value, asset.category_specific_fields)}
                           </span>
                         )}
                       </div>

@@ -190,17 +190,6 @@ const Contacts = () => {
           </div>
           {!isAtContactLimit ? (
             <div className="flex items-center gap-3">
-              {isPaid && contacts.length > 0 && (
-                <Button
-                  onClick={handleRegenerateAllPortalLinks}
-                  disabled={regeneratingAll || !vaultKey}
-                  variant="outline"
-                  className="rounded-full px-5"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${regeneratingAll ? 'animate-spin' : ''}`} />
-                  {regeneratingAll ? 'Regenerating...' : 'Regenerate All Portal Links'}
-                </Button>
-              )}
               <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
                 <UserPlus className="w-4 h-4 mr-2" />Add Contact
               </Button>

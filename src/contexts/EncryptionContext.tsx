@@ -209,17 +209,23 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isUnlocked, lock]);
 
-  // Clear vault key on sign out
+  // Track auth state and prompt reauth when vault is locked
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         setVaultKey(null);
         userIdRef.current = null;
         setShowReauth(false);
+      } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
+        // If user is logged in but vault is locked, prompt for password
+        if (!vaultKey) {
+          userIdRef.current = session.user.id;
+          setShowReauth(true);
+        }
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [vaultKey]);
 
   const handleReauth = async (e: React.FormEvent) => {
     e.preventDefault();

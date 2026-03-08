@@ -152,6 +152,16 @@ const Switch = () => {
 
   const handleActivateAndCheckIn = async () => {
     if (!user) return;
+
+    // Guard: if custom deadline is stale, don't activate
+    const currentDeadline = settings?.next_check_in_due || settings?.custom_deadline;
+    const deadlineIsStale = !currentDeadline || new Date(currentDeadline) <= new Date();
+    if (deadlineIsStale && settings?.deadline_mode === 'custom') {
+      toast({ title: 'Deadline has passed', description: 'Please set a new custom deadline before activating.', variant: 'destructive' });
+      setShowActivationDialog(false);
+      return;
+    }
+
     try {
       await SettingsService.updateSettings(user.id, { is_active: true });
       await SettingsService.checkIn(user.id);

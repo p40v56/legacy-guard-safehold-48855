@@ -77,6 +77,8 @@ const Documents = () => {
     });
   }, [documents, searchTerm, filterVisibility]);
 
+  const isDocLimitReached = limits.maxDocuments !== Infinity && documents.length >= limits.maxDocuments;
+
   useEffect(() => {
     if (user) {
       fetchDocuments();

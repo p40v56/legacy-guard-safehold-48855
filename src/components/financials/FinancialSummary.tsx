@@ -24,8 +24,6 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   const [fxRates, setFxRates] = useState<FxRates | null>(null);
   const [fxLoading, setFxLoading] = useState(false);
 
-  if (assets.length === 0) return null;
-
   // Determine currencies used
   const currencyCounts: Record<string, number> = {};
   const currencyTotals: Record<string, number> = {};
@@ -49,6 +47,8 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
       setFxLoading(false);
     });
   }, [isMultiCurrency]);
+
+  if (assets.length === 0) return null;
 
   // Calculate converted total
   const hasValues = assets.some(a => a.estimated_value && a.estimated_value > 0);

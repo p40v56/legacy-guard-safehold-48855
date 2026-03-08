@@ -119,7 +119,26 @@ const Dashboard = () => {
     }
   };
 
-  const getTimeOfDay = () => {
+  const handleDeactivate = async () => {
+    if (!user) return;
+    try {
+      await SettingsService.updateSettings(user.id, {
+        is_active: false,
+        grace_period_active: false,
+        grace_period_end: null,
+        switch_triggered: false,
+        switch_triggered_at: null,
+      });
+      await fetchStats();
+      toast({
+        title: 'System deactivated',
+        description: 'Your Dead Man\'s Switch is now off. Check in to reactivate.',
+      });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to deactivate', variant: 'destructive' });
+    }
+  };
+
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';

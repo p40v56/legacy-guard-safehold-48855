@@ -273,7 +273,13 @@ const Documents = () => {
       description: document.description || '',
       content: (document as any).content || '',
       is_public: document.is_public,
-    });
+      ...(document.file_path ? {
+        file_path: document.file_path,
+        file_type: document.file_type,
+        file_size: document.file_size,
+        file_iv: (document as any).file_iv,
+      } : {}),
+    } as any);
     setEditingDocument(document);
     setShowAddForm(true);
   };

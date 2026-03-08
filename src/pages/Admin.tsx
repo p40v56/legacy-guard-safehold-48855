@@ -312,6 +312,7 @@ const Admin = () => {
               { label: 'Essential', value: stats.essential_users, icon: CreditCard },
               { label: 'Family', value: stats.family_users, icon: Crown },
               { label: 'Active Switches', value: stats.active_switches, icon: Timer },
+              { label: 'Triggered', value: stats.triggered_switches, icon: AlertTriangle },
               { label: 'Checked In Today', value: stats.checked_in_today, icon: Shield },
             ].map((stat) => (
               <Card key={stat.label} className="bg-muted/30 border-none rounded-2xl">

@@ -144,6 +144,9 @@ export type Database = {
         Row: {
           checked_in_at: string
           created_at: string
+          deadline_at: string | null
+          deadline_mode: string | null
+          grace_period_hours: number | null
           id: string
           method: string
           user_id: string
@@ -151,6 +154,9 @@ export type Database = {
         Insert: {
           checked_in_at?: string
           created_at?: string
+          deadline_at?: string | null
+          deadline_mode?: string | null
+          grace_period_hours?: number | null
           id?: string
           method?: string
           user_id: string
@@ -158,6 +164,9 @@ export type Database = {
         Update: {
           checked_in_at?: string
           created_at?: string
+          deadline_at?: string | null
+          deadline_mode?: string | null
+          grace_period_hours?: number | null
           id?: string
           method?: string
           user_id?: string

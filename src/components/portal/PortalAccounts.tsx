@@ -52,11 +52,18 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
   const navigate = useNavigate();
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (accounts.length === 0) return null;
 
+  const filteredAccounts = accounts.filter(a => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (a.account_name || '').toLowerCase().includes(q) || (a.platform || '').toLowerCase().includes(q) || (a.account_type || '').toLowerCase().includes(q);
+  });
+
   const grouped: Record<string, DigitalAccount[]> = {};
-  for (const a of accounts) {
+  for (const a of filteredAccounts) {
     const t = a.account_type || 'other';
     if (!grouped[t]) grouped[t] = [];
     grouped[t].push(a);

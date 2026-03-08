@@ -117,23 +117,25 @@ export async function createPortalShares(
     })
   );
 
-  // Filter documents by permissions
+  // Filter documents by permissions and plan limits
   let documents: any[] = [];
-  if (!isFree) {
-    const docPerms = permissions.legacy_documents;
-    if (docPerms) {
-      if (docPerms.all_documents) {
-        documents = allDocs;
-      } else {
-        const cats = docPerms.by_category || [];
-        const ids = docPerms.specific_documents || [];
-        if (cats.length > 0 || ids.length > 0) {
-          documents = allDocs.filter(
-            (d: any) => cats.includes(d.document_type) || ids.includes(d.id)
-          );
-        }
+  const docPerms = permissions.legacy_documents;
+  if (docPerms) {
+    if (docPerms.all_documents) {
+      documents = allDocs;
+    } else {
+      const cats = docPerms.by_category || [];
+      const ids = docPerms.specific_documents || [];
+      if (cats.length > 0 || ids.length > 0) {
+        documents = allDocs.filter(
+          (d: any) => cats.includes(d.document_type) || ids.includes(d.id)
+        );
       }
     }
+  }
+  // Apply plan limit
+  if (tierLimits.maxDocuments !== Infinity) {
+    documents = documents.slice(0, tierLimits.maxDocuments);
   }
 
   // Decrypt & filter accounts

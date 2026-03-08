@@ -144,7 +144,7 @@ export const useSettings = () => {
         }
         return {
           id: rule.id,
-          target_type: rule.target_type as 'category' | 'contacts',
+          target_type: rule.target_type as 'all' | 'category' | 'contacts',
           contact_category: rule.contact_category as ContactType,
           contact_ids: rule.contact_ids || [],
           delay_hours: rule.delay_hours,

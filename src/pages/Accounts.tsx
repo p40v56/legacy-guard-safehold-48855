@@ -381,20 +381,30 @@ const Accounts = () => {
 
                     <div className="space-y-4">
                       {sortedAccounts.length === 0 ? (
-                        <Card className="bg-card border-border backdrop-blur-sm">
-                          <CardContent className="p-12 text-center">
-                            <div className="max-w-md mx-auto">
-                              <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6"><Monitor className="w-12 h-12 text-muted-foreground" /></div>
-                              <h3 className="text-xl font-semibold text-foreground mb-3">No accounts found</h3>
-                              <p className="text-muted-foreground mb-6 leading-relaxed">
-                                {searchTerm ? 'No accounts match your search criteria.' : 'Start adding your digital accounts to create a comprehensive digital legacy plan.'}
-                              </p>
-                              {(!searchTerm && !isFreeBlocked) && (
-                                <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 shadow-lg font-semibold"><Plus className="w-4 h-4 mr-2" />Add Your First Account</Button>
-                              )}
+                        accounts.length === 0 && !searchTerm ? (
+                          <div className="text-center py-16 space-y-4">
+                            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+                              <Monitor className="w-8 h-8 text-primary" />
                             </div>
-                          </CardContent>
-                        </Card>
+                            <h3 className="text-lg font-medium text-card-foreground">No digital accounts yet</h3>
+                            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                              Add your email, social media, banking and other online accounts so your contacts know what exists and what to do with each one.
+                            </p>
+                            <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 rounded-xl">
+                              <Plus className="w-4 h-4 mr-2" />Add your first account
+                            </Button>
+                          </div>
+                        ) : (
+                          <Card className="bg-card border-border backdrop-blur-sm">
+                            <CardContent className="p-12 text-center">
+                              <div className="max-w-md mx-auto">
+                                <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6"><Monitor className="w-12 h-12 text-muted-foreground" /></div>
+                                <h3 className="text-xl font-semibold text-foreground mb-3">No accounts found</h3>
+                                <p className="text-muted-foreground mb-6 leading-relaxed">No accounts match your search criteria.</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
                       ) : (
                         <div className="grid gap-4">
                           {sortedAccounts.map((account) => {

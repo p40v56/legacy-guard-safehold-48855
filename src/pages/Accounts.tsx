@@ -51,7 +51,7 @@ const Accounts = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
-  const { plan } = usePlan();
+  const { plan, limits, isFree } = usePlan();
   const { vaultKey } = useEncryption();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any | null>(null);

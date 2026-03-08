@@ -207,10 +207,21 @@ export class SettingsService {
     
     if (error) throw error;
 
-    // Record in check-in history
+    // Record in check-in history with deadline context
+    const deadlineAt = currentSettings?.deadline_mode === 'custom' 
+      ? currentSettings?.custom_deadline 
+      : currentSettings?.next_check_in_due;
+
     await supabase
       .from('check_in_history')
-      .insert({ user_id: userId, method: 'web', checked_in_at: now });
+      .insert({ 
+        user_id: userId, 
+        method: 'web', 
+        checked_in_at: now,
+        deadline_at: deadlineAt || null,
+        deadline_mode: currentSettings?.deadline_mode || null,
+        grace_period_hours: currentSettings?.grace_period_hours ?? null,
+      } as any);
 
     return data;
   }

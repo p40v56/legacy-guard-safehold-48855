@@ -225,13 +225,23 @@ const Portal = () => {
           <form onSubmit={handleAnswerSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label className="text-gray-900 font-medium">{securityChallenge.question}</Label>
-              <Input
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Your answer..."
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                autoFocus
-              />
+              <div className="relative">
+                <Input
+                  type={showAnswer ? 'text' : 'password'}
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Your answer..."
+                  className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 pr-10"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAnswer(!showAnswer)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showAnswer ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             {answerError && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">

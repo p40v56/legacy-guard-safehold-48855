@@ -68,33 +68,28 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const userId = tokenData.user_id;
-    const now = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
 
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
 
+    // Email link check-in only extends deadline by 24 hours (not a full cycle reset)
     let nextCheckInDue = null;
     if (settings?.is_active && settings.deadline_mode === "frequency") {
-      const freq = settings.check_in_frequency;
-      const next = new Date();
-      switch (freq) {
-        case "daily": next.setDate(next.getDate() + 1); break;
-        case "weekly": next.setDate(next.getDate() + 7); break;
-        case "biweekly": next.setDate(next.getDate() + 14); break;
-        case "monthly": next.setMonth(next.getMonth() + 1); break;
-      }
+      const next = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24h only
       nextCheckInDue = next.toISOString();
     }
 
     await supabase.from("user_settings").update({
-      last_check_in: now, next_check_in_due: nextCheckInDue,
+      last_check_in: nowIso, next_check_in_due: nextCheckInDue,
       grace_period_active: false, grace_period_end: null,
       switch_triggered: false, switch_triggered_at: null,
     }).eq("user_id", userId);
 
-    await supabase.from("check_in_tokens").update({ used_at: now }).eq("id", tokenData.id);
-    await supabase.from("check_in_history").insert({ user_id: userId, method: tokenData.method, checked_in_at: now });
+    await supabase.from("check_in_tokens").update({ used_at: nowIso }).eq("id", tokenData.id);
+    await supabase.from("check_in_history").insert({ user_id: userId, method: tokenData.method, checked_in_at: nowIso });
 
-    return new Response(generateHtml("✅ Check-in Successful", "Your Dead Man's Switch timer has been reset. You're all set!"), {
+    return new Response(generateHtml("✅ Check-in Successful", "Your deadline has been extended by 24 hours. Use the website for a full check-in reset."), {
       status: 200, headers: { "Content-Type": "text/html", ...corsHeaders },
     });
   } catch (error: unknown) {

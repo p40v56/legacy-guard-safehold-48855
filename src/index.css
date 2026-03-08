@@ -606,25 +606,26 @@ body:has(#lv-root) {
 }
 
 /* ── Shared section layout ── */
-#lv-root .lv-section { padding: 120px 48px; position: relative; }
+#lv-root .lv-section { padding: 140px 48px; position: relative; }
 #lv-root .lv-container { max-width: 1100px; margin: 0 auto; }
 #lv-root .lv-label {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.25em;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.3em;
   text-transform: uppercase; color: #1A9BD7;
-  display: block; margin-bottom: 16px;
+  display: block; margin-bottom: 18px;
   font-family: 'DM Sans', sans-serif;
+  text-shadow: 0 0 20px rgba(26,155,215,0.3);
 }
-#lv-root .lv-label.light { color: rgba(255,255,255,0.45); }
+#lv-root .lv-label.light { color: rgba(255,255,255,0.5); text-shadow: none; }
 #lv-root .lv-h2 {
   font-family: 'DM Serif Display', serif !important;
-  font-size: clamp(32px, 4.5vw, 52px) !important;
-  color: white !important; line-height: 1.1 !important;
-  margin-bottom: 20px; font-weight: 400 !important; letter-spacing: 0 !important;
+  font-size: clamp(36px, 5vw, 58px) !important;
+  color: white !important; line-height: 1.08 !important;
+  margin-bottom: 24px; font-weight: 400 !important; letter-spacing: -0.01em !important;
 }
 #lv-root .lv-h2 em { font-style: italic !important; font-weight: 300 !important; }
 #lv-root .lv-body {
   color: rgba(255,255,255,0.45); font-size: 18px;
-  font-weight: 300; line-height: 1.65; max-width: 540px;
+  font-weight: 300; line-height: 1.7; max-width: 540px;
   font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-centered { text-align: center; }

@@ -420,6 +420,26 @@ const ContactCard: React.FC<ContactCardProps> = ({
                         Portal link is active for this contact
                       </div>
                     )}
+                    {/* Portal access activity */}
+                    {hasActiveShare && (
+                      <div className="bg-muted/30 rounded-xl p-3 space-y-2 mt-2">
+                        <p className="text-xs font-medium text-card-foreground">Portal Activity</p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{portalAccessCount} access{portalAccessCount !== 1 ? 'es' : ''}</span>
+                          </div>
+                          {lastPortalAccess ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground/60">Last:</span>
+                              <span>{formatDateEU(lastPortalAccess)}</span>
+                            </div>
+                          ) : (
+                            <span className="italic">Never accessed</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </TabsContent>

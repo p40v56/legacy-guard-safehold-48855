@@ -39,8 +39,15 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (documents.length === 0) return null;
+
+  const filteredDocs = documents.filter(doc => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return doc.title?.toLowerCase().includes(q) || doc.document_type?.toLowerCase().includes(q);
+  });
 
   const grouped: Record<string, PortalDocument[]> = {};
   for (const doc of documents) {

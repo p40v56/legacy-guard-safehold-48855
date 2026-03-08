@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Mail, Eye, EyeOff, Save, Info, Send, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +51,100 @@ const VariablesInset = () => (
   </div>
 );
 
+function resolveVars(text: string, userName: string): string {
+  return text
+    .replace(/\{userName\}/g, userName)
+    .replace(/\{contactName\}/g, 'Contact Name')
+    .replace(/\{triggerDate\}/g, new Date().toLocaleDateString())
+    .replace(/\{gracePeriodHours\}/g, '24');
+}
+
+/** Builds a real HTML email preview matching send-notification edge function output */
+function buildGracePreviewHtml(template: EmailTemplateData, userName: string): string {
+  const graceIntro = resolveVars(
+    template.email_grace_intro || "Your Dead Man's Switch has detected that you did not check in by your scheduled deadline.",
+    userName
+  );
+  const graceEnd = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+  });
+
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">⚠️ Grace Period Started</h1>
+        <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Dead Man's Switch Warning</p>
+      </div>
+      <div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px; margin: 0 0 20px 0;">Hello <strong>${userName}</strong>,</p>
+        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
+          <p style="color: #92400e; margin: 0; font-size: 15px; font-weight: 600;">You missed your scheduled check-in!</p>
+        </div>
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${graceIntro} A <strong>24-hour grace period</strong> has now started.</p>
+        <div style="background-color: #fee2e2; border: 2px solid #ef4444; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
+          <p style="color: #991b1b; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">⏰ GRACE PERIOD ENDS:</p>
+          <p style="color: #dc2626; margin: 0; font-size: 18px; font-weight: 700;">${graceEnd}</p>
+        </div>
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;"><strong>What happens next?</strong><br>If you do not perform a check-in before the grace period ends, your emergency contacts will be automatically notified with the information you have configured.</p>
+        <div style="text-align: center; margin: 32px 0;"><p style="font-size: 16px; color: #059669; font-weight: 600; margin: 0;">✅ Log in to your account and perform a check-in to cancel this alert.</p></div>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+        <p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">This is an automated message from your Dead Man's Switch system.<br>If you did not set up this system, please ignore this email.</p>
+      </div>
+    </div>`;
+}
+
+function buildTriggeredPreviewHtml(template: EmailTemplateData, userName: string): string {
+  const headerTitle = template.email_header_title || '🚨 Important Notification';
+  const headerSubtitle = template.email_header_subtitle || "Dead Man's Switch Activated";
+  const introMessage = resolveVars(
+    template.email_intro_message || "This is an automated message from {userName}'s Dead Man's Switch system.",
+    userName
+  );
+  const footerMessage = template.email_footer_message || "This is an automated message from the Dead Man's Switch system.";
+
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">${headerTitle}</h1>
+        <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">${headerSubtitle}</p>
+      </div>
+      <div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px; margin: 0 0 20px 0;">Dear <strong>Contact Name</strong>,</p>
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${introMessage}</p>
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${userName} has designated you as a trusted contact and has authorized the following information to be shared with you:</p>
+
+        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
+          <h3 style="color: #92400e; margin: 0 0 12px 0; font-size: 16px;">⚠️ Emergency Instructions</h3>
+          <div style="color: #78350f; font-size: 14px; line-height: 1.6;">Your emergency instructions will appear here based on your profile settings.</div>
+        </div>
+
+        <div style="margin: 24px 0;">
+          <h3 style="color: #374151; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px;">📄 Documents</h3>
+          <div style="background-color: #f9fafb; padding: 16px; margin: 12px 0; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <h4 style="color: #111827; margin: 0 0 8px 0; font-size: 15px;">Sample Document Title</h4>
+            <p style="color: #6b7280; font-size: 13px; margin: 0;">Documents shared based on this contact's permissions will appear here.</p>
+          </div>
+        </div>
+
+        <div style="background-color: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
+          <h3 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px;">🔐 Access Your Document Portal</h3>
+          <p style="color: #047857; margin: 0 0 16px 0; font-size: 14px;">You can also view your authorized documents online at any time using the secure link below:</p>
+          <span style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">Open Document Portal →</span>
+          <p style="color: #6b7280; margin: 12px 0 0 0; font-size: 12px;">This link is private and unique to you. Do not share it with others.</p>
+        </div>
+
+        <div style="text-align: center; margin: 16px 0;">
+          <span style="display: inline-block; background-color: #059669; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px;">✓ Confirm I have received this message</span>
+          <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 11px;">Clicking this lets the system know you have seen this notification.</p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+        <div style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">${footerMessage}</div>
+      </div>
+    </div>`;
+}
+
 const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'John' }: EmailTemplateEditorProps) => {
   const [showGracePreview, setShowGracePreview] = useState(false);
   const [showTriggeredPreview, setShowTriggeredPreview] = useState(false);
@@ -61,9 +155,8 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
     onChange({ ...template, [field]: value });
   };
 
-  const resolveVariable = (text: string) => {
-    return text.replace(/\{userName\}/g, userName).replace(/\{contactName\}/g, 'Contact Name').replace(/\{triggerDate\}/g, new Date().toLocaleDateString()).replace(/\{gracePeriodHours\}/g, '24');
-  };
+  const gracePreviewHtml = useMemo(() => buildGracePreviewHtml(template, userName), [template, userName]);
+  const triggeredPreviewHtml = useMemo(() => buildTriggeredPreviewHtml(template, userName), [template, userName]);
 
   const sendTestEmail = async (templateType: 'switch_triggered' | 'grace_period') => {
     setSendingTest(templateType);
@@ -150,20 +243,16 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
               </div>
 
               {showGracePreview && (
-                <div className="rounded-xl border border-border overflow-hidden">
-                  <div className="bg-warning p-6 text-center">
-                    <h2 className="text-xl font-semibold text-warning-foreground">⚠️ Grace Period Started</h2>
-                    <p className="text-warning-foreground/80 text-sm mt-1">Dead Man's Switch Warning</p>
-                  </div>
-                  <div className="bg-card p-6 space-y-4">
-                    <p className="text-foreground">Hello <strong>{userName}</strong>,</p>
-                    <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_grace_intro) }} />
-                    <div className="bg-destructive/10 border-2 border-destructive p-5 rounded-lg text-center">
-                      <p className="text-destructive font-semibold text-sm">⏰ GRACE PERIOD ENDS:</p>
-                      <p className="text-destructive text-lg font-bold mt-1">{new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString()}</p>
+                <div className="rounded-xl border border-border overflow-hidden bg-card">
+                  <div className="p-1">
+                    <div className="text-xs text-muted-foreground px-3 py-2 bg-muted/50 rounded-t-lg flex items-center justify-between">
+                      <span>Subject: <strong className="text-foreground">{resolveVars(template.email_grace_subject, userName)}</strong></span>
+                      <Badge variant="secondary" className="text-[10px]">Preview</Badge>
                     </div>
-                    <hr className="border-border" />
-                    <p className="text-muted-foreground text-xs text-center">This email was sent by your Dead Man's Switch system.</p>
+                    <div
+                      className="bg-white rounded-b-lg"
+                      dangerouslySetInnerHTML={{ __html: gracePreviewHtml }}
+                    />
                   </div>
                 </div>
               )}
@@ -240,24 +329,16 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
               </div>
 
               {showTriggeredPreview && (
-                <div className="rounded-xl border border-border overflow-hidden">
-                  <div className="bg-destructive p-6 text-center">
-                    <h2 className="text-xl font-semibold text-destructive-foreground">{template.email_header_title}</h2>
-                    <p className="text-destructive-foreground/80 text-sm mt-1">{template.email_header_subtitle}</p>
-                  </div>
-                  <div className="bg-card p-6 space-y-4">
-                    <p className="text-foreground">Dear <strong>Contact Name</strong>,</p>
-                    <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_intro_message) }} />
-                    <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
-                      <h3 className="text-warning font-medium text-sm">⚠️ Emergency Instructions</h3>
-                      <p className="text-muted-foreground text-xs mt-1">Your emergency instructions will appear here...</p>
+                <div className="rounded-xl border border-border overflow-hidden bg-card">
+                  <div className="p-1">
+                    <div className="text-xs text-muted-foreground px-3 py-2 bg-muted/50 rounded-t-lg flex items-center justify-between">
+                      <span>Subject: <strong className="text-foreground">{resolveVars(template.email_subject, userName)}</strong></span>
+                      <Badge variant="secondary" className="text-[10px]">Preview</Badge>
                     </div>
-                    <div className="bg-muted/50 p-4 rounded">
-                      <h3 className="text-foreground font-medium text-sm">📄 Documents</h3>
-                      <p className="text-muted-foreground text-xs mt-1">Shared documents will appear here...</p>
-                    </div>
-                    <hr className="border-border" />
-                    <div className="text-muted-foreground text-xs text-center" dangerouslySetInnerHTML={{ __html: template.email_footer_message }} />
+                    <div
+                      className="bg-white rounded-b-lg"
+                      dangerouslySetInnerHTML={{ __html: triggeredPreviewHtml }}
+                    />
                   </div>
                 </div>
               )}

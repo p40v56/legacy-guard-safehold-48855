@@ -56,8 +56,8 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
 
   const lock = useCallback(() => {
     setVaultKey(null);
-    // Don't show reauth if no user is logged in
-    if (userIdRef.current) {
+    // Only show reauth if vault was previously unlocked (auto-lock scenario)
+    if (userIdRef.current && wasUnlockedRef.current) {
       setShowReauth(true);
     }
   }, []);

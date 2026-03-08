@@ -57,6 +57,7 @@ const WaveCard = ({
 }) => {
   const isImmediate = rule.delay_hours === 0;
   const [showMessage, setShowMessage] = useState(!!rule.custom_message && rule.custom_message !== '<p><br></p>' && rule.custom_message.replace(/<[^>]*>/g, '').trim().length > 0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const waveLabel = isImmediate ? '⚡ Immediate notification' : `⏱ After ${rule.delay_hours} hours`;
 
   return (

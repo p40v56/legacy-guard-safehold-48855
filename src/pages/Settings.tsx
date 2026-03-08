@@ -116,6 +116,17 @@ const Settings = () => {
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{ ok: number; failed: number; total: number } | null>(null);
 
+  // MFA state
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaVerifyCode, setMfaVerifyCode] = useState('');
+  const [mfaVerifyError, setMfaVerifyError] = useState<string | null>(null);
+  const [mfaVerifying, setMfaVerifying] = useState(false);
+
   // Session management
   const [signingOutAll, setSigningOutAll] = useState(false);
   const { sessions: trackedSessions, loading: sessionsLoading, revokeSession } = useSessionTracker(user?.id);
@@ -125,10 +136,92 @@ const Settings = () => {
     if (stored) setAutoLockMinutes(parseInt(stored));
   }, []);
 
+  // Check MFA status on mount
+  useEffect(() => {
+    const checkMfa = async () => {
+      const { data } = await supabase.auth.mfa.listFactors();
+      const totpFactor = data?.totp?.find(f => f.status === 'verified');
+      if (totpFactor) {
+        setMfaEnabled(true);
+        setMfaFactorId(totpFactor.id);
+      }
+    };
+    if (user) checkMfa();
+  }, [user]);
+
   const handleAutoLockChange = (minutes: number) => {
     setAutoLockMinutes(minutes);
     localStorage.setItem('vault_auto_lock_minutes', minutes.toString());
     toast({ title: 'Auto-lock updated', description: `Vault will lock after ${minutes === 60 ? '1 hour' : minutes === 240 ? '4 hours' : `${minutes} minutes`} of inactivity.` });
+  };
+
+  const handleEnableMfa = async () => {
+    setMfaLoading(true);
+    setMfaVerifyError(null);
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: 'LegacyVault Authenticator',
+      });
+      if (error) throw error;
+      setQrCode(data.totp.qr_code);
+      setMfaSecret(data.totp.secret);
+      setMfaFactorId(data.id);
+      setShowMfaSetup(true);
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleVerifyMfa = async () => {
+    if (!mfaFactorId || mfaVerifyCode.length !== 6) return;
+    setMfaVerifying(true);
+    setMfaVerifyError(null);
+    try {
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: mfaFactorId,
+      });
+      if (challengeError) throw challengeError;
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: challengeData.id,
+        code: mfaVerifyCode,
+      });
+      if (verifyError) {
+        setMfaVerifyError('Incorrect code. Please try again.');
+        return;
+      }
+
+      setMfaEnabled(true);
+      setShowMfaSetup(false);
+      setQrCode(null);
+      setMfaSecret(null);
+      setMfaVerifyCode('');
+      toast({ title: '2FA enabled ✓', description: 'Two-factor authentication is now active on your account.' });
+    } catch (error: any) {
+      setMfaVerifyError(error.message || 'Verification failed');
+    } finally {
+      setMfaVerifying(false);
+    }
+  };
+
+  const handleDisableMfa = async () => {
+    if (!mfaFactorId) return;
+    setMfaLoading(true);
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
+      if (error) throw error;
+      setMfaEnabled(false);
+      setMfaFactorId(null);
+      toast({ title: '2FA disabled', description: 'Two-factor authentication has been removed.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setMfaLoading(false);
+    }
   };
 
   const handleVerifyVault = async () => {
@@ -572,11 +665,132 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            
           </TabsContent>
 
           {/* ─── SECURITY TAB ─── */}
           <TabsContent value="security" className="space-y-4 mt-6">
+            {/* Two-Factor Authentication */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-5 bg-card rounded-2xl border border-border">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mfaEnabled ? 'bg-success/20' : 'bg-muted/50'}`}>
+                    <Smartphone className={`w-5 h-5 ${mfaEnabled ? 'text-success' : 'text-muted-foreground'}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-card-foreground">Two-Factor Authentication</p>
+                    <p className="text-sm text-muted-foreground">
+                      {mfaEnabled
+                        ? 'Enabled — your account is protected with an authenticator app'
+                        : 'Add an extra layer of security to your account'}
+                    </p>
+                  </div>
+                </div>
+                {mfaEnabled ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDisableMfa}
+                    disabled={mfaLoading}
+                    className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
+                  >
+                    {mfaLoading ? 'Removing...' : 'Remove 2FA'}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEnableMfa}
+                    disabled={mfaLoading || showMfaSetup}
+                    className="rounded-xl"
+                  >
+                    {mfaLoading ? 'Setting up...' : 'Enable 2FA'}
+                  </Button>
+                )}
+              </div>
+
+              {showMfaSetup && qrCode && (
+                <div className="p-5 bg-card rounded-2xl border border-primary/30 space-y-5">
+                  <div>
+                    <h4 className="font-medium text-card-foreground mb-1">Scan with your authenticator app</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Use Google Authenticator, Authy, or any TOTP app to scan this QR code.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <div className="p-3 bg-white rounded-xl border border-border">
+                      <img src={qrCode} alt="2FA QR Code" className="w-48 h-48" />
+                    </div>
+                  </div>
+
+                  {mfaSecret && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Can't scan? Enter this key manually:</p>
+                      <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl">
+                        <code className="text-xs font-mono text-card-foreground flex-1 break-all">
+                          {mfaSecret}
+                        </code>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(mfaSecret)}
+                          className="text-primary hover:text-primary/80 text-xs shrink-0"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <p className="text-sm text-card-foreground font-medium">
+                      Enter the 6-digit code from your app to confirm setup:
+                    </p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      value={mfaVerifyCode}
+                      onChange={e => {
+                        setMfaVerifyCode(e.target.value.replace(/\D/g, ''));
+                        setMfaVerifyError(null);
+                      }}
+                      placeholder="000000"
+                      className="w-full text-center text-2xl font-mono tracking-[0.5em] h-14 bg-muted/30 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                    {mfaVerifyError && (
+                      <p className="text-sm text-destructive">{mfaVerifyError}</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleVerifyMfa}
+                      disabled={mfaVerifyCode.length !== 6 || mfaVerifying}
+                      className="bg-primary hover:bg-primary/90 rounded-xl flex-1"
+                    >
+                      {mfaVerifying ? 'Verifying...' : 'Activate 2FA'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={async () => {
+                        if (mfaFactorId) {
+                          await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
+                        }
+                        setShowMfaSetup(false);
+                        setQrCode(null);
+                        setMfaSecret(null);
+                        setMfaFactorId(null);
+                        setMfaVerifyCode('');
+                      }}
+                      className="rounded-xl"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Collapsible defaultOpen={false}>
               <Card className="bg-muted/30 border-none rounded-2xl">
                 <CollapsibleTrigger className="w-full text-left">

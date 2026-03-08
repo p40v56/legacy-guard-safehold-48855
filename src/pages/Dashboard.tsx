@@ -34,6 +34,7 @@ const Dashboard = () => {
   const [testEmailSent, setTestEmailSent] = useState(false);
   const [hasPortalLinks, setHasPortalLinks] = useState(false);
   const [firstName, setFirstName] = useState('');
+  const [mfaEnabled, setMfaEnabled] = useState(false);
 
   const settings = stats.userSettings;
   const currentDeadline = settings?.deadline_mode === 'custom' && settings?.custom_deadline
@@ -77,6 +78,13 @@ const Dashboard = () => {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
+
+  useEffect(() => {
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      const verified = data?.totp?.find(f => f.status === 'verified');
+      setMfaEnabled(!!verified);
+    });
+  }, []);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -216,6 +224,7 @@ const Dashboard = () => {
   const autoLockLabel = autoLockMinutes >= 60 ? `${autoLockMinutes / 60} hour${autoLockMinutes > 60 ? 's' : ''}` : `${autoLockMinutes} minutes`;
 
   const securityItems = [
+    { label: 'Two-Factor Auth', enabled: mfaEnabled, explanation: mfaEnabled ? 'Your account is protected with an authenticator app in addition to your password.' : 'Enable two-factor authentication in Settings → Security for an extra layer of protection.' },
     { label: 'Vault Auto-Lock', enabled: true, explanation: `Your vault automatically locks after ${autoLockLabel} of inactivity, clearing encryption keys from memory.` },
     { label: 'Data Encryption', enabled: true, explanation: 'All data is encrypted client-side with AES-256-GCM before reaching our servers. We operate on a zero-knowledge basis.' },
     { label: 'EU Data Storage', enabled: true, explanation: 'Your encrypted data is stored on Supabase infrastructure in the EU region, replicated across multiple availability zones.' },

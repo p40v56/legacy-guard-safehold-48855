@@ -102,6 +102,7 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
       category_specific_fields: { ...csf, currency },
       visible_to: visibleToAll ? null : (selectedContactIds.length > 0 ? selectedContactIds : null),
       attached_document_ids: attachedDocIds.length > 0 ? attachedDocIds : null,
+    });
   };
   };
 

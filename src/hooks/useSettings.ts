@@ -31,7 +31,7 @@ interface NotificationSettings {
 
 interface ActivationRule {
   id: string;
-  target_type: 'category' | 'contacts';
+  target_type: 'all' | 'category' | 'contacts';
   contact_category?: ContactType;
   contact_ids?: string[];
   delay_hours: number;

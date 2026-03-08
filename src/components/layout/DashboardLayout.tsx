@@ -38,8 +38,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigationItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Switch', href: '/switch', icon: Timer },
-    { name: 'Accounts', href: '/accounts', icon: CreditCard },
     { name: 'Contacts', href: '/contacts', icon: Users },
+    { name: 'Accounts', href: '/accounts', icon: CreditCard },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];

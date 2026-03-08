@@ -694,7 +694,7 @@ const Settings = () => {
                     const lim = PLAN_LIMITS[tier];
                     const userEmail = user?.email || '';
                     return (
-                      <div key={tier} className={`rounded-xl p-4 border transition-all duration-200 ${isCurrent ? 'border-2 border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-1 ring-primary/20 scale-[1.02]' : 'border-border bg-muted/20 opacity-80'}`}>
+                      <div key={tier} className={`rounded-xl p-4 border transition-all duration-200 ${isCurrent ? 'border-2 border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-2 ring-primary/30 scale-[1.02]' : 'border-border bg-muted/20 opacity-80'}`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <h4 className="font-medium text-card-foreground">{PLAN_LABELS[tier]}</h4>

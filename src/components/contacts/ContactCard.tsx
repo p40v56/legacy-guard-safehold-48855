@@ -55,6 +55,8 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [portalStale, setPortalStale] = useState(false);
   const [regeneratingShares, setRegeneratingShares] = useState(false);
   const [hasActiveShare, setHasActiveShare] = useState(false);
+  const [lastPortalAccess, setLastPortalAccess] = useState<string | null>(null);
+  const [portalAccessCount, setPortalAccessCount] = useState(0);
 
   // Check if an active share exists on mount
   useEffect(() => {

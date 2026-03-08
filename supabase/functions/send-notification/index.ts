@@ -293,6 +293,27 @@ const handler = async (req: Request): Promise<Response> => {
       recipientEmail = warningData.recipientEmail;
       recipientName = warningData.recipientName;
       console.log(`Sending ${isPreDeadline ? 'pre-deadline reminder' : 'grace period warning'} to ${recipientName} (${recipientEmail})`);
+    } else if (notificationType === "plan_expiry_warning") {
+      const { recipientEmail: peEmail, planLabel, daysLabel, expiresAt, appUrl } = data as any;
+      const expiryDate = new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#374151;max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0;">
+          <h1 style="margin:0;font-size:24px;font-weight:600;">Your LegacyVault plan expires ${daysLabel}</h1>
+          <p style="margin:12px 0 0;opacity:.9;font-size:14px;">Plan Expiry Notice</p>
+        </div>
+        <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+          <p style="font-size:15px;margin:0 0 20px;color:#4b5563;">Your <strong>${planLabel || 'paid'}</strong> plan expires on <strong>${expiryDate}</strong>.</p>
+          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">After expiry, your account will revert to the Free plan. Your data will remain intact but some features will be restricted.</p>
+          <div style="text-align:center;margin:32px 0;"><a href="${appUrl || ''}/settings?tab=account" style="display:inline-block;background-color:#f59e0b;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">Renew your plan →</a></div>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+          <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · <a href="${appUrl || ''}/privacy" style="color:#9ca3af;">Privacy</a></p>
+        </div>
+      </body></html>`;
+      recipientEmail = peEmail;
+      recipientName = peEmail;
+      subject = `Your LegacyVault ${planLabel || 'paid'} plan expires ${daysLabel || 'soon'}`;
+      console.log(`Sending plan expiry warning to ${recipientEmail}`);
     } else if (notificationType === "welcome") {
       const { recipientEmail: wEmail, appUrl } = data as any;
       emailHtml = buildWelcomeHtml(wEmail, appUrl || 'https://legacy-guard-safehold-48855.lovable.app');

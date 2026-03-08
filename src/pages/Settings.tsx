@@ -290,8 +290,12 @@ const Settings = () => {
 
       text += `\n--- DOCUMENTS ---\n`;
       documents.forEach((d: any) => {
-        text += `• ${d.title || 'Untitled'} | Type: ${d.document_type || ''} | Created: ${d.created_at?.split('T')[0] || ''}\n`;
-        if (d.content) text += `  Content: ${d.content.substring(0, 200)}${d.content.length > 200 ? '...' : ''}\n`;
+        text += `\n${d.title || 'Untitled'}`;
+        text += `\n  Type: ${d.document_type || 'unknown'}`;
+        if (d.description) text += `\n  Description: ${d.description}`;
+        text += `\n  Added: ${d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'unknown'}`;
+        if (d.content) text += `\n  Content: ${d.content.substring(0, 200)}${d.content.length > 200 ? '...' : ''}`;
+        text += '\n';
       });
 
       text += `\n--- DIGITAL ACCOUNTS ---\n`;

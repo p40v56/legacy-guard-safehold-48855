@@ -549,6 +549,62 @@ const handler = async (req: Request): Promise<Response> => {
         results.gracePeriodStarted.push({ userId, ...graceResult });
       }
 
+      // Plan expiry warnings: notify at 7 days and 1 day before expiry
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('plan, plan_expires_at')
+          .eq('user_id', userId)
+          .single();
+
+        if (profileData?.plan_expires_at && profileData.plan !== 'free') {
+          const expiresAt = new Date(profileData.plan_expires_at);
+          const daysUntilExpiry = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+          if (daysUntilExpiry > 0 && daysUntilExpiry <= 7) {
+            const reminderKey = daysUntilExpiry <= 1 ? 'plan_expiry_1d' : 'plan_expiry_7d';
+
+            const { data: existingReminder } = await supabase
+              .from('sent_notifications')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('notification_type', reminderKey)
+              .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+              .limit(1);
+
+            if (!existingReminder || existingReminder.length === 0) {
+              const userEmail = await getUserEmail(supabase, userId);
+              const planLabel = profileData.plan === 'family' ? 'Family' : 'Essential';
+              const daysLabel = daysUntilExpiry <= 1 ? 'tomorrow' : 'in 7 days';
+
+              if (userEmail) {
+                await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+                  body: JSON.stringify({
+                    notificationType: 'plan_expiry_warning',
+                    recipientEmail: userEmail,
+                    planLabel,
+                    daysLabel,
+                    expiresAt: expiresAt.toISOString(),
+                    appUrl: APP_BASE_URL,
+                  }),
+                });
+
+                await supabase.from('sent_notifications').insert({
+                  user_id: userId,
+                  contact_id: userId,
+                  notification_type: reminderKey,
+                  status: 'sent',
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Plan expiry check error:', err);
+      }
+
       // Pre-deadline reminder: warn at 48h and 24h before deadline
       if (deadline && !settings.grace_period_active && !settings.switch_triggered) {
         const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);

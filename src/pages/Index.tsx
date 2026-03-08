@@ -101,6 +101,7 @@ const Index = () => {
           <div className="lv-orb orb1" />
           <div className="lv-orb orb2" />
           <div className="lv-orb orb3" />
+          <div className="lv-orb orb4" />
           <div className="lv-rays" />
           {/* Floating particles */}
           <div className="lv-particles">

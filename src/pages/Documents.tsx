@@ -266,6 +266,26 @@ const Documents = () => {
   };
 
   const handleFileUpload = async (file: File) => {
+    if (!limits.fileUploads) {
+      toast({ title: 'File uploads unavailable', description: 'File uploads require the Essential or Family plan. Free plan supports text documents only.', variant: 'destructive' });
+      return;
+    }
+
+    // Check storage limit
+    if (limits.maxStorageMb > 0 && limits.maxStorageMb !== Infinity) {
+      try {
+        const { data: sizeData } = await supabase
+          .from('legacy_documents')
+          .select('file_size')
+          .eq('user_id', user?.id);
+        const totalMb = (sizeData || []).reduce((sum, d) => sum + (d.file_size || 0), 0) / (1024 * 1024);
+        if (totalMb + (file.size / (1024 * 1024)) > limits.maxStorageMb) {
+          toast({ title: 'Storage limit reached', description: `Your plan allows ${limits.maxStorageMb >= 1024 ? `${limits.maxStorageMb / 1024} GB` : `${limits.maxStorageMb} MB`} of storage. Upgrade to add more files.`, variant: 'destructive' });
+          return;
+        }
+      } catch { /* proceed */ }
+    }
+
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();

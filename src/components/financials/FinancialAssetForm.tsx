@@ -103,6 +103,7 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
       visible_to: visibleToAll ? null : (selectedContactIds.length > 0 ? selectedContactIds : null),
       attached_document_ids: attachedDocIds.length > 0 ? attachedDocIds : null,
     });
+  };
 
   const visibleDocs = showAllDocs ? availableDocs : availableDocs.slice(0, 5);
 

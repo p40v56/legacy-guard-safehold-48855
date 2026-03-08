@@ -92,8 +92,6 @@ const Index = () => {
             <span style={{ fontSize: 17, fontWeight: 600, color: 'white' }}>LegacyVault</span>
           </a>
           <nav style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-            <a href="#how-it-works" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", transition: 'color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>How it works</a>
-            <a href="#pricing" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", transition: 'color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>Pricing</a>
             <button className="lv-login" onClick={() => navigate('/auth')}>Log in</button>
           </nav>
         </header>

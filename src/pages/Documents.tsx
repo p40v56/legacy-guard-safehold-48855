@@ -35,9 +35,9 @@ interface LegacyDocument {
 
 const Documents = () => {
   const { user } = useAuth();
-  const { plan } = usePlan();
+  const { plan, limits } = usePlan();
   const { vaultKey } = useEncryption();
-  const isFreeBlocked = plan === 'free';
+  const isDocLimitReached = limits.maxDocuments !== Infinity && documents.length >= limits.maxDocuments;
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [documents, setDocuments] = useState<LegacyDocument[]>([]);

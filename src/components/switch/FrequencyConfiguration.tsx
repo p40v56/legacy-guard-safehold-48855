@@ -1,5 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckInFrequency } from '@/types/common';
+import { Label } from '@/components/ui/label';
 import GracePeriodPresets from './GracePeriodPresets';
 
 interface FrequencyConfigurationProps {
@@ -16,8 +17,6 @@ const FREQUENCY_OPTIONS = [
   { value: 'biweekly' as const, label: 'Every 2 Weeks' },
   { value: 'monthly' as const, label: 'Every Month' },
 ] as const;
-
-import { Label } from '@/components/ui/label';
 
 const FrequencyConfiguration = ({
   frequency,

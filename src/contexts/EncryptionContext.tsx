@@ -118,6 +118,8 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       return true;
     } catch {
       return false;
+    } finally {
+      unlockingRef.current = false;
     }
   }, []);
 

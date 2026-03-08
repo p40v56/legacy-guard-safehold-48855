@@ -248,43 +248,13 @@ const Switch = () => {
                   Your first check-in will activate the switch and start your countdown.
                 </p>
                 {settings && (
-                  <div className="mt-4 bg-muted/50 rounded-xl p-4 text-left max-w-sm mx-auto space-y-2">
-                    <p className="text-xs font-medium text-card-foreground uppercase tracking-wide">Current configuration</p>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Mode</span>
-                        <span className="text-card-foreground font-medium">
-                          {settings.deadline_mode === 'custom' ? 'Custom deadline' : 'Frequency based'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          {settings.deadline_mode === 'custom' ? 'Deadline' : 'Frequency'}
-                        </span>
-                        <span className="text-card-foreground font-medium">
-                          {settings.deadline_mode === 'custom'
-                            ? settings.custom_deadline
-                              ? new Date(settings.custom_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                              : 'Not set'
-                            : settings.check_in_frequency === 'daily' ? 'Every day'
-                              : settings.check_in_frequency === 'weekly' ? 'Every week'
-                              : settings.check_in_frequency === 'biweekly' ? 'Every 2 weeks'
-                              : 'Every month'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Grace period</span>
-                        <span className="text-card-foreground font-medium">{settings.grace_period_hours}h</span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setConfigOpen(true)}
-                      className="text-xs text-primary hover:underline mt-2 block w-full text-center"
-                    >
-                      Amend configuration ↓
-                    </button>
-                  </div>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    {settings.deadline_mode === 'custom'
+                      ? `Custom deadline${settings.custom_deadline ? ` · ${new Date(settings.custom_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}`
+                      : `${settings.check_in_frequency === 'daily' ? 'Daily' : settings.check_in_frequency === 'weekly' ? 'Weekly' : settings.check_in_frequency === 'biweekly' ? 'Biweekly' : 'Monthly'}`}
+                    {' · '}{settings.grace_period_hours}h grace period
+                    {' · '}<button type="button" onClick={() => setConfigOpen(true)} className="text-primary hover:underline">edit</button>
+                  </p>
                 )}
               </div>
             )}

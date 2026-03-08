@@ -49,6 +49,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Require password re-verification
+    const { password } = await req.json().catch(() => ({} as any));
+    if (!password) {
+      return new Response(
+        JSON.stringify({ error: 'Password required to delete account' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const verifyClient = createClient(supabaseUrl, anonKey);
+    const { error: signInError } = await verifyClient.auth.signInWithPassword({
+      email: user.email!,
+      password,
+    });
+    if (signInError) {
+      return new Response(
+        JSON.stringify({ error: 'Incorrect password. Account deletion cancelled.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const userId = user.id;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 

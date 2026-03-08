@@ -338,7 +338,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                     </div>
                     <div
                       className="bg-white rounded-b-lg"
-                      dangerouslySetInnerHTML={{ __html: triggeredPreviewHtml }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(triggeredPreviewHtml) }}
                     />
                   </div>
                 </div>

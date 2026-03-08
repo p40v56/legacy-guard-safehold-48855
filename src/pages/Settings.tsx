@@ -722,13 +722,23 @@ const Settings = () => {
                           className="bg-background border-destructive/30 rounded-xl"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Enter your password to confirm</Label>
+                        <Input
+                          type="password"
+                          value={deletePassword}
+                          onChange={e => setDeletePassword(e.target.value)}
+                          placeholder="Your current password"
+                          className="bg-background border-destructive/30 rounded-xl"
+                        />
+                      </div>
                       <div className="flex gap-3">
-                        <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} className="rounded-xl">
+                        <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeletePassword(''); }} className="rounded-xl">
                           Cancel
                         </Button>
                         <Button
                           variant="destructive"
-                          disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
+                          disabled={deleteConfirmText !== 'DELETE' || !deletePassword || deletingAccount}
                           onClick={handleDeleteAccount}
                         >
                           {deletingAccount ? <LoadingSpinner size="sm" className="mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}

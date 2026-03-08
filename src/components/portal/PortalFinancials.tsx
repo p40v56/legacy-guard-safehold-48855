@@ -78,13 +78,20 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) => {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
   const { token } = useParams();
   const navigate = useNavigate();
 
   if (financialAssets.length === 0) return null;
 
+  const filteredAssets = financialAssets.filter(a => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return a.name?.toLowerCase().includes(q) || a.institution?.toLowerCase().includes(q) || a.category?.toLowerCase().includes(q);
+  });
+
   const grouped: Record<string, FinancialAsset[]> = {};
-  for (const a of financialAssets) {
+  for (const a of filteredAssets) {
     if (!grouped[a.category]) grouped[a.category] = [];
     grouped[a.category].push(a);
   }

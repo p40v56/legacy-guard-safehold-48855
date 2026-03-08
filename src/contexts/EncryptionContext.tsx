@@ -252,7 +252,8 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
         setShowReauth(false);
       } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
         // If user is logged in but vault is locked, prompt for password
-        if (!vaultKey) {
+        // Skip if unlock is currently in progress (login flow)
+        if (!vaultKey && !unlockingRef.current) {
           userIdRef.current = session.user.id;
           setShowReauth(true);
         }

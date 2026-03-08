@@ -72,6 +72,7 @@ const Documents = () => {
     title: '',
     document_type: 'legal',
     description: '',
+    content: '',
     is_public: false,
   });
   const [uploading, setUploading] = useState(false);
@@ -211,6 +212,7 @@ const Documents = () => {
         title: formData.title,
         document_type: formData.document_type,
         description: formData.description,
+        content: formData.content,
         is_public: formData.is_public,
         file_path: (formData as any).file_path || null,
         file_type: (formData as any).file_type || null,
@@ -221,6 +223,7 @@ const Documents = () => {
         const encrypted = await encryptFields({
           title: formData.title,
           description: formData.description,
+          content: formData.content,
         }, vaultKey);
         submissionData = { ...submissionData, ...encrypted };
       }
@@ -267,6 +270,7 @@ const Documents = () => {
       title: document.title,
       document_type: document.document_type,
       description: document.description || '',
+      content: (document as any).content || '',
       is_public: document.is_public,
     });
     setEditingDocument(document);
@@ -370,6 +374,7 @@ const Documents = () => {
       title: '',
       document_type: 'legal',
       description: '',
+      content: '',
       is_public: false,
     });
     setShowAddForm(false);
@@ -586,8 +591,8 @@ const Documents = () => {
                 <Label className="text-card-foreground">Document Content</Label>
                 <p className="text-xs text-muted-foreground mb-2">Write directly, or upload a file below. You can do both.</p>
                 <RichTextEditor
-                  value={formData.description}
-                  onChange={(value) => setFormData({...formData, description: value})}
+                  value={formData.content}
+                  onChange={(value) => setFormData({...formData, content: value})}
                   placeholder="Write your document content here — supports formatting..."
                 />
               </div>

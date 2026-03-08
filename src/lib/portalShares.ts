@@ -296,7 +296,12 @@ export async function createPortalShares(
       id: f.id, name: f.name, category: f.category, institution: f.institution,
       reference_number: f.reference_number, estimated_value: f.estimated_value,
       notes: f.notes, contact_name: f.contact_name, contact_phone: f.contact_phone,
-      contact_email: f.contact_email, category_specific_fields: f.category_specific_fields || {},
+      contact_email: f.contact_email, category_specific_fields: (() => {
+        if (f.category_specific_fields_json) {
+          try { return JSON.parse(f.category_specific_fields_json as string); } catch { return {}; }
+        }
+        return (f as any).category_specific_fields || {};
+      })(),
       updated_at: f.updated_at,
       attached_documents: await resolveAttachedDocs(f.attached_document_ids),
     }))),

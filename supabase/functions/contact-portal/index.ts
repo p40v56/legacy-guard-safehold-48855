@@ -426,7 +426,60 @@ const handler = async (req: Request): Promise<Response> => {
         .from("portal_access_attempts")
         .insert({ token_hash: tokenHashForLimit, success: true });
 
-      return await servePortalResponse(supabase, tokenData, contact, bodyToken, corsHeaders);
+      // Update last_accessed_at on the token
+      await supabase
+        .from("contact_access_tokens")
+        .update({ last_accessed_at: new Date().toISOString() })
+        .eq("id", tokenData.id);
+
+      const portalResponse = await servePortalResponse(supabase, tokenData, contact, bodyToken, corsHeaders);
+
+      // Notify vault owner — deduplicated to once per 24 hours per contact
+      try {
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: recentNotif } = await supabase
+          .from('sent_notifications')
+          .select('id')
+          .eq('user_id', tokenData.user_id)
+          .eq('contact_id', contact.id)
+          .eq('notification_type', 'portal_accessed')
+          .gte('created_at', oneDayAgo)
+          .limit(1);
+
+        if (!recentNotif || recentNotif.length === 0) {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          const ownerEmailResult = await supabase.auth.admin.getUserById(tokenData.user_id);
+          const ownerEmail = ownerEmailResult.data?.user?.email;
+          if (ownerEmail) {
+            const contactName = contact.name || 'A trusted contact';
+            const accessedAt = new Date().toLocaleString('en-GB', {
+              day: 'numeric', month: 'long', year: 'numeric',
+              hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+            });
+            await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                notificationType: 'portal_accessed',
+                recipientEmail: ownerEmail,
+                recipientName: 'Vault Owner',
+                contactName,
+                accessedAt,
+                userId: tokenData.user_id,
+                contactId: contact.id,
+              }),
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to send portal access notification (verify-answer):', err);
+      }
+
+      return portalResponse;
     }
 
     // ── acknowledge ──────────────────────────────────────

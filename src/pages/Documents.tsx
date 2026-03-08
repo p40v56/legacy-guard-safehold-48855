@@ -270,6 +270,7 @@ const Documents = () => {
       title: document.title,
       document_type: document.document_type,
       description: document.description || '',
+      content: (document as any).content || '',
       is_public: document.is_public,
     });
     setEditingDocument(document);

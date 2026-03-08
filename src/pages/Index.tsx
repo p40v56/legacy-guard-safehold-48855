@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -10,13 +10,23 @@ const Index = () => {
     if (user && !loading) navigate('/dashboard');
   }, [user, loading, navigate]);
 
+  // Generate stable particle positions
+  const particles = useMemo(() =>
+    Array.from({ length: 20 }, (_, i) => ({
+      left: `${(i * 37 + 13) % 100}%`,
+      size: 2 + (i % 3),
+      duration: 8 + (i % 7) * 2,
+      delay: (i * 0.7) % 6,
+      opacity: 0.15 + (i % 4) * 0.08,
+    })), []);
+
   useEffect(() => {
-    // Scroll reveal
+    // Scroll reveal with blur-to-sharp
     const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {if (e.isIntersecting) e.target.classList.add('visible');}),
-      { threshold: 0.1 }
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.08 }
     );
-    document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
+    document.querySelectorAll('#lv-root .reveal').forEach((el) => obs.observe(el));
 
     // Counters
     const cObs = new IntersectionObserver((entries) => {
@@ -25,15 +35,15 @@ const Index = () => {
         const el = entry.target as HTMLElement;
         const target = parseInt(el.dataset.count || '0');
         const suffix = el.dataset.suffix || '';
-        if (target === 0) {el.textContent = '0' + suffix;cObs.unobserve(el);return;}
+        if (target === 0) { el.textContent = '0' + suffix; cObs.unobserve(el); return; }
         const dur = target > 10000 ? 2200 : 1400;
         const start = performance.now();
         const step = (now: number) => {
           const p = Math.min((now - start) / dur, 1);
           const eased = 1 - Math.pow(1 - p, 3);
           el.textContent = Math.floor(eased * target).toLocaleString() + suffix;
-          if (p < 1) requestAnimationFrame(step);else
-          {el.textContent = target.toLocaleString() + suffix;cObs.unobserve(el);}
+          if (p < 1) requestAnimationFrame(step); else
+          { el.textContent = target.toLocaleString() + suffix; cObs.unobserve(el); }
         };
         requestAnimationFrame(step);
       });
@@ -54,14 +64,8 @@ const Index = () => {
     const onScroll = () => nav?.classList.toggle('scrolled', window.scrollY > 60);
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    // Hero reveal
-    document.querySelectorAll('.lv-hero .reveal').forEach((el) => {
-      const delay = parseFloat((el as HTMLElement).style.transitionDelay || '0') * 1000;
-      setTimeout(() => el.classList.add('visible'), delay + 100);
-    });
-
     return () => {
-      obs.disconnect();cObs.disconnect();connectorObs.disconnect();
+      obs.disconnect(); cObs.disconnect(); connectorObs.disconnect();
       window.removeEventListener('scroll', onScroll);
     };
   }, []);
@@ -73,10 +77,9 @@ const Index = () => {
       </div>
     </div>);
 
-
   return (
     <>
-          <div id="lv-root">
+      <div id="lv-root">
 
         {/* NAV */}
         <header id="lv-nav">
@@ -88,7 +91,11 @@ const Index = () => {
             </div>
             <span style={{ fontSize: 17, fontWeight: 600, color: 'white' }}>LegacyVault</span>
           </a>
-          <button className="lv-login" onClick={() => navigate('/auth')}>Log in</button>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+            <a href="#how-it-works" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", transition: 'color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>How it works</a>
+            <a href="#pricing" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", transition: 'color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>Pricing</a>
+            <button className="lv-login" onClick={() => navigate('/auth')}>Log in</button>
+          </nav>
         </header>
 
         {/* HERO */}
@@ -97,6 +104,18 @@ const Index = () => {
           <div className="lv-orb orb2" />
           <div className="lv-orb orb3" />
           <div className="lv-rays" />
+          {/* Floating particles */}
+          <div className="lv-particles">
+            {particles.map((p, i) => (
+              <div key={i} className="lv-particle" style={{
+                left: p.left,
+                width: p.size, height: p.size,
+                animationDuration: `${p.duration}s`,
+                animationDelay: `${p.delay}s`,
+                opacity: p.opacity,
+              }} />
+            ))}
+          </div>
           <div className="lv-hero-content">
             <div className="reveal" style={{ transitionDelay: '0.1s' }}>
               <div className="lv-zk"><div className="lv-zk-dot" />Zero-Knowledge Encrypted</div>
@@ -105,17 +124,9 @@ const Index = () => {
               <h1 className="lv-h1">One app<br /><em>for your legacy.</em></h1>
             </div>
             <div className="reveal" style={{ transitionDelay: '0.4s' }}>
-              <p className="lv-hero-sub">An encrypted digital contingency system that safeguards your messages, documents, account details, and final wishes - automatically transmitting to designated recipients if you stop checking in.</p>
+              <p className="lv-hero-sub">An encrypted digital contingency system that safeguards your messages, documents, account details, and final wishes — automatically transmitting to designated recipients if you stop checking in.</p>
             </div>
             <div className="reveal" style={{ transitionDelay: '0.55s' }}>
-              <div className="lv-trust">
-                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>AES-256 Encrypted</div>
-                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>Zero-knowledge</div>
-                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>GDPR Compliant</div>
-                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>No plaintext on server</div>
-              </div>
-            </div>
-            <div className="reveal" style={{ transitionDelay: '0.7s' }}>
               <div className="lv-hero-cta">
                 <button className="lv-btn-primary" onClick={() => navigate('/auth?mode=signup')}>
                   Get started free
@@ -123,6 +134,14 @@ const Index = () => {
                 <button className="lv-btn-ghost" onClick={() => navigate('/auth')}>
                   Sign in
                 </button>
+              </div>
+            </div>
+            <div className="reveal" style={{ transitionDelay: '0.7s' }}>
+              <div className="lv-trust">
+                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>AES-256 Encrypted</div>
+                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>Zero-knowledge</div>
+                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>GDPR Compliant</div>
+                <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>No plaintext on server</div>
               </div>
             </div>
           </div>
@@ -133,7 +152,7 @@ const Index = () => {
         <div className="lv-numbers">
           <div className="lv-numbers-inner">
             {[{ n: 256, s: '-bit', l: 'AES Encryption' }, { n: 310000, s: '', l: 'PBKDF2 Iterations' }, { n: 100, s: '%', l: 'Client-side keys' }, { n: 0, s: '', l: 'Server-side access to your data' }].map(({ n, s, l }, i) =>
-            <div key={l} className="lv-num-item reveal" style={{ transitionDelay: `${i * 0.1}s` }}>
+              <div key={l} className="lv-num-item reveal" style={{ transitionDelay: `${i * 0.12}s` }}>
                 <div className="lv-num-val" data-count={n} data-suffix={s}>{n}{s}</div>
                 <div className="lv-num-label">{l}</div>
               </div>
@@ -151,11 +170,11 @@ const Index = () => {
             </div>
             <div className="lv-grid3">
               {[
-              { tag: 'AES-256-GCM', ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>, title: 'Your key, your data', body: 'Your encryption key is derived from your password using PBKDF2 with 310,000 iterations. It never leaves your device. We cannot derive it, reset it, or access it.', cls: '' },
-              { tag: 'Zero-knowledge', ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>, title: 'Zero-knowledge architecture', body: 'Our servers store only encrypted blobs. Our cloud provider, our team — nobody can read your documents, account credentials, or personal messages.', cls: 'd1' },
-              { tag: 'Per-contact keys', ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: 'Secure contact portals', body: 'When your switch activates, each contact receives a unique token. Their portal decrypts locally in their browser — we never see the plaintext at any point.', cls: 'd2' }].
-              map(({ tag, ico, title, body, cls }) =>
-              <div key={title} className={`lv-card reveal ${cls}`}>
+                { tag: 'AES-256-GCM', ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>, title: 'Your key, your data', body: 'Your encryption key is derived from your password using PBKDF2 with 310,000 iterations. It never leaves your device. We cannot derive it, reset it, or access it.', cls: '' },
+                { tag: 'Zero-knowledge', ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>, title: 'Zero-knowledge architecture', body: 'Our servers store only encrypted blobs. Our cloud provider, our team — nobody can read your documents, account credentials, or personal messages.', cls: 'd1' },
+                { tag: 'Per-contact keys', ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: 'Secure contact portals', body: 'When your switch activates, each contact receives a unique token. Their portal decrypts locally in their browser — we never see the plaintext at any point.', cls: 'd2' },
+              ].map(({ tag, ico, title, body, cls }) =>
+                <div key={title} className={`lv-card reveal ${cls}`}>
                   <div className="lv-card-ico">{ico}</div>
                   <div className="lv-card-tag">{tag}</div>
                   <h3>{title}</h3><p>{body}</p>
@@ -168,7 +187,7 @@ const Index = () => {
               <div className="lv-enc-steps">
                 {[{ cls: 'white', v: 'Your Password', s: 'Never stored' }, { cls: 'amber', v: 'Master Key', s: 'PBKDF2 · 310k iter' }, { cls: 'blue', v: 'Vault Key', s: 'AES-256-GCM' }, { cls: 'green', v: 'Ciphertext', s: 'Stored on server' }].reduce((acc, node, i, arr) => {
                   acc.push(<div key={node.v} className={`lv-enc-node ${node.cls}`}><div className="lv-enc-val">{node.v}</div><div className="lv-enc-sub">{node.s}</div></div>);
-                  if (i < arr.length - 1) acc.push(<div key={`arr${i}`} className="lv-enc-arrow">→</div>);
+                  if (i < arr.length - 1) acc.push(<div key={`arr${i}`} className="lv-enc-arrow"><span>→</span></div>);
                   return acc;
                 }, [] as React.ReactNode[])}
               </div>
@@ -188,7 +207,7 @@ const Index = () => {
             <div className="lv-steps" id="stepsRow">
               <div className="lv-connector" id="stepConnector"><div className="lv-connector-fill" /></div>
               {[{ n: '1', l: 'Account', d: 'Create your secure account' }, { n: '2', l: 'Contacts', d: 'Add trusted people' }, { n: '3', l: 'Documents', d: 'Upload important files' }, { n: '4', l: 'Configure', d: 'Set your check-in schedule' }, { n: '5', l: 'Protected', d: 'Your legacy is secured' }].map((s, i) =>
-              <div key={s.n} className={`lv-step reveal d${i + 1}`}>
+                <div key={s.n} className={`lv-step reveal d${i + 1}`}>
                   <div className="lv-step-circle">{s.n}</div>
                   <div className="lv-step-lbl">{s.l}</div>
                   <div className="lv-step-desc">{s.d}</div>
@@ -223,27 +242,19 @@ const Index = () => {
                   features: ['Unlimited contacts', 'Unlimited documents', '5 GB storage', 'Unlimited financial assets', 'Unlimited digital accounts', 'Everything in Essential'],
                   cta: 'Upgrade to Family',
                 },
-              ].map(({ name, price, period, features, cta, highlight }) => (
-                <div key={name} className={`lv-card reveal`} style={{
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                  border: highlight ? '2px solid #1A9BD7' : undefined,
-                  position: 'relative',
-                }}>
-                  {highlight && (
-                    <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#1A9BD7', color: 'white', fontSize: 11, fontWeight: 600, padding: '3px 14px', borderRadius: 99, letterSpacing: '0.02em' }}>
-                      Most Popular
-                    </div>
-                  )}
+              ].map(({ name, price, period, features, cta, highlight }, cardIdx) => (
+                <div key={name} className={`lv-pricing-card reveal ${highlight ? 'highlight' : ''} d${cardIdx + 1}`}>
+                  {highlight && <div className="lv-pricing-badge">Most Popular</div>}
                   <div>
-                    <h3 style={{ marginBottom: 4 }}>{name}</h3>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 16 }}>
-                      <span style={{ fontSize: 32, fontWeight: 700, color: 'white' }}>{price}</span>
-                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,.45)' }}>{period}</span>
+                    <h3 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 17, fontWeight: 600, marginBottom: 4 }}>{name}</h3>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 20 }}>
+                      <span style={{ fontSize: 36, fontWeight: 700, color: 'white', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.02em' }}>{price}</span>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,.4)' }}>{period}</span>
                     </div>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                       {features.map(f => (
-                        <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 13.5, color: 'rgba(255,255,255,.7)' }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                        <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', fontSize: 13.5, color: 'rgba(255,255,255,.65)' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={highlight ? '#1A9BD7' : 'rgba(255,255,255,0.35)'} strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
                           {f}
                         </li>
                       ))}
@@ -251,7 +262,7 @@ const Index = () => {
                   </div>
                   <button
                     className={highlight ? 'lv-btn-primary' : 'lv-btn-ghost'}
-                    style={{ width: '100%', marginTop: 24 }}
+                    style={{ width: '100%', marginTop: 28 }}
                     onClick={() => {
                       if (name === 'Free') navigate('/auth?mode=signup');
                       else window.location.href = `mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault upgrade — ${name} plan`)}`;
@@ -274,18 +285,32 @@ const Index = () => {
             </div>
             <div className="lv-grid3">
               {[
-              { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>, icoCls: 'red', title: "Dead Man's Switch", body: 'If you stop checking in, your vault activates automatically after a configurable grace period. Nothing needs to be done by anyone.', cls: '' },
-              { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>, icoCls: '', title: 'Encrypted Vault', body: 'Store documents, passwords, bank details, and instructions. All encrypted client-side before it leaves your browser.', cls: 'd1' },
-              { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, icoCls: '', title: 'Trusted Contacts', body: "Assign exactly which contacts see which data. Each person gets their own private portal, locked with a unique access token.", cls: 'd2' },
-              { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>, icoCls: '', title: 'Document Storage', body: 'Upload wills, deeds, insurance policies, letters. Encrypted before upload. Signed download URLs expire in 60 seconds.', cls: 'd1' },
-              { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>, icoCls: '', title: 'Digital Accounts', body: 'Catalogue every online account with closure instructions. What to delete, transfer, or memorialize — all specified by you.', cls: 'd2' },
-              { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>, icoCls: 'amber', title: 'Security Questions', body: 'Require contacts to answer a personal question before accessing their portal. Answers are SHA-256 hashed — never stored as plaintext.', cls: 'd3' }].
-              map(({ ico, icoCls, title, body, cls }) =>
-              <div key={title} className={`lv-card reveal ${cls}`}>
+                { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>, icoCls: 'red', title: "Dead Man's Switch", body: 'If you stop checking in, your vault activates automatically after a configurable grace period. Nothing needs to be done by anyone.', cls: '' },
+                { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>, icoCls: '', title: 'Encrypted Vault', body: 'Store documents, passwords, bank details, and instructions. All encrypted client-side before it leaves your browser.', cls: 'd1' },
+                { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, icoCls: '', title: 'Trusted Contacts', body: "Assign exactly which contacts see which data. Each person gets their own private portal, locked with a unique access token.", cls: 'd2' },
+                { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>, icoCls: '', title: 'Document Storage', body: 'Upload wills, deeds, insurance policies, letters. Encrypted before upload. Signed download URLs expire in 60 seconds.', cls: 'd1' },
+                { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9BD7" strokeWidth="1.8"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>, icoCls: '', title: 'Digital Accounts', body: 'Catalogue every online account with closure instructions. What to delete, transfer, or memorialize — all specified by you.', cls: 'd2' },
+                { ico: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>, icoCls: 'amber', title: 'Security Questions', body: 'Require contacts to answer a personal question before accessing their portal. Answers are SHA-256 hashed — never stored as plaintext.', cls: 'd3' },
+              ].map(({ ico, icoCls, title, body, cls }) =>
+                <div key={title} className={`lv-card reveal ${cls}`}>
                   <div className={`lv-card-ico ${icoCls}`}>{ico}</div>
                   <h3>{title}</h3><p>{body}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </section>
+
+        {/* FINAL CTA */}
+        <section className="lv-final-cta">
+          <div className="lv-container">
+            <div className="reveal">
+              <h2 className="lv-h2" style={{ marginBottom: 16 }}>Ready to protect<br /><em>what matters most?</em></h2>
+              <p className="lv-body" style={{ color: 'rgba(255,255,255,.5)', margin: '0 auto 40px', textAlign: 'center' }}>Set up your encrypted vault in under 10 minutes. No credit card required.</p>
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button className="lv-btn-primary" onClick={() => navigate('/auth?mode=signup')}>Get started free</button>
+                <button className="lv-btn-ghost" onClick={() => navigate('/auth')}>Sign in</button>
+              </div>
             </div>
           </div>
         </section>
@@ -304,7 +329,7 @@ const Index = () => {
             <div className="lv-footer-col">
               <h4>Product</h4>
               <ul>
-                <li><a href="#">Features</a></li>
+                <li><a href="#how-it-works">How it works</a></li>
                 <li><a href="#">Security</a></li>
                 <li><a href="#pricing">Pricing</a></li>
                 <li><a href="#">FAQ</a></li>
@@ -340,7 +365,6 @@ const Index = () => {
 
       </div>
     </>);
-
 };
 
 export default Index;

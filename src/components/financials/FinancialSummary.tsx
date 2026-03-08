@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Landmark, Shield, TrendingUp, Wallet, Home, CreditCard, Package, FileText, Phone, RefreshCw } from 'lucide-react';
 import type { FinancialAsset, FinancialCategory } from '@/types/financial';
 import { CATEGORY_LABELS } from '@/types/financial';
-import { formatCurrencyValue, getCurrency, getAssetCurrency, fetchFxRates, convertCurrency, FxRates } from '@/lib/currency';
+import { CURRENCIES, formatCurrencyValue, getCurrency, getAssetCurrency, fetchFxRates, convertCurrency, FxRates } from '@/lib/currency';
 
 const CATEGORY_ICON_MAP: Record<FinancialCategory, React.ReactNode> = {
   bank_account: <Landmark className="w-4 h-4" />,
@@ -23,6 +24,7 @@ interface FinancialSummaryProps {
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   const [fxRates, setFxRates] = useState<FxRates | null>(null);
   const [fxLoading, setFxLoading] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState<string | null>(null);
 
   // Determine currencies used
   const currencyCounts: Record<string, number> = {};
@@ -34,19 +36,21 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   });
 
   const sortedCurrencies = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1]);
-  const mainCurrency = sortedCurrencies[0]?.[0] || 'GBP';
+  const defaultCurrency = sortedCurrencies[0]?.[0] || 'GBP';
+  const mainCurrency = displayCurrency || defaultCurrency;
   const mainCurrencyInfo = getCurrency(mainCurrency);
   const isMultiCurrency = sortedCurrencies.length > 1;
+  const needsConversion = isMultiCurrency || (displayCurrency && displayCurrency !== defaultCurrency);
 
-  // Fetch FX rates when multi-currency
+  // Fetch FX rates when conversion needed
   useEffect(() => {
-    if (!isMultiCurrency) return;
+    if (!needsConversion) return;
     setFxLoading(true);
     fetchFxRates('USD').then(rates => {
       setFxRates(rates);
       setFxLoading(false);
     });
-  }, [isMultiCurrency]);
+  }, [needsConversion]);
 
   if (assets.length === 0) return null;
 
@@ -54,22 +58,22 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   const hasValues = assets.some(a => a.estimated_value && a.estimated_value > 0);
 
   let convertedTotal = 0;
-  if (isMultiCurrency && fxRates) {
+  if (needsConversion && fxRates) {
     assets.forEach(a => {
       const cur = getAssetCurrency(a.category_specific_fields as Record<string, any>);
       convertedTotal += convertCurrency(a.estimated_value || 0, cur, mainCurrency, fxRates);
     });
-  } else {
+  } else if (!needsConversion) {
     convertedTotal = assets.reduce((sum, a) => sum + (a.estimated_value || 0), 0);
   }
 
   const byCategory = assets.reduce<Record<string, { count: number; value: number }>>((acc, a) => {
     if (!acc[a.category]) acc[a.category] = { count: 0, value: 0 };
     acc[a.category].count++;
-    if (isMultiCurrency && fxRates) {
+    if (needsConversion && fxRates) {
       const cur = getAssetCurrency(a.category_specific_fields as Record<string, any>);
       acc[a.category].value += convertCurrency(a.estimated_value || 0, cur, mainCurrency, fxRates);
-    } else {
+    } else if (!needsConversion) {
       acc[a.category].value += a.estimated_value || 0;
     }
     return acc;
@@ -81,24 +85,38 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   return (
     <Card className="bg-card border-border">
       <CardContent className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <span className="text-lg font-bold text-primary">{mainCurrencyInfo.symbol}</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <span className="text-lg font-bold text-primary">{mainCurrencyInfo.symbol}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Financial Summary</h3>
           </div>
-          <h3 className="text-lg font-semibold text-foreground">Financial Summary</h3>
+          <Select value={mainCurrency} onValueChange={setDisplayCurrency}>
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map(c => (
+                <SelectItem key={c.code} value={c.code} className="text-xs">
+                  {c.symbol} {c.code}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {hasValues && (
           <div className="mb-4 p-4 rounded-xl bg-muted/30">
             <p className="text-sm text-muted-foreground mb-1">
               Total Estimated Value
-              {isMultiCurrency && <span className="ml-1 text-xs">(converted to {mainCurrency})</span>}
+              {needsConversion && <span className="ml-1 text-xs">(converted to {mainCurrency})</span>}
             </p>
             <div className="flex items-center gap-2">
               <p className="text-2xl font-bold text-foreground">
-                {fxLoading && isMultiCurrency ? '...' : formatCurrencyValue(convertedTotal, mainCurrency)}
+                {fxLoading && needsConversion ? '...' : formatCurrencyValue(convertedTotal, mainCurrency)}
               </p>
-              {isMultiCurrency && fxRates && (
+              {needsConversion && fxRates && (
                 <span className="text-xs text-muted-foreground">≈</span>
               )}
             </div>
@@ -143,9 +161,9 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
                 <p className="text-sm font-medium text-foreground">
                   {data.count} {data.count === 1 ? 'asset' : 'assets'}
                   {data.value > 0 && (
-                    <span className="text-muted-foreground ml-1">
-                      · {isMultiCurrency ? '≈ ' : ''}{formatCurrencyValue(data.value, mainCurrency)}
-                    </span>
+                     <span className="text-muted-foreground ml-1">
+                       · {needsConversion ? '≈ ' : ''}{formatCurrencyValue(data.value, mainCurrency)}
+                     </span>
                   )}
                 </p>
               </div>

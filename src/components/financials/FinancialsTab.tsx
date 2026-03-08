@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, PoundSterling } from 'lucide-react';
+import { Plus, PoundSterling, Landmark } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { usePlan } from '@/hooks/usePlan';
 import { useFinancialAssets } from '@/hooks/useFinancialAssets';
@@ -131,22 +131,19 @@ const FinancialsTab: React.FC = () => {
             <p className="text-muted-foreground">No assets match "{searchQuery}"</p>
           </div>
         ) : (
-          <Card className="bg-card border-border">
-            <CardContent className="p-12 text-center">
-              <div className="max-w-md mx-auto">
-                <div className="p-4 rounded-2xl bg-muted w-fit mx-auto mb-6">
-                  <PoundSterling className="w-12 h-12 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-3">No financial assets documented yet</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Adding your financial information here will help your loved ones know exactly where to find what matters.
-                </p>
-                <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90 shadow-lg font-semibold">
-                  <Plus className="w-4 h-4 mr-2" />Add your first asset
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="text-center py-16 space-y-4">
+            <div className="w-16 h-16 bg-emerald-500/15 rounded-2xl flex items-center justify-center mx-auto">
+              <Landmark className="w-8 h-8 text-emerald-500" />
+            </div>
+            <h3 className="text-lg font-medium text-card-foreground">No financial assets yet</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Document your bank accounts, insurance policies, investments, pensions and property so your contacts can locate and manage them.
+            </p>
+            <Button onClick={() => setShowForm(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+              <Plus className="w-4 h-4 mr-2" />
+              Add your first asset
+            </Button>
+          </div>
         )
       ) : (
         <div className="space-y-4">

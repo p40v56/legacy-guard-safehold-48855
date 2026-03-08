@@ -14,7 +14,7 @@ type ContactCategory = 'immediate_family' | 'extended_family' | 'close_friends' 
 
 interface ActivationRule {
   id: string;
-  target_type: 'category' | 'contacts';
+  target_type: 'all' | 'category' | 'contacts';
   contact_category?: ContactCategory;
   contact_ids?: string[];
   delay_hours: number;
@@ -73,7 +73,7 @@ const WaveCard = ({
           </div>
           {/* Summary when collapsed: show target info */}
           <span className="text-xs text-muted-foreground">
-            {rule.target_type === 'category' && rule.contact_category ? contactTypeLabels[rule.contact_category] : rule.target_type === 'contacts' ? `${(rule.contact_ids || []).length} contact(s)` : ''}
+            {rule.target_type === 'all' ? 'All contacts' : rule.target_type === 'category' && rule.contact_category ? contactTypeLabels[rule.contact_category] : rule.target_type === 'contacts' ? `${(rule.contact_ids || []).length} contact(s)` : 'All contacts'}
           </span>
         </div>
       </CollapsibleTrigger>
@@ -118,11 +118,12 @@ const WaveCard = ({
       {/* Who receives */}
       <div className="space-y-2">
         <Label className="text-card-foreground font-medium">Who receives this notification</Label>
-        <Select value={rule.target_type} onValueChange={(v) => updateActivationRule(rule.id, { target_type: v as 'category' | 'contacts', contact_category: v === 'category' ? 'immediate_family' : undefined, contact_ids: v === 'contacts' ? [] : undefined })}>
+        <Select value={rule.target_type} onValueChange={(v) => updateActivationRule(rule.id, { target_type: v as 'all' | 'category' | 'contacts', contact_category: v === 'category' ? 'immediate_family' : undefined, contact_ids: v === 'contacts' ? [] : undefined })}>
           <SelectTrigger className="bg-muted/30 border-border rounded-xl">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-card border-border">
+            <SelectItem value="all">All trusted contacts</SelectItem>
             <SelectItem value="category">A contact category (immediate family, legal, etc.)</SelectItem>
             <SelectItem value="contacts">Specific contacts</SelectItem>
           </SelectContent>

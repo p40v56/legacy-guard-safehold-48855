@@ -7,7 +7,7 @@ import ContactPermissionsDialog from '@/components/contacts/ContactPermissionsDi
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, Filter, Shield, RefreshCw } from 'lucide-react';
+import { Users, UserPlus, Filter, Shield, RefreshCw, ChevronUp, ChevronDown } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { useContacts } from '@/hooks/useContacts';
@@ -168,12 +168,48 @@ const Contacts = () => {
     }
   };
 
+  const sortedContacts = useMemo(() => {
+    return [...filteredContacts].sort((a, b) => (a.priority_order ?? 99) - (b.priority_order ?? 99));
+  }, [filteredContacts]);
+
+  const handleReorder = async (contactId: string, direction: 'up' | 'down') => {
+    const sorted = [...contacts].sort((a, b) => (a.priority_order ?? 99) - (b.priority_order ?? 99));
+    const idx = sorted.findIndex(c => c.id === contactId);
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === sorted.length - 1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const current = sorted[idx];
+    const swap = sorted[swapIdx];
+    const currentOrder = current.priority_order ?? idx;
+    const swapOrder = swap.priority_order ?? swapIdx;
+    await Promise.all([
+      supabase.from('contacts').update({ priority_order: swapOrder }).eq('id', current.id),
+      supabase.from('contacts').update({ priority_order: currentOrder }).eq('id', swap.id),
+    ]);
+    // Optimistic local update via re-fetch pattern - contacts hook will pick up changes
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-pulse">
-            <Shield className="w-6 h-6 text-white" />
+        <div className="space-y-6">
+          <div className="mb-8">
+            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Contacts</h1>
+            <p className="text-muted-foreground">Your trusted contacts</p>
+          </div>
+          <div className="space-y-3">
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-muted/30 rounded-2xl p-5 animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-muted rounded-xl" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-muted rounded w-1/3" />
+                    <div className="h-3 bg-muted rounded w-1/4" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </DashboardLayout>
@@ -256,18 +292,40 @@ const Contacts = () => {
               )}
             </div>
           ) : (
-            filteredContacts.map((contact) => (
-              <ContactCard
-                key={contact.id}
-                contact={contact}
-                contactTypeLabels={contactTypeLabels}
-                onEdit={handleEditContact}
-                onDelete={(id) => setDeleteTargetId(id)}
-                onPermissionsChange={updateContactPermissions}
-                onUseTypeDefaultsChange={updateUseTypeDefaults}
-                isExpanded={expandedContactId === contact.id}
-                onToggleExpand={() => handleToggleExpand(contact.id)}
-              />
+            sortedContacts.map((contact, idx) => (
+              <div key={contact.id} className="flex items-center gap-2">
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[10px] text-muted-foreground font-medium">#{idx + 1}</span>
+                  <button
+                    onClick={() => handleReorder(contact.id, 'up')}
+                    disabled={idx === 0}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move up"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleReorder(contact.id, 'down')}
+                    disabled={idx === sortedContacts.length - 1}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move down"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex-1">
+                  <ContactCard
+                    contact={contact}
+                    contactTypeLabels={contactTypeLabels}
+                    onEdit={handleEditContact}
+                    onDelete={(id) => setDeleteTargetId(id)}
+                    onPermissionsChange={updateContactPermissions}
+                    onUseTypeDefaultsChange={updateUseTypeDefaults}
+                    isExpanded={expandedContactId === contact.id}
+                    onToggleExpand={() => handleToggleExpand(contact.id)}
+                  />
+                </div>
+              </div>
             ))
           )}
         </div>

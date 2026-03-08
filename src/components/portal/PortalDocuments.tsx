@@ -39,11 +39,18 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (documents.length === 0) return null;
 
+  const filteredDocs = documents.filter(doc => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return doc.title?.toLowerCase().includes(q) || doc.document_type?.toLowerCase().includes(q);
+  });
+
   const grouped: Record<string, PortalDocument[]> = {};
-  for (const doc of documents) {
+  for (const doc of filteredDocs) {
     const t = doc.document_type || 'other';
     if (!grouped[t]) grouped[t] = [];
     grouped[t].push(doc);
@@ -75,6 +82,16 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
       <button onClick={() => navigate(`/portal/${token}/overview`)} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
+
+      {documents.length >= 5 && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search documents..."
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 mb-4"
+        />
+      )}
 
       {Object.entries(grouped).map(([docType, docs]) => {
         const isOpen = openCategories.has(docType);

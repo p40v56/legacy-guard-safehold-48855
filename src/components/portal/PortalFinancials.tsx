@@ -78,13 +78,20 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) => {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
   const { token } = useParams();
   const navigate = useNavigate();
 
   if (financialAssets.length === 0) return null;
 
+  const filteredAssets = financialAssets.filter(a => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return a.name?.toLowerCase().includes(q) || a.institution?.toLowerCase().includes(q) || a.category?.toLowerCase().includes(q);
+  });
+
   const grouped: Record<string, FinancialAsset[]> = {};
-  for (const a of financialAssets) {
+  for (const a of filteredAssets) {
     if (!grouped[a.category]) grouped[a.category] = [];
     grouped[a.category].push(a);
   }
@@ -250,6 +257,16 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
           <li>Start with <strong>insurance claims</strong> first — many have time-sensitive deadlines (typically 6–12 months).</li>
         </ul>
       </div>
+
+      {financialAssets.length >= 5 && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search assets..."
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 mb-4"
+        />
+      )}
 
       {CATEGORY_ORDER.filter(cat => grouped[cat]).map(cat => {
         const assets = grouped[cat];

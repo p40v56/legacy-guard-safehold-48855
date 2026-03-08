@@ -52,11 +52,18 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
   const navigate = useNavigate();
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (accounts.length === 0) return null;
 
+  const filteredAccounts = accounts.filter(a => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (a.account_name || '').toLowerCase().includes(q) || (a.platform || '').toLowerCase().includes(q) || (a.account_type || '').toLowerCase().includes(q);
+  });
+
   const grouped: Record<string, DigitalAccount[]> = {};
-  for (const a of accounts) {
+  for (const a of filteredAccounts) {
     const t = a.account_type || 'other';
     if (!grouped[t]) grouped[t] = [];
     grouped[t].push(a);
@@ -132,6 +139,16 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
       <button onClick={() => navigate(`/portal/${token}/overview`)} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
+
+      {accounts.length >= 5 && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search accounts..."
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 mb-4"
+        />
+      )}
 
       {Object.entries(grouped).map(([type, accts]) => {
         const isOpen = openCategories.has(type);

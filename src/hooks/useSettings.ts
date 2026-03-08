@@ -31,7 +31,7 @@ interface NotificationSettings {
 
 interface ActivationRule {
   id: string;
-  target_type: 'category' | 'contacts';
+  target_type: 'all' | 'category' | 'contacts';
   contact_category?: ContactType;
   contact_ids?: string[];
   delay_hours: number;
@@ -144,7 +144,7 @@ export const useSettings = () => {
         }
         return {
           id: rule.id,
-          target_type: rule.target_type as 'category' | 'contacts',
+          target_type: rule.target_type as 'all' | 'category' | 'contacts',
           contact_category: rule.contact_category as ContactType,
           contact_ids: rule.contact_ids || [],
           delay_hours: rule.delay_hours,
@@ -338,10 +338,9 @@ export const useSettings = () => {
   const addActivationRule = () => {
     const newRule: ActivationRule = {
       id: `temp-${Date.now()}`,
-      target_type: 'category',
-      contact_category: 'immediate_family',
+      target_type: 'all',
       delay_hours: 0,
-      custom_message: 'This is an automated message.',
+      custom_message: '',
       enabled: true
     };
     setActivationRules(prev => [...prev, newRule]);

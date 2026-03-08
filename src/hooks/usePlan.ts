@@ -2,20 +2,97 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-export type PlanType = 'free' | 'paid';
+export type PlanTier = 'free' | 'essential' | 'family';
+
+export interface PlanLimits {
+  maxContacts: number;
+  maxDocuments: number;
+  maxStorageMb: number;
+  maxFinancialAssets: number;
+  maxAccounts: number;
+  portalAccess: boolean;
+  customCheckInFrequency: boolean;
+  securityQuestions: boolean;
+  customEmail: boolean;
+  activationRules: boolean;
+  fileUploads: boolean;
+}
+
+export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
+  free: {
+    maxContacts: 1,
+    maxDocuments: 1,
+    maxStorageMb: 0,
+    maxFinancialAssets: 2,
+    maxAccounts: 0,
+    portalAccess: true,
+    customCheckInFrequency: false,
+    securityQuestions: false,
+    customEmail: false,
+    activationRules: false,
+    fileUploads: false,
+  },
+  essential: {
+    maxContacts: 5,
+    maxDocuments: 20,
+    maxStorageMb: 500,
+    maxFinancialAssets: 10,
+    maxAccounts: 10,
+    portalAccess: true,
+    customCheckInFrequency: true,
+    securityQuestions: true,
+    customEmail: true,
+    activationRules: true,
+    fileUploads: true,
+  },
+  family: {
+    maxContacts: Infinity,
+    maxDocuments: Infinity,
+    maxStorageMb: 5120,
+    maxFinancialAssets: Infinity,
+    maxAccounts: Infinity,
+    portalAccess: true,
+    customCheckInFrequency: true,
+    securityQuestions: true,
+    customEmail: true,
+    activationRules: true,
+    fileUploads: true,
+  },
+};
+
+export const PLAN_LABELS: Record<PlanTier, string> = {
+  free: 'Free',
+  essential: 'Essential',
+  family: 'Family',
+};
+
+export const PLAN_PRICES: Record<PlanTier, string> = {
+  free: 'Free',
+  essential: '£49/year',
+  family: '£99/year',
+};
+
+const rawToTier = (raw: string): PlanTier => {
+  if (raw === 'family') return 'family';
+  if (raw === 'essential' || raw === 'paid') return 'essential';
+  return 'free';
+};
 
 interface PlanInfo {
-  plan: PlanType;
-  rawPlan: PlanType;
+  plan: PlanTier;
+  limits: PlanLimits;
+  rawPlan: string;
   planExpiresAt: string | null;
   isExpired: boolean;
   isAdmin: boolean;
+  isPaid: boolean;
+  isFree: boolean;
   loading: boolean;
 }
 
 export const usePlan = (): PlanInfo => {
   const { user } = useAuth();
-  const [rawPlan, setRawPlan] = useState<PlanType>('free');
+  const [rawPlan, setRawPlan] = useState<string>('free');
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,34 +128,19 @@ export const usePlan = (): PlanInfo => {
     fetchPlanAndRole();
   }, [user]);
 
-  const isExpired = rawPlan === 'paid' && !!planExpiresAt && new Date(planExpiresAt) <= new Date();
-  const isPaid = rawPlan === 'paid' && (!planExpiresAt || new Date(planExpiresAt) > new Date());
+  const tier = rawToTier(rawPlan);
+  const isExpired = tier !== 'free' && !!planExpiresAt && new Date(planExpiresAt) <= new Date();
+  const effectiveTier: PlanTier = isExpired ? 'free' : tier;
 
   return {
-    plan: isPaid ? 'paid' : 'free',
+    plan: effectiveTier,
+    limits: PLAN_LIMITS[effectiveTier],
     rawPlan,
     planExpiresAt,
     isExpired,
     isAdmin,
+    isPaid: effectiveTier !== 'free',
+    isFree: effectiveTier === 'free',
     loading,
   };
-};
-
-// Feature limit helpers
-export const FREE_PLAN_LIMITS = {
-  maxContacts: 1,
-  maxDocuments: 0,
-  maxAccounts: 0,
-  maxFinancialAssets: 2,
-  maxRules: 1,
-  hasPortalAccess: false,
-  hasMultiChannelCheckin: false,
-  hasFullEmailCustomization: false,
-};
-
-export const PAID_FEATURES = {
-  documents: 'Store and share documents with trusted contacts',
-  accounts: 'Catalogue digital accounts with closure instructions',
-  multipleContacts: 'Add multiple trusted contacts with individual permissions',
-  portal: 'Contacts get a private decrypted portal when your switch fires',
 };

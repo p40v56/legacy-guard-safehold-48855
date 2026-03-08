@@ -1,24 +1,32 @@
 import { Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { PlanTier, PLAN_LABELS, PLAN_PRICES } from '@/hooks/usePlan';
 
 interface UpgradePromptProps {
   message: string;
   featureKey?: string;
+  requiredPlan?: PlanTier;
   className?: string;
 }
 
-const PAID_FEATURE_DESCRIPTIONS: Record<string, string> = {
+const FEATURE_DESCRIPTIONS: Record<string, string> = {
   documents: 'Store and share documents with trusted contacts',
   accounts: 'Catalogue digital accounts with closure instructions',
   multipleContacts: 'Add multiple trusted contacts with individual permissions',
   portal: 'Contacts get a private decrypted portal when your switch fires',
+  securityQuestions: 'Add security questions to protect portal access',
+  customEmail: 'Customise email templates sent to your contacts',
+  activationRules: 'Configure advanced activation rules for your switch',
+  fileUploads: 'Upload files alongside your text documents',
 };
 
-const UpgradePrompt = ({ message, featureKey, className = '' }: UpgradePromptProps) => {
+const UpgradePrompt = ({ message, featureKey, requiredPlan = 'essential', className = '' }: UpgradePromptProps) => {
   const { user } = useAuth();
   const userEmail = user?.email || '';
-  const mailtoLink = `mailto:support@legacyvault.app?subject=${encodeURIComponent('LegacyVault upgrade request')}&body=${encodeURIComponent(`I'd like to upgrade my LegacyVault account to the paid plan. My account email is: ${userEmail}`)}`;
+  const planLabel = PLAN_LABELS[requiredPlan];
+  const planPrice = PLAN_PRICES[requiredPlan];
+  const mailtoLink = `mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault upgrade request — ${planLabel} plan`)}&body=${encodeURIComponent(`I'd like to upgrade to the ${planLabel} plan (${planPrice}). My account email is: ${userEmail}`)}`;
 
   return (
     <div className={`bg-muted/30 border border-border rounded-2xl p-5 flex items-start gap-4 ${className}`}>
@@ -27,18 +35,18 @@ const UpgradePrompt = ({ message, featureKey, className = '' }: UpgradePromptPro
       </div>
       <div className="flex-1">
         <p className="text-sm text-muted-foreground mb-2">{message}</p>
-        {featureKey && PAID_FEATURE_DESCRIPTIONS[featureKey] && (
+        {featureKey && FEATURE_DESCRIPTIONS[featureKey] && (
           <p className="text-sm text-foreground/70 mb-2">
-            <strong>What you get:</strong> {PAID_FEATURE_DESCRIPTIONS[featureKey]}
+            <strong>What you get:</strong> {FEATURE_DESCRIPTIONS[featureKey]}
           </p>
         )}
-        <p className="text-xs text-muted-foreground mb-3">Paid Plan — £50/year</p>
+        <p className="text-xs text-muted-foreground mb-3">{planLabel} — {planPrice}</p>
         <div className="flex items-center gap-3 flex-wrap">
           <a
             href={mailtoLink}
             className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            Upgrade to Paid — contact us →
+            Upgrade to {planLabel} →
           </a>
           <Link
             to="/settings?tab=profile"

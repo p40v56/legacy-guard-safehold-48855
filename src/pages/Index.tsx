@@ -306,7 +306,7 @@ const Index = () => {
               <ul>
                 <li><a href="#">Features</a></li>
                 <li><a href="#">Security</a></li>
-                <li><a href="#">Pricing</a></li>
+                <li><a href="#pricing">Pricing</a></li>
                 <li><a href="#">FAQ</a></li>
               </ul>
             </div>

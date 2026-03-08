@@ -532,7 +532,11 @@ const Settings = () => {
 
           <TabsContent value="permissions" className="space-y-6 mt-6">
             <ContactTypePermissions typePermissions={typePermissions} onUpdate={handleSaveTypePermissions} />
-            <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
+            {limits.securityQuestions ? (
+              <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
+            ) : (
+              <UpgradePrompt message="Security questions require the Essential plan or higher." featureKey="securityQuestions" />
+            )}
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6 mt-6">

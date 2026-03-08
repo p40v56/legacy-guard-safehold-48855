@@ -1,13 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlan } from '@/hooks/usePlan';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, AlertTriangle, CheckCircle, Settings, Mail, Send } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Shield, CheckCircle, Settings, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import SwitchCountdown from '@/components/switch/SwitchCountdown';
 import SwitchConfiguration from '@/components/switch/SwitchConfiguration';
 import CheckInMethods from '@/components/switch/CheckInMethods';
@@ -22,6 +20,7 @@ const Switch = () => {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [configOpen, setConfigOpen] = useState(true);
   
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [customTime, setCustomTime] = useState('12:00');
@@ -30,25 +29,11 @@ const Switch = () => {
   const [emailCheckinEnabled, setEmailCheckinEnabled] = useState(false);
   const [smsCheckinEnabled, setSmsCheckinEnabled] = useState(false);
 
-  // Email preview state
-  const [showEmailPreview, setShowEmailPreview] = useState(false);
-  const [emailPreviewHtml, setEmailPreviewHtml] = useState<string | null>(null);
-  const [loadingPreview, setLoadingPreview] = useState(false);
-  const [sendingTest, setSendingTest] = useState(false);
-  const [previewTab, setPreviewTab] = useState<'grace_period' | 'switch_triggered'>('grace_period');
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (user) fetchSettings();
   }, [user]);
 
-  // Clean up blob URL on unmount or modal close
-  useEffect(() => {
-    return () => {
-      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
-    };
-  }, []);
 
   const calculateNextCheckIn = (frequency: CheckInFrequency, fromDate: Date = new Date()) => {
     const nextDate = new Date(fromDate);
@@ -191,92 +176,6 @@ const Switch = () => {
     }
   };
 
-  const fetchPreview = async (templateType: 'grace_period' | 'switch_triggered') => {
-    setLoadingPreview(true);
-    setEmailPreviewHtml(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-test-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ templateType, action: 'preview' }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to load preview');
-
-      setEmailPreviewHtml(result.html);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to load email preview", variant: "destructive" });
-    } finally {
-      setLoadingPreview(false);
-    }
-  };
-
-  const handlePreviewEmail = async () => {
-    setShowEmailPreview(true);
-    setPreviewTab('grace_period');
-    await fetchPreview('grace_period');
-  };
-
-  const handlePreviewTabChange = async (tab: string) => {
-    const t = tab as 'grace_period' | 'switch_triggered';
-    setPreviewTab(t);
-    await fetchPreview(t);
-  };
-
-  const handleSendTestEmail = async () => {
-    setSendingTest(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-test-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ templateType: 'grace_period' }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to send');
-      toast({ title: "Test email sent!", description: "Check your inbox for the grace period warning email." });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to send test email", variant: "destructive" });
-    } finally {
-      setSendingTest(false);
-    }
-  };
-
-  const handleCloseEmailPreview = () => {
-    setShowEmailPreview(false);
-    setEmailPreviewHtml(null);
-    setPreviewTab('grace_period');
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
-  };
-
-  // Build blob URL for iframe
-  const getIframeSrc = () => {
-    if (!emailPreviewHtml) return undefined;
-    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
-    const blob = new Blob([emailPreviewHtml], { type: 'text/html' });
-    blobUrlRef.current = URL.createObjectURL(blob);
-    return blobUrlRef.current;
-  };
 
   if (loading) {
     return (
@@ -366,36 +265,42 @@ const Switch = () => {
         </div>
 
         {/* Section 2: Configuration */}
-        <div className="bg-muted/30 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Settings className="w-6 h-6 text-primary" />
+        <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
+          <div className="bg-muted/30 rounded-2xl p-6">
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Settings className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-medium text-card-foreground">Configuration</h3>
+                    <p className="text-sm text-muted-foreground">Customize your switch settings</p>
+                  </div>
+                </div>
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${configOpen ? 'rotate-180' : ''}`} />
               </div>
-              <div>
-                <h3 className="text-lg font-medium text-card-foreground">Configuration</h3>
-                <p className="text-sm text-muted-foreground">Customize your switch settings</p>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-6">
+                {settings && (
+                  <SwitchConfiguration
+                    settings={settings}
+                    customDate={customDate}
+                    customTime={customTime}
+                    saving={saving}
+                    onUpdateSettings={updateSettings}
+                    onSwitchToFrequencyMode={switchToFrequencyMode}
+                    onCustomDateTimeUpdate={handleCustomDateTimeUpdate}
+                    onCustomDateChange={setCustomDate}
+                    onCustomTimeChange={setCustomTime}
+                    isFree={plan === 'free'}
+                  />
+                )}
               </div>
-            </div>
-            <Button onClick={handlePreviewEmail} variant="outline" size="sm" className="rounded-xl">
-              <Mail className="w-4 h-4 mr-2" />Preview Email
-            </Button>
+            </CollapsibleContent>
           </div>
-          {settings && (
-            <SwitchConfiguration
-              settings={settings}
-              customDate={customDate}
-              customTime={customTime}
-              saving={saving}
-              onUpdateSettings={updateSettings}
-              onSwitchToFrequencyMode={switchToFrequencyMode}
-              onCustomDateTimeUpdate={handleCustomDateTimeUpdate}
-              onCustomDateChange={setCustomDate}
-              onCustomTimeChange={setCustomTime}
-              isFree={plan === 'free'}
-            />
-          )}
-        </div>
+        </Collapsible>
 
         {/* Section 3: Check-in Methods */}
         <CheckInMethods
@@ -409,51 +314,6 @@ const Switch = () => {
         {/* Section 4: Check-in History */}
         <CheckInHistory />
       </div>
-
-      {/* Email Preview Dialog */}
-      <Dialog open={showEmailPreview} onOpenChange={(open) => { if (!open) handleCloseEmailPreview(); }}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-[640px] max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-card-foreground flex items-center">
-              <Mail className="w-5 h-5 mr-2 text-primary" />
-              Email Preview
-            </DialogTitle>
-          </DialogHeader>
-          <Tabs value={previewTab} onValueChange={handlePreviewTabChange} className="w-full">
-            <TabsList className="w-full rounded-xl">
-              <TabsTrigger value="grace_period" className="flex-1 rounded-lg text-xs">Grace period warning</TabsTrigger>
-              <TabsTrigger value="switch_triggered" className="flex-1 rounded-lg text-xs">Switch triggered</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="flex-1 min-h-0">
-            {loadingPreview ? (
-              <div className="flex items-center justify-center h-[400px]">
-                <div className="text-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-3 animate-pulse">
-                    <Mail className="w-5 h-5 text-primary" />
-                  </div>
-                  <p className="text-muted-foreground text-sm">Loading preview...</p>
-                </div>
-              </div>
-            ) : emailPreviewHtml ? (
-              <iframe
-                ref={iframeRef}
-                src={getIframeSrc()}
-                sandbox="allow-same-origin"
-                className="w-full h-[500px] border border-border rounded-xl bg-white"
-                title="Email preview"
-              />
-            ) : null}
-          </div>
-          <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleCloseEmailPreview}>Close</Button>
-            <Button onClick={handleSendTestEmail} disabled={sendingTest} className="bg-primary hover:bg-primary/90">
-              <Send className="w-4 h-4 mr-2" />
-              {sendingTest ? 'Sending...' : 'Send test email to myself (grace period warning)'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 };

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { useContacts } from '@/hooks/useContacts';
-import { usePlan } from '@/hooks/usePlan';
+import { usePlan, PLAN_LIMITS, PLAN_LABELS, PLAN_PRICES, PlanTier } from '@/hooks/usePlan';
 import { supabase } from '@/integrations/supabase/client';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { useNavigate } from 'react-router-dom';

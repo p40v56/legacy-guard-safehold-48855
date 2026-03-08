@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 const Contacts = () => {
   const {
     contacts, loading, createContact, updateContact, deleteContact,
-    updateContactPermissions, updateUseTypeDefaults,
+    updateContactPermissions, updateUseTypeDefaults, refetchContacts,
   } = useContacts();
   const { plan, limits, isPaid } = usePlan();
   const { user } = useAuth();

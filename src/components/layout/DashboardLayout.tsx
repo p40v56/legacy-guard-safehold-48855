@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { usePlan } from '@/hooks/usePlan';
+import { usePlan, PLAN_LABELS } from '@/hooks/usePlan';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
@@ -16,8 +16,7 @@ import {
   Menu,
   X,
   MessageCircle,
-  ShieldCheck,
-  Crown
+  ShieldCheck
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -54,9 +53,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="flex items-center gap-2">
             <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
             <span className="text-lg lg:text-xl font-semibold text-white">LegacyVault</span>
-            {plan !== 'free' && (
-              <Crown className="w-4 h-4 text-yellow-400" />
-            )}
+            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${
+              plan === 'family' ? 'bg-yellow-400/20 text-yellow-400' :
+              plan === 'essential' ? 'bg-primary/20 text-primary' :
+              'bg-white/10 text-white/60'
+            }`}>
+              {PLAN_LABELS[plan]}
+            </span>
           </div>
           
           {/* Desktop user info */}

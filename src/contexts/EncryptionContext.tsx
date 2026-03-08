@@ -139,6 +139,25 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       setVaultKey(newVaultKey);
       userIdRef.current = userId;
       lastActivityRef.current = Date.now();
+
+      // Send welcome email (non-blocking)
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+            body: JSON.stringify({
+              notificationType: 'welcome',
+              recipientEmail: user.email,
+              appUrl: window.location.origin,
+            }),
+          });
+        }
+      } catch { /* non-blocking */ }
+
       return true;
     } catch {
       return false;

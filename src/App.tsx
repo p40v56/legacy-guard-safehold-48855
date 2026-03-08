@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import Confirm from "./pages/Confirm";
 import Dashboard from "./pages/Dashboard";
 import Switch from "./pages/Switch";
 import Accounts from "./pages/Accounts";
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/confirm" element={<Confirm />} />
               <Route 
                 path="/dashboard"
                 element={

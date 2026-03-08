@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Monitor, Mail, ArrowLeft, FileText, Download, Lock } from 'lucide-react';
+import { Globe, Monitor, Mail, ArrowLeft, FileText, Download, Lock, ChevronDown, ChevronRight } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface AttachedDocument {

@@ -352,11 +352,10 @@ const ContactCard: React.FC<ContactCardProps> = ({
                   <p className="text-muted-foreground text-sm">
                     This message will be included in the email sent to this contact when the switch triggers.
                   </p>
-                  <Textarea
+                  <RichTextEditor
                     value={customMsg}
-                    onChange={(e) => setCustomMsg(e.target.value)}
+                    onChange={(value) => setCustomMsg(value)}
                     placeholder={`Write a personal message for ${contact.name}...`}
-                    className="min-h-[120px] bg-muted/30 border-border rounded-xl"
                   />
                   <Button onClick={handleSaveCustomMessage} disabled={savingMessage} size="sm" className="bg-primary hover:bg-primary/90 rounded-xl">
                     {savingMessage ? 'Saving...' : 'Save Message'}

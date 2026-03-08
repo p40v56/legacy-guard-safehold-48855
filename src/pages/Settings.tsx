@@ -116,6 +116,17 @@ const Settings = () => {
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{ ok: number; failed: number; total: number } | null>(null);
 
+  // MFA state
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaVerifyCode, setMfaVerifyCode] = useState('');
+  const [mfaVerifyError, setMfaVerifyError] = useState<string | null>(null);
+  const [mfaVerifying, setMfaVerifying] = useState(false);
+
   // Session management
   const [signingOutAll, setSigningOutAll] = useState(false);
   const { sessions: trackedSessions, loading: sessionsLoading, revokeSession } = useSessionTracker(user?.id);
@@ -124,6 +135,19 @@ const Settings = () => {
     const stored = localStorage.getItem('vault_auto_lock_minutes');
     if (stored) setAutoLockMinutes(parseInt(stored));
   }, []);
+
+  // Check MFA status on mount
+  useEffect(() => {
+    const checkMfa = async () => {
+      const { data } = await supabase.auth.mfa.listFactors();
+      const totpFactor = data?.totp?.find(f => f.status === 'verified');
+      if (totpFactor) {
+        setMfaEnabled(true);
+        setMfaFactorId(totpFactor.id);
+      }
+    };
+    if (user) checkMfa();
+  }, [user]);
 
   const handleAutoLockChange = (minutes: number) => {
     setAutoLockMinutes(minutes);

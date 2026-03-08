@@ -132,45 +132,62 @@ const Switch = () => {
 
   const performCheckIn = async () => {
     if (!user) return;
-    if (!settings?.is_active) { setShowActivationDialog(true); return; }
     try {
+      const wasInactive = !settings?.is_active;
+
+      // Guard: if custom deadline is stale, don't activate
+      if (wasInactive && settings?.deadline_mode === 'custom') {
+        const currentDl = settings?.next_check_in_due || settings?.custom_deadline;
+        const deadlineIsStale = !currentDl || new Date(currentDl) <= new Date();
+        if (deadlineIsStale) {
+          toast({ title: 'Deadline has passed', description: 'Please set a new custom deadline before activating.', variant: 'destructive' });
+          return;
+        }
+      }
+
+      if (wasInactive) {
+        await SettingsService.updateSettings(user.id, { is_active: true });
+      }
       await SettingsService.checkIn(user.id);
       const freshSettings = await SettingsService.getUserSettings(user.id);
       setSettings(freshSettings);
-      toast({
-        title: "Check-in Successful! ✅",
-        description: settings.deadline_mode === 'custom'
-          ? "Your check-in has been recorded. Custom deadline remains unchanged."
-          : "Your next check-in has been scheduled",
-      });
+      if (wasInactive) {
+        toast({
+          title: 'System activated ✅',
+          description: 'Your Dead Man\'s Switch is now active. Your countdown has started.',
+        });
+      } else {
+        toast({
+          title: 'Check-in successful ✅',
+          description: settings?.deadline_mode === 'custom'
+            ? 'Check-in recorded. Custom deadline unchanged.'
+            : 'Your countdown has been reset.',
+        });
+      }
     } catch (error) {
       console.error('Error performing check-in:', error);
-      toast({ title: "Error", description: "Failed to perform check-in", variant: "destructive" });
+      toast({ title: 'Error', description: 'Failed to perform check-in', variant: 'destructive' });
     }
   };
 
-  const handleActivateAndCheckIn = async () => {
+  const handleDeactivate = async () => {
     if (!user) return;
-
-    // Guard: if custom deadline is stale, don't activate
-    const currentDeadline = settings?.next_check_in_due || settings?.custom_deadline;
-    const deadlineIsStale = !currentDeadline || new Date(currentDeadline) <= new Date();
-    if (deadlineIsStale && settings?.deadline_mode === 'custom') {
-      toast({ title: 'Deadline has passed', description: 'Please set a new custom deadline before activating.', variant: 'destructive' });
-      setShowActivationDialog(false);
-      return;
-    }
-
     try {
-      await SettingsService.updateSettings(user.id, { is_active: true });
-      await SettingsService.checkIn(user.id);
+      await SettingsService.updateSettings(user.id, {
+        is_active: false,
+        grace_period_active: false,
+        grace_period_end: null,
+        switch_triggered: false,
+        switch_triggered_at: null,
+      });
       const freshSettings = await SettingsService.getUserSettings(user.id);
       setSettings(freshSettings);
-      setShowActivationDialog(false);
-      toast({ title: "System Activated & Check-in Successful! ✅", description: "Your Dead Man's Switch is now active" });
+      toast({
+        title: 'System deactivated',
+        description: 'Your Dead Man\'s Switch is now off. Check in to reactivate.',
+      });
     } catch (error) {
-      console.error('Error activating and checking in:', error);
-      toast({ title: "Error", description: "Failed to activate system and perform check-in", variant: "destructive" });
+      toast({ title: 'Error', description: 'Failed to deactivate', variant: 'destructive' });
     }
   };
 

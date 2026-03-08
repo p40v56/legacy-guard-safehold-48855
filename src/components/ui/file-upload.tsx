@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Upload, File, X, CheckCircle } from 'lucide-react';
+import { Upload, File, X, CheckCircle, CloudUpload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FileUploadProps {
@@ -35,7 +35,6 @@ const FileUpload = ({
     setUploadComplete(false);
 
     try {
-      // Simulate upload progress
       const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -87,7 +86,6 @@ const FileUpload = ({
       console.error('Upload error:', error);
     }
     
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -108,16 +106,17 @@ const FileUpload = ({
   return (
     <div
       className={cn(
-        "relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+        "relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer",
         dragActive && !disabled && !isUploading 
-          ? "border-emerald-400 bg-emerald-500/10" 
-          : "border-slate-600 hover:border-slate-500",
+          ? "border-primary bg-primary/5 scale-[1.01]" 
+          : "border-border hover:border-primary/50 hover:bg-muted/50",
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
+      onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
     >
       <input
         ref={fileInputRef}
@@ -129,49 +128,40 @@ const FileUpload = ({
       />
 
       {uploadComplete ? (
-        <div className="space-y-4">
-          <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-emerald-400" />
+        <div className="space-y-3">
+          <div className="w-14 h-14 bg-emerald-500/15 rounded-2xl flex items-center justify-center mx-auto">
+            <CheckCircle className="w-7 h-7 text-emerald-500" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white mb-2">Upload Complete!</h3>
-            <p className="text-slate-400">Your file has been uploaded successfully.</p>
+            <p className="text-sm font-medium text-card-foreground">Upload complete!</p>
+            <p className="text-xs text-muted-foreground mt-1">Your file has been encrypted and uploaded.</p>
           </div>
         </div>
       ) : isUploading ? (
-        <div className="space-y-4">
-          <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto">
-            <File className="w-8 h-8 text-blue-400 animate-pulse" />
+        <div className="space-y-3">
+          <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+            <File className="w-7 h-7 text-primary animate-pulse" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white mb-2">Uploading...</h3>
-            <Progress value={uploadProgress} className="w-full max-w-xs mx-auto" />
-            <p className="text-slate-400 text-sm mt-2">{uploadProgress}% complete</p>
+            <p className="text-sm font-medium text-card-foreground">Encrypting & uploading…</p>
+            <Progress value={uploadProgress} className="w-full max-w-xs mx-auto mt-3" />
+            <p className="text-xs text-muted-foreground mt-2">{uploadProgress}%</p>
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto">
-            <Upload className="w-8 h-8 text-slate-400" />
+        <div className="space-y-3">
+          <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+            <CloudUpload className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white mb-2">
-              {dragActive ? "Drop your file here" : "Upload a file"}
-            </h3>
-            <p className="text-slate-400 mb-4">
-              Drag and drop your file here, or click to browse
+            <p className="text-sm font-medium text-card-foreground">
+              {dragActive ? "Drop your file here" : "Drag & drop a file here"}
             </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled || isUploading}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700/50"
-            >
-              Choose File
-            </Button>
-            <p className="text-xs text-slate-500 mt-2">
-              Maximum file size: {maxSize}MB
+            <p className="text-xs text-muted-foreground mt-1">
+              or <span className="text-primary font-medium hover:underline">browse from your device</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-3">
+              Max {maxSize} MB
             </p>
           </div>
         </div>

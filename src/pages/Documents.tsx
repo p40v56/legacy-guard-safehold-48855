@@ -629,22 +629,37 @@ const Documents = () => {
                             {(formData as any).file_type || 'File'} · {formatFileSize((formData as any).file_size)} · Encrypted & uploaded ✓
                           </p>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={() => setFormData(prev => {
-                            const next = { ...prev };
-                            delete (next as any).file_path;
-                            delete (next as any).file_type;
-                            delete (next as any).file_size;
-                            delete (next as any).file_iv;
-                            return next;
-                          })}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {editingDocument && editingDocument.file_path && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-primary"
+                              onClick={() => handleDownload(editingDocument)}
+                              title="Download file"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => setFormData(prev => {
+                              const next = { ...prev };
+                              delete (next as any).file_path;
+                              delete (next as any).file_type;
+                              delete (next as any).file_size;
+                              delete (next as any).file_iv;
+                              return next;
+                            })}
+                            title="Remove file"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <FileUpload

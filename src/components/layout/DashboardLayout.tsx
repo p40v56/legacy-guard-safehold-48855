@@ -16,8 +16,7 @@ import {
   Menu,
   X,
   MessageCircle,
-  ShieldCheck,
-  Crown
+  ShieldCheck
 } from 'lucide-react';
 
 interface DashboardLayoutProps {

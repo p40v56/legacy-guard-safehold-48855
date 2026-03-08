@@ -16,11 +16,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Plus, Edit, Trash2, PoundSterling, FileText } from 'lucide-react';
+import { CreditCard, Plus, Edit, Trash2, PoundSterling, FileText, Mail, Users, Landmark, Briefcase, Play, Globe, AlertTriangle } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import FinancialsTab from '@/components/financials/FinancialsTab';
+import { Link } from 'react-router-dom';
 
 type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'other';
 type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
@@ -34,6 +35,33 @@ const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   subscription: 'Subscription',
   other: 'Other',
 };
+
+const ACCOUNT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; bg: string; iconColor: string }> = {
+  email: { icon: <Mail className="w-5 h-5" />, bg: 'bg-blue-500/15', iconColor: 'text-blue-500' },
+  social: { icon: <Users className="w-5 h-5" />, bg: 'bg-purple-500/15', iconColor: 'text-purple-500' },
+  financial: { icon: <Landmark className="w-5 h-5" />, bg: 'bg-emerald-500/15', iconColor: 'text-emerald-500' },
+  work: { icon: <Briefcase className="w-5 h-5" />, bg: 'bg-amber-500/15', iconColor: 'text-amber-500' },
+  entertainment: { icon: <Play className="w-5 h-5" />, bg: 'bg-pink-500/15', iconColor: 'text-pink-500' },
+  cloud: { icon: <Globe className="w-5 h-5" />, bg: 'bg-cyan-500/15', iconColor: 'text-cyan-500' },
+  subscription: { icon: <CreditCard className="w-5 h-5" />, bg: 'bg-orange-500/15', iconColor: 'text-orange-500' },
+  other: { icon: <Globe className="w-5 h-5" />, bg: 'bg-gray-500/15', iconColor: 'text-gray-500' },
+};
+
+const CLOSURE_STYLES: Record<string, string> = {
+  delete: 'bg-red-500/10 text-red-600 border border-red-200',
+  memorialize: 'bg-purple-500/10 text-purple-600 border border-purple-200',
+  transfer: 'bg-blue-500/10 text-blue-600 border border-blue-200',
+  download: 'bg-amber-500/10 text-amber-600 border border-amber-200',
+};
+
+const CLOSURE_LABELS: Record<string, string> = {
+  delete: '→ Delete',
+  memorialize: '→ Memorialize',
+  transfer: '→ Transfer',
+  download: '→ Download data',
+};
+
+const IMPORTANCE_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 interface AccountFormData {
   platform: string;
@@ -65,6 +93,7 @@ const Accounts = () => {
   });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [availableDocs, setAvailableDocs] = useState<{id: string; title: string; document_type: string}[]>([]);
+  const [showCredentials, setShowCredentials] = useState<Record<string, boolean>>({});
 
   // Fetch available documents for linking
   useEffect(() => {
@@ -124,6 +153,12 @@ const Accounts = () => {
   }, [accounts, searchTerm, activeTab, filteredAccounts]);
 
   const displayAccounts = activeTab === 'all' && searchTerm ? searchResults : filteredAccounts;
+
+  const sortedAccounts = useMemo(() => {
+    return [...displayAccounts].sort((a, b) =>
+      (IMPORTANCE_ORDER[a.importance] ?? 4) - (IMPORTANCE_ORDER[b.importance] ?? 4)
+    );
+  }, [displayAccounts]);
 
   const isFreeBlocked = limits.maxAccounts === 0;
   const isAtAccountLimit = limits.maxAccounts !== Infinity && limits.maxAccounts > 0 && accounts.length >= limits.maxAccounts;
@@ -185,6 +220,10 @@ const Accounts = () => {
     );
   }
 
+  const toggleCredentials = (accountId: string) => {
+    setShowCredentials(prev => ({ ...prev, [accountId]: !prev[accountId] }));
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -194,19 +233,38 @@ const Accounts = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-muted/50 rounded-xl p-1 mb-6 flex-wrap h-auto gap-1">
-            <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
-              All
-            </TabsTrigger>
-            {categoryTabs.map(cat => (
-              <TabsTrigger key={cat} value={cat} className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
-                {ACCOUNT_TYPE_LABELS[cat as AccountType] || cat}
-              </TabsTrigger>
-            ))}
-            <TabsTrigger value="financials" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
-              <PoundSterling className="w-4 h-4 mr-1" />Financials
-            </TabsTrigger>
-          </TabsList>
+          {/* Unified control bar: tabs + search + add button */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+            <div className="flex overflow-x-auto gap-1 no-scrollbar flex-shrink-0">
+              <TabsList className="bg-muted/50 rounded-xl p-1 flex-wrap h-auto gap-1">
+                <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
+                  All
+                </TabsTrigger>
+                {categoryTabs.map(cat => (
+                  <TabsTrigger key={cat} value={cat} className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
+                    {ACCOUNT_TYPE_LABELS[cat as AccountType] || cat}
+                  </TabsTrigger>
+                ))}
+                <TabsTrigger value="financials" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm px-4">
+                  <PoundSterling className="w-4 h-4 mr-1" />Financials
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            {activeTab !== 'financials' && (
+              <>
+                <div className="flex-1">
+                  <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Search accounts..." className="bg-card/50 border-border" />
+                </div>
+                {!isFreeBlocked && !isAtAccountLimit && (
+                  <div className="flex-shrink-0">
+                    <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
+                      <Plus className="w-5 h-5 mr-2" />Add Account
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
           <TabsContent value="financials">
             <FinancialsTab />
@@ -216,14 +274,6 @@ const Accounts = () => {
           {['all', ...categoryTabs].map(tab => (
             <TabsContent key={tab} value={tab}>
               <div className="space-y-6">
-                  {!isFreeBlocked && !isAtAccountLimit && (
-                    <div className="flex justify-end">
-                      <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
-                        <Plus className="w-5 h-5 mr-2" />Add Account
-                      </Button>
-                    </div>
-                  )}
-
                   {isAtAccountLimit && (
                     <UpgradePrompt
                       message={`Your plan allows up to ${limits.maxAccounts} accounts. Upgrade to add more.`}
@@ -238,12 +288,6 @@ const Accounts = () => {
 
                 {(!isFreeBlocked || accounts.length > 0) && (
                   <>
-                    {tab === 'all' && (
-                      <div className="bg-muted/30 rounded-2xl p-4">
-                        <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Search all accounts..." className="bg-card/50 border-border" />
-                      </div>
-                    )}
-
                     {showForm && (
                       <div className="bg-muted/30 rounded-2xl p-6">
                         <div className="flex items-center gap-4 mb-6">
@@ -356,7 +400,7 @@ const Accounts = () => {
                     )}
 
                     <div className="space-y-4">
-                      {displayAccounts.length === 0 ? (
+                      {sortedAccounts.length === 0 ? (
                         <Card className="bg-card border-border backdrop-blur-sm">
                           <CardContent className="p-12 text-center">
                             <div className="max-w-md mx-auto">
@@ -372,57 +416,119 @@ const Accounts = () => {
                           </CardContent>
                         </Card>
                       ) : (
-                        <div className="grid gap-6">
-                          {displayAccounts.map((account) => (
-                            <Card key={account.id} className="bg-card border-border backdrop-blur-sm hover:bg-card/80 transition-all duration-300 group">
-                              <CardContent className="p-6">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-4 mb-4">
-                                      <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/20 transition-colors"><CreditCard className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" /></div>
+                        <div className="grid gap-4">
+                          {sortedAccounts.map((account) => {
+                            const typeConfig = ACCOUNT_TYPE_CONFIG[account.account_type] || ACCOUNT_TYPE_CONFIG.other;
+                            const isCredsVisible = showCredentials[account.id] || false;
+
+                            return (
+                              <Card key={account.id} className="bg-card border-border backdrop-blur-sm hover:bg-card/80 transition-all duration-300 group">
+                                <CardContent className="p-5">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex gap-3 flex-1 min-w-0">
+                                      {/* Type icon */}
+                                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${typeConfig.bg}`}>
+                                        <span className={typeConfig.iconColor}>{typeConfig.icon}</span>
+                                      </div>
+
                                       <div className="flex-1 min-w-0">
-                                        <h3 className="text-lg font-semibold text-foreground mb-1 truncate">{account.platform}</h3>
-                                        <div className="flex items-center gap-3 flex-wrap">
+                                        {/* Title + badges row */}
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                          <h3 className="text-base font-semibold text-foreground truncate">{account.platform}</h3>
                                           <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs font-medium">
                                             {ACCOUNT_TYPE_LABELS[account.account_type as AccountType] || account.account_type}
                                           </Badge>
-                                          <Badge variant="secondary" className={`text-xs font-medium ${account.importance === 'critical' ? 'bg-destructive/20 text-destructive border-destructive/30' : account.importance === 'high' ? 'bg-warning/20 text-warning border-warning/30' : account.importance === 'medium' ? 'bg-warning/10 text-warning/80 border-warning/20' : 'bg-muted text-muted-foreground border-muted'}`}>{account.importance}</Badge>
-                                          <span className="text-muted-foreground text-sm">→ {account.closure_action}</span>
+                                          <Badge variant="secondary" className={`text-xs font-medium ${account.importance === 'critical' ? 'bg-destructive/20 text-destructive border-destructive/30' : account.importance === 'high' ? 'bg-warning/20 text-warning border-warning/30' : account.importance === 'medium' ? 'bg-warning/10 text-warning/80 border-warning/20' : 'bg-muted text-muted-foreground border-muted'}`}>
+                                            {account.importance}
+                                          </Badge>
+                                          {account.closure_action && (
+                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CLOSURE_STYLES[account.closure_action] || 'bg-muted text-muted-foreground'}`}>
+                                              {CLOSURE_LABELS[account.closure_action] || account.closure_action}
+                                            </span>
+                                          )}
                                         </div>
+
+                                        {/* Vertical info list */}
+                                        <div className="mt-3 space-y-1.5">
+                                          {account.email && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                              <span className="text-muted-foreground w-20 shrink-0">Email</span>
+                                              <a href={`mailto:${account.email}`} className="text-foreground hover:text-primary transition-colors truncate">{account.email}</a>
+                                            </div>
+                                          )}
+                                          {account.username && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                              <span className="text-muted-foreground w-20 shrink-0">Username</span>
+                                              <span className="text-foreground font-mono">{account.username}</span>
+                                            </div>
+                                          )}
+                                          {account.website_url && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                              <span className="text-muted-foreground w-20 shrink-0">Website</span>
+                                              <a href={account.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{account.website_url}</a>
+                                            </div>
+                                          )}
+                                          {account.credentials && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                              <span className="text-muted-foreground w-20 shrink-0">Password</span>
+                                              {isCredsVisible ? (
+                                                <span className="text-foreground font-mono text-xs">{account.credentials}</span>
+                                              ) : (
+                                                <span className="text-foreground font-mono">{'•'.repeat(8)}</span>
+                                              )}
+                                              <button
+                                                onClick={() => toggleCredentials(account.id)}
+                                                className="text-xs text-primary hover:underline ml-1"
+                                              >
+                                                {isCredsVisible ? 'Hide' : 'Reveal'}
+                                              </button>
+                                            </div>
+                                          )}
+                                          {account.notes && (
+                                            <div className="flex items-start gap-2 text-sm mt-2">
+                                              <span className="text-muted-foreground w-20 shrink-0 pt-0.5">📝 Note</span>
+                                              <span className="text-muted-foreground leading-relaxed">{account.notes}</span>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Completeness indicator */}
+                                        {!account.credentials && !account.notes && (
+                                          <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                                            <AlertTriangle className="w-3 h-3" />
+                                            No password or notes added — your contact may not have enough information to act.
+                                          </p>
+                                        )}
+
+                                        {/* Linked documents */}
+                                        {account.attached_document_ids && account.attached_document_ids.length > 0 && (
+                                          <LinkedDocsPills documentIds={account.attached_document_ids} vaultKey={vaultKey} />
+                                        )}
                                       </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                      {account.email && (
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-muted-foreground font-medium">Email:</span>
-                                          <span className="text-foreground truncate">{account.email}</span>
-                                        </div>
-                                      )}
-                                      {account.username && (
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-muted-foreground font-medium">Username:</span>
-                                          <span className="text-foreground">{account.username}</span>
-                                        </div>
-                                      )}
+
+                                    {/* Edit/Delete buttons */}
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      <button
+                                        onClick={() => handleEdit(account)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-sm"
+                                      >
+                                        <Edit className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline">Edit</span>
+                                      </button>
+                                      <button
+                                        onClick={() => setDeleteTarget(account.id)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors text-sm"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline">Delete</span>
+                                      </button>
                                     </div>
-                                    {account.notes && (
-                                      <p className="text-muted-foreground mt-3 text-sm leading-relaxed line-clamp-2">{account.notes}</p>
-                                    )}
-                                    {account.credentials && (
-                                      <div className="mt-3">
-                                        <span className="text-muted-foreground text-xs font-medium uppercase">Credentials / Password hint:</span>
-                                        <p className="text-foreground text-sm mt-1 font-mono">{account.credentials}</p>
-                                      </div>
-                                    )}
                                   </div>
-                                  <div className="flex items-center gap-1 ml-4">
-                                    <Button variant="ghost" size="sm" onClick={() => handleEdit(account)} className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-10 w-10 p-0"><Edit className="w-4 h-4" /></Button>
-                                    <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(account.id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 w-10 p-0"><Trash2 className="w-4 h-4" /></Button>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -444,6 +550,48 @@ const Accounts = () => {
         />
       </div>
     </DashboardLayout>
+  );
+};
+
+// Sub-component for linked document pills
+const LinkedDocsPills = ({ documentIds, vaultKey }: { documentIds: string[]; vaultKey: CryptoKey | null }) => {
+  const [linkedDocs, setLinkedDocs] = useState<{id: string; title: string}[]>([]);
+
+  useEffect(() => {
+    if (!documentIds || documentIds.length === 0) return;
+    const fetchDocs = async () => {
+      const { data } = await supabase
+        .from('legacy_documents')
+        .select('id, title, title_iv')
+        .in('id', documentIds);
+      if (!data) return;
+      const docs = await Promise.all(data.map(async (doc) => {
+        let title = doc.title;
+        if (vaultKey && doc.title_iv) {
+          try {
+            const decrypted = await decryptFields(doc, ['title'], vaultKey);
+            title = decrypted.title || doc.title;
+          } catch { /* use raw */ }
+        }
+        return { id: doc.id, title };
+      }));
+      setLinkedDocs(docs);
+    };
+    fetchDocs();
+  }, [documentIds, vaultKey]);
+
+  if (linkedDocs.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-2 mt-3 flex-wrap">
+      <span className="text-xs text-muted-foreground">📎 Linked:</span>
+      {linkedDocs.map(doc => (
+        <Link key={doc.id} to="/documents" className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors">
+          <FileText className="w-3 h-3" />
+          {doc.title}
+        </Link>
+      ))}
+    </div>
   );
 };
 

@@ -381,8 +381,9 @@ const Admin = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-card border-border rounded-xl">
                           <DropdownMenuItem onClick={() => handleSetPlan(u, 'free')}>Set to Free</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleSetPlan(u, 'paid')}>Set to Paid</DropdownMenuItem>
-                          {u.plan === 'paid' && (
+                          <DropdownMenuItem onClick={() => handleSetPlan(u, 'essential')}>Set to Essential</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleSetPlan(u, 'family')}>Set to Family</DropdownMenuItem>
+                          {(u.plan === 'essential' || u.plan === 'family') && (
                             <DropdownMenuItem onClick={() => handleExtendPlan(u)}>Extend +1 year</DropdownMenuItem>
                           )}
                           <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => handleOpenExpiryEditor(u), 0); }}>Edit expiry date</DropdownMenuItem>

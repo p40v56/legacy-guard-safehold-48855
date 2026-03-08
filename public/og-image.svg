@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d2847;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1A9BD7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#38bdf8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <rect x="60" y="280" width="80" height="4" rx="2" fill="url(#accent)" />
+  <text x="60" y="250" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="white">LegacyVault</text>
+  <text x="60" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#94a3b8">Zero-knowledge encrypted digital legacy</text>
+  <text x="60" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#64748b">Your vault. Your contacts. Your final wishes. Protected.</text>
+  <text x="60" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#475569">legacyvault.app</text>
+</svg>

@@ -243,6 +243,22 @@ async function startGracePeriod(
     return { success: true };
   }
 
+  // Generate a one-click check-in token for the reminder email
+  let checkInUrl: string | null = null;
+  try {
+    const checkInToken = crypto.randomUUID();
+    const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    await supabase.from('check_in_tokens').insert({
+      user_id: userId,
+      token: checkInToken,
+      expires_at: tokenExpiry,
+      method: 'email_link',
+    });
+    checkInUrl = `${APP_BASE_URL}/functions/v1/check-in-via-token?token=${checkInToken}`;
+  } catch (tokenErr) {
+    console.error("Failed to generate check-in token:", tokenErr);
+  }
+
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
       method: "POST",
@@ -258,6 +274,7 @@ async function startGracePeriod(
         gracePeriodHours: userSettings.grace_period_hours,
         graceEndDate: graceEndDate.toISOString(),
         emailTemplate,
+        checkInUrl,
       }),
     });
 

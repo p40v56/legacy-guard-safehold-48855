@@ -377,6 +377,17 @@ const Dashboard = () => {
               )}
             </div>
           )}
+
+          {/* Check-in history link */}
+          <div className="mt-3 flex justify-end">
+            <Link
+              to="/switch#history"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              <History className="w-3.5 h-3.5" />
+              View check-in history
+            </Link>
+          </div>
         </div>
 
         {/* Quick Actions */}

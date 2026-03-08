@@ -544,6 +544,8 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <ThemeSelector />
           </TabsContent>
 
           {/* ─── SECURITY TAB ─── */}

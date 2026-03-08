@@ -34,6 +34,12 @@ const CheckInHistory = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    if (window.location.hash === '#history') {
+      setIsOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!user || !isOpen) return;
     supabase
       .from('check_in_history')

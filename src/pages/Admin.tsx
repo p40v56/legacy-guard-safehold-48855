@@ -460,6 +460,61 @@ const Admin = () => {
           )}
         </div>
 
+        {/* Triggered Switches */}
+        <div className="bg-muted/30 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setTriggeredOpen(prev => !prev)}
+            className="w-full flex items-center justify-between p-4 hover:bg-destructive/10 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              <h3 className="font-medium text-card-foreground">Triggered Switches</h3>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                triggeredUsers.length > 0
+                  ? 'bg-destructive/20 text-destructive'
+                  : 'bg-muted text-muted-foreground'
+              }`}>
+                {triggeredUsers.length}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${triggeredOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {triggeredOpen && (
+            <div className="border-t border-border">
+              {triggeredUsers.length === 0 ? (
+                <p className="text-muted-foreground text-sm p-4">No switches currently triggered.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">User</th>
+                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Triggered At</th>
+                      <th className="text-left p-3 text-xs text-muted-foreground font-medium uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {triggeredUsers.map((u: any) => (
+                      <tr key={u.user_id} className="border-b border-border/50">
+                        <td className="p-3 text-muted-foreground font-mono text-xs">{emailMap[u.user_id] || u.user_id?.slice(0, 8) + '...'}</td>
+                        <td className="p-3 text-muted-foreground text-xs">
+                          {u.switch_triggered_at
+                            ? new Date(u.switch_triggered_at).toLocaleString('en-GB')
+                            : '—'}
+                        </td>
+                        <td className="p-3">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/20 text-destructive">
+                            🚨 Triggered
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Create User Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent className="bg-card border-border rounded-2xl">

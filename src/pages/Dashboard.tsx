@@ -223,9 +223,6 @@ const Dashboard = () => {
   const autoLockMinutes = parseInt(localStorage.getItem('vault_auto_lock_minutes') || '15');
   const autoLockLabel = autoLockMinutes >= 60 ? `${autoLockMinutes / 60} hour${autoLockMinutes > 60 ? 's' : ''}` : `${autoLockMinutes} minutes`;
 
-  const autoLockMinutes = parseInt(localStorage.getItem('vault_auto_lock_minutes') || '15');
-  const autoLockLabel = autoLockMinutes >= 60 ? `${autoLockMinutes / 60} hour${autoLockMinutes > 60 ? 's' : ''}` : `${autoLockMinutes} minutes`;
-
   const securityItems = [
     { label: 'Two-Factor Auth', enabled: mfaEnabled, explanation: mfaEnabled ? 'Your account is protected with an authenticator app in addition to your password.' : 'Enable two-factor authentication in Settings → Security for an extra layer of protection.' },
     { label: 'Vault Auto-Lock', enabled: true, explanation: `Your vault automatically locks after ${autoLockLabel} of inactivity, clearing encryption keys from memory.` },

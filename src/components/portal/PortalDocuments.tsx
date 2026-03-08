@@ -50,7 +50,7 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   });
 
   const grouped: Record<string, PortalDocument[]> = {};
-  for (const doc of documents) {
+  for (const doc of filteredDocs) {
     const t = doc.document_type || 'other';
     if (!grouped[t]) grouped[t] = [];
     grouped[t].push(doc);

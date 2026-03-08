@@ -58,12 +58,12 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   const hasValues = assets.some(a => a.estimated_value && a.estimated_value > 0);
 
   let convertedTotal = 0;
-  if (isMultiCurrency && fxRates) {
+  if (needsConversion && fxRates) {
     assets.forEach(a => {
       const cur = getAssetCurrency(a.category_specific_fields as Record<string, any>);
       convertedTotal += convertCurrency(a.estimated_value || 0, cur, mainCurrency, fxRates);
     });
-  } else {
+  } else if (!needsConversion) {
     convertedTotal = assets.reduce((sum, a) => sum + (a.estimated_value || 0), 0);
   }
 

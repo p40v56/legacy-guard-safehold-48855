@@ -156,7 +156,11 @@ const Dashboard = () => {
       contextInfo: settings?.is_active
         ? `Next check-in in ${countdown.days > 0 ? `${countdown.days}d ` : ''}${countdown.hours}h ${countdown.minutes}m`
         : 'System inactive',
-      actionLabel: settings?.is_active ? 'Check-in now' : 'Activate',
+      actionLabel: !settings?.is_active
+        ? 'Check in to activate'
+        : countdown.isOverdue || settings?.grace_period_active
+          ? '⚠️ Check in urgently'
+          : 'Check in now',
     },
     {
       name: 'Contacts',

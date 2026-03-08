@@ -24,6 +24,7 @@ const methodIcons: Record<string, React.ReactNode> = {
 const methodLabels: Record<string, string> = {
   web: 'Web',
   email: 'Email',
+  email_link: 'Email Link',
   sms: 'SMS',
 };
 

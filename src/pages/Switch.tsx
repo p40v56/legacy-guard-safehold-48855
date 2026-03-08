@@ -254,7 +254,7 @@ const Switch = () => {
                     </button>
                     {': '}
                     {settings.deadline_mode === 'custom'
-                      ? `Custom deadline${settings.custom_deadline ? ` · ${new Date(settings.custom_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}`
+                      ? `Custom deadline${settings.custom_deadline ? ` (${new Date(settings.custom_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${new Date(settings.custom_deadline).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })})` : ''}`
                       : `${settings.check_in_frequency === 'daily' ? 'Daily' : settings.check_in_frequency === 'weekly' ? 'Weekly' : settings.check_in_frequency === 'biweekly' ? 'Biweekly' : 'Monthly'}`}
                     {' · '}{settings.grace_period_hours}h grace period
                   </p>

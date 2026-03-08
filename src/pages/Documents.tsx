@@ -513,13 +513,19 @@ const Documents = () => {
 
               <div className="space-y-2">
                 <Label className="text-card-foreground">Upload File</Label>
-                <FileUpload
-                  onUpload={handleFileUpload}
-                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                  maxSize={10}
-                  disabled={uploading}
-                  className="bg-muted/30 border-border"
-                />
+                {limits.fileUploads ? (
+                  <FileUpload
+                    onUpload={handleFileUpload}
+                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                    maxSize={10}
+                    disabled={uploading}
+                    className="bg-muted/30 border-border"
+                  />
+                ) : (
+                  <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
+                    File uploads require the Essential plan or higher. Free plan supports text documents only.
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">

@@ -472,7 +472,8 @@ const Admin = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-card border-border">
                     <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="essential">Essential</SelectItem>
+                    <SelectItem value="family">Family</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

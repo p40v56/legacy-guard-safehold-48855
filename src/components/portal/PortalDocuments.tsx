@@ -132,30 +132,35 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
                   <span className="text-gray-400 text-xs">
                     Updated {formatDate(doc)}
                   </span>
-                  {doc.file_path && (
+                  {doc.file_data ? (
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         try {
-                          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-                          const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-                          const response = await fetch(`${supabaseUrl}/functions/v1/get-document-url`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-                            body: JSON.stringify({ token, documentId: doc.id, filePath: doc.file_path }),
-                          });
-                          const result = await response.json();
-                          if (result.signedUrl) {
-                            window.open(result.signedUrl, '_blank');
+                          const binary = atob(doc.file_data!);
+                          const bytes = new Uint8Array(binary.length);
+                          for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
                           }
+                          const blob = new Blob([bytes], { type: doc.file_type || 'application/octet-stream' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = doc.title || 'document';
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
                         } catch (err) {
-                          console.error('Failed to get download URL:', err);
+                          console.error('Failed to download document:', err);
                         }
                       }}
                       className="inline-flex items-center gap-1.5 text-blue-600 text-xs hover:underline"
                     >
                       <Download className="w-3 h-3" />Download
                     </button>
-                  )}
+                  ) : doc.file_path ? (
+                    <span className="text-gray-400 text-xs italic">File unavailable in portal</span>
+                  ) : null}
                 </div>
               </div>
             );

@@ -49,6 +49,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   const lastActivityRef = useRef(Date.now());
   const tabHiddenAtRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const unlockingRef = useRef(false);
 
   const isUnlocked = vaultKey !== null;
 
@@ -61,6 +62,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const unlock = useCallback(async (password: string, userId: string): Promise<boolean> => {
+    unlockingRef.current = true;
     try {
       // Fetch profile for salt + encrypted vault key
       const { data: profile, error } = await supabase
@@ -116,6 +118,8 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       return true;
     } catch {
       return false;
+    } finally {
+      unlockingRef.current = false;
     }
   }, []);
 
@@ -248,7 +252,8 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
         setShowReauth(false);
       } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
         // If user is logged in but vault is locked, prompt for password
-        if (!vaultKey) {
+        // Skip if unlock is currently in progress (login flow)
+        if (!vaultKey && !unlockingRef.current) {
           userIdRef.current = session.user.id;
           setShowReauth(true);
         }

@@ -485,7 +485,12 @@ const Settings = () => {
                     )}
                     <div>
                       <Label className="text-foreground">Custom Message</Label>
-                      <RichTextEditor value={rule.custom_message} onChange={(value) => updateActivationRule(rule.id, { custom_message: value })} placeholder="Message to send to selected targets..." className="mt-1" />
+                      <Textarea 
+                        value={rule.custom_message} 
+                        onChange={(e) => updateActivationRule(rule.id, { custom_message: e.target.value })} 
+                        placeholder="Message to send to selected targets..." 
+                        className="mt-1 min-h-[80px] resize-y"
+                      />
                     </div>
                   </div>
                 ))}

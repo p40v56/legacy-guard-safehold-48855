@@ -569,6 +569,20 @@ const Settings = () => {
                     <div>
                       <Label className="text-foreground">New Password</Label>
                       <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password" />
+                      {newPassword.length > 0 && (() => {
+                        const s = getPasswordStrength(newPassword);
+                        return (
+                          <div className="mt-2 space-y-1">
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${s.color}`}
+                                style={{ width: s.width }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">{s.label}</p>
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div>
                       <Label className="text-foreground">Confirm New Password</Label>

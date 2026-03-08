@@ -223,6 +223,7 @@ const Documents = () => {
         const encrypted = await encryptFields({
           title: formData.title,
           description: formData.description,
+          content: formData.content,
         }, vaultKey);
         submissionData = { ...submissionData, ...encrypted };
       }

@@ -27,5 +27,11 @@ verify_jwt = false
 [functions.delete-own-account]
 verify_jwt = false
 
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
 [functions.stripe-webhook]
 verify_jwt = false

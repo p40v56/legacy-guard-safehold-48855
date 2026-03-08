@@ -125,7 +125,8 @@ const Accounts = () => {
 
   const displayAccounts = activeTab === 'all' && searchTerm ? searchResults : filteredAccounts;
 
-  const isFreeBlocked = plan === 'free';
+  const isFreeBlocked = limits.maxAccounts === 0;
+  const isAtAccountLimit = limits.maxAccounts !== Infinity && limits.maxAccounts > 0 && accounts.length >= limits.maxAccounts;
 
   if (!loading && isFreeBlocked) {
     return (

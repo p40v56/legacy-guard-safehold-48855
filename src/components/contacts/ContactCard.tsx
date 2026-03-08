@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 import { Edit, Trash2, Phone, Mail, Shield, AlertCircle, MessageSquare, Link2, Check, ChevronDown, Eye, AlertTriangle, ShieldOff } from 'lucide-react';
 import PermissionsConfig from '@/components/contacts/PermissionsConfig';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
@@ -352,11 +352,10 @@ const ContactCard: React.FC<ContactCardProps> = ({
                   <p className="text-muted-foreground text-sm">
                     This message will be included in the email sent to this contact when the switch triggers.
                   </p>
-                  <Textarea
+                  <RichTextEditor
                     value={customMsg}
-                    onChange={(e) => setCustomMsg(e.target.value)}
+                    onChange={(value) => setCustomMsg(value)}
                     placeholder={`Write a personal message for ${contact.name}...`}
-                    className="min-h-[120px] bg-muted/30 border-border rounded-xl"
                   />
                   <Button onClick={handleSaveCustomMessage} disabled={savingMessage} size="sm" className="bg-primary hover:bg-primary/90 rounded-xl">
                     {savingMessage ? 'Saving...' : 'Save Message'}

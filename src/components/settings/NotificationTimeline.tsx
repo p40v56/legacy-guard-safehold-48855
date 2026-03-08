@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Bell, Plus, Trash2, Info, ChevronDown, Save } from 'lucide-react';
+import { Bell, Plus, Trash2, Info, ChevronDown, Save, ChevronRight } from 'lucide-react';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 
 type ContactCategory = 'immediate_family' | 'extended_family' | 'close_friends' | 'professional' | 'legal' | 'financial';

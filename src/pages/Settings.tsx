@@ -118,6 +118,7 @@ const Settings = () => {
 
   // Session management
   const [signingOutAll, setSigningOutAll] = useState(false);
+  const { sessions: trackedSessions, loading: sessionsLoading, revokeSession } = useSessionTracker(user?.id);
 
   useEffect(() => {
     const stored = localStorage.getItem('vault_auto_lock_minutes');

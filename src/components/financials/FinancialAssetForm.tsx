@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +40,7 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>(initialData?.visible_to || []);
   const [attachedDocIds, setAttachedDocIds] = useState<string[]>(initialData?.attached_document_ids || []);
   const [availableDocs, setAvailableDocs] = useState<{id: string; title: string; document_type: string}[]>([]);
+  const [showAllDocs, setShowAllDocs] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -85,6 +85,8 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
     });
   };
 
+  const visibleDocs = showAllDocs ? availableDocs : availableDocs.slice(0, 5);
+
   return (
     <div className="bg-muted/30 rounded-2xl p-6">
       <div className="flex items-center gap-4 mb-6">
@@ -124,23 +126,43 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
           </div>
           <div className="space-y-2">
             <Label className="text-card-foreground">Estimated Value (£)</Label>
-            <Input type="number" step="0.01" value={estimatedValue} onChange={e => setEstimatedValue(e.target.value)} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="0.00" />
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">£</span>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={estimatedValue}
+                onChange={e => setEstimatedValue(e.target.value)}
+                placeholder="0.00"
+                className="pl-8 h-12 bg-muted/50 border-border rounded-xl"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Reference & Contact */}
+        {/* Reference */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label className="text-card-foreground">Reference / Account Number</Label>
             <Input value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="Account or policy number" />
           </div>
+        </div>
+
+        {/* Institution contact section header */}
+        <div>
+          <div className="flex items-center gap-2 mt-2 mb-1">
+            <h4 className="text-sm font-medium text-card-foreground">Institution contact details</h4>
+            <span className="text-xs text-muted-foreground">— who to call when the switch fires</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">These details will be shown to your trusted contacts so they can reach the right person.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label className="text-card-foreground">Contact Person</Label>
             <Input value={contactName} onChange={e => setContactName(e.target.value)} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="Name of person to contact" />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label className="text-card-foreground">Contact Phone</Label>
             <Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="+44..." />
@@ -168,7 +190,20 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
             </div>
             <div className="space-y-2">
               <Label className="text-card-foreground">Sort Code</Label>
-              <Input value={csf.sort_code || ''} onChange={e => updateCsf('sort_code', e.target.value)} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="00-00-00" />
+              <Input
+                value={csf.sort_code || ''}
+                onChange={e => {
+                  const raw = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  const formatted = raw.length > 4
+                    ? `${raw.slice(0,2)}-${raw.slice(2,4)}-${raw.slice(4)}`
+                    : raw.length > 2
+                    ? `${raw.slice(0,2)}-${raw.slice(2)}`
+                    : raw;
+                  updateCsf('sort_code', formatted);
+                }}
+                className="h-12 bg-muted/50 border-border rounded-xl"
+                placeholder="00-00-00"
+              />
             </div>
             <div className="space-y-2">
               <Label className="text-card-foreground">Joint Account Holder</Label>
@@ -214,7 +249,13 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
             </div>
             <div className="space-y-2">
               <Label className="text-card-foreground">Death Claim Process</Label>
-              <Textarea value={csf.death_claim_process || ''} onChange={e => updateCsf('death_claim_process', e.target.value)} className="bg-muted/50 border-border rounded-xl" rows={3} placeholder="Steps to claim: call number, provide death certificate..." />
+              <p className="text-xs text-muted-foreground">Instructions for your contacts on how to make a claim — policy number to quote, forms to complete, deadlines to meet.</p>
+              <Textarea
+                value={csf.death_claim_process || ''}
+                onChange={e => updateCsf('death_claim_process', e.target.value)}
+                placeholder="e.g. Call 0800 XXX XXXX, quote policy number, request a death claim form. Submit within 6 months of death."
+                className="min-h-[100px] bg-muted/50 border-border rounded-xl"
+              />
             </div>
           </div>
         )}
@@ -375,26 +416,37 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
           <Label className="text-card-foreground font-medium">Linked Documents</Label>
           <p className="text-xs text-muted-foreground">Attach relevant documents (e.g. policy PDF, deed, certificate)</p>
           {availableDocs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {availableDocs.map(doc => (
-                <div key={doc.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`doc-${doc.id}`}
-                    checked={attachedDocIds.includes(doc.id)}
-                    onCheckedChange={(checked) => {
-                      setAttachedDocIds(prev =>
-                        checked ? [...prev, doc.id] : prev.filter(id => id !== doc.id)
-                      );
-                    }}
-                  />
-                  <label htmlFor={`doc-${doc.id}`} className="text-sm text-card-foreground cursor-pointer flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                    {doc.title}
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{doc.document_type}</Badge>
-                  </label>
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {visibleDocs.map(doc => (
+                  <div key={doc.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`doc-${doc.id}`}
+                      checked={attachedDocIds.includes(doc.id)}
+                      onCheckedChange={(checked) => {
+                        setAttachedDocIds(prev =>
+                          checked ? [...prev, doc.id] : prev.filter(id => id !== doc.id)
+                        );
+                      }}
+                    />
+                    <label htmlFor={`doc-${doc.id}`} className="text-sm text-card-foreground cursor-pointer flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                      {doc.title}
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{doc.document_type}</Badge>
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {availableDocs.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllDocs(p => !p)}
+                  className="text-xs text-primary hover:underline mt-1"
+                >
+                  {showAllDocs ? 'Show less' : `Show all ${availableDocs.length} documents`}
+                </button>
+              )}
+            </>
           ) : (
             <p className="text-xs text-muted-foreground italic">No documents yet. Upload documents in the Documents section first.</p>
           )}

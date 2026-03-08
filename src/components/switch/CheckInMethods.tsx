@@ -60,11 +60,11 @@ const CheckInMethods = ({
                   <Mail className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <Label className="text-foreground font-medium">Check-in via email link</Label>
+                  <Label className="text-foreground font-medium">Check-in via email link <span className="font-normal text-muted-foreground">(+24h)</span></Label>
                   <p className="text-xs text-muted-foreground">
                     {emailCheckinEnabled
-                      ? 'A one-click check-in link is included in reminder and grace period emails.'
-                      : 'Enable to include a one-click check-in link in reminder and grace period emails.'}
+                      ? 'A one-click check-in link is included in reminder and grace period emails. Clicking it extends your deadline by 24 hours only — use the website for a full check-in.'
+                      : 'Enable to include a one-click check-in link in reminder and grace period emails. Extends your deadline by 24 hours only.'}
                   </p>
                 </div>
               </div>

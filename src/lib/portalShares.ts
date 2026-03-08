@@ -183,18 +183,23 @@ export async function createPortalShares(
     financialAssets = financialAssets.slice(0, tierLimits.maxFinancialAssets);
   }
 
-  // Helper to resolve attached documents from allDocs
-  const resolveAttachedDocs = (docIds: string[] | null | undefined) => {
+  // Helper to resolve attached documents from allDocs (with file data)
+  const resolveAttachedDocs = async (docIds: string[] | null | undefined) => {
     if (!docIds || docIds.length === 0) return [];
-    return docIds
+    const found = docIds
       .map((docId: string) => allDocs.find((d: any) => d.id === docId))
-      .filter(Boolean)
-      .map((d: any) => ({
+      .filter(Boolean);
+    return Promise.all(found.map(async (d: any) => {
+      const fileBundle = await decryptFileForBundle(d);
+      return {
         id: d.id,
         title: d.title,
         file_path: d.file_path || null,
         document_type: d.document_type,
-      }));
+        file_data: fileBundle?.file_data || null,
+        file_type: fileBundle?.file_type || d.file_type || null,
+      };
+    }));
   };
 
   // Helper to download and decrypt a file from storage, returning base64

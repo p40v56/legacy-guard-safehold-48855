@@ -373,7 +373,7 @@ const Settings = () => {
                 <Mail className="w-4 h-4 mr-1.5" />Switch Emails
               </TabsTrigger>
               <TabsTrigger value="activation" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
-                <Bell className="w-4 h-4 mr-1.5" />Notifications
+                <Bell className="w-4 h-4 mr-1.5" />Who Gets Notified
               </TabsTrigger>
               <TabsTrigger value="access" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
                 <Shield className="w-4 h-4 mr-1.5" />Access Control

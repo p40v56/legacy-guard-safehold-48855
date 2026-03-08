@@ -46,6 +46,8 @@ interface UserSettings {
   grace_period_end: string | null;
   switch_triggered: boolean;
   switch_triggered_at: string | null;
+  email_checkin_enabled: boolean;
+  check_in_frequency: string;
 }
 
 interface Contact {

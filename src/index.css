@@ -835,7 +835,7 @@ body:has(#lv-root) {
 
 /* ── Process ── */
 #lv-root .lv-process {
-  background: linear-gradient(160deg, #1A9BD7 0%, #0D6EA8 60%, #072a42 100%);
+  background: linear-gradient(180deg, #0D1B2A 0%, #091624 100%);
   padding: 140px 48px; position: relative; overflow: hidden;
 }
 #lv-root .lv-process::before {
@@ -919,7 +919,7 @@ body:has(#lv-root) {
 
 /* ── Features ── */
 #lv-root .lv-features {
-  background: linear-gradient(180deg, #0e2a45 0%, #0a2240 50%, #0D1B2A 100%);
+  background: linear-gradient(160deg, #1A9BD7 0%, #0D6EA8 60%, #072a42 100%);
   padding: 140px 48px;
   position: relative;
   overflow: hidden;

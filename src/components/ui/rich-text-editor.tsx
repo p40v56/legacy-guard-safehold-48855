@@ -33,49 +33,64 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   ];
 
   useEffect(() => {
-    // Inject custom styles for dark theme
-    const styleId = 'quill-dark-theme';
+    const styleId = 'quill-light-theme';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
       style.textContent = `
         .rich-text-editor .ql-toolbar {
-          background-color: rgb(51 65 85) !important;
-          border-color: rgb(71 85 105) !important;
-          border-bottom: 1px solid rgb(71 85 105) !important;
+          background-color: hsl(var(--card)) !important;
+          border-color: hsl(var(--border)) !important;
+          border-bottom: 1px solid hsl(var(--border)) !important;
+          border-radius: 0.75rem 0.75rem 0 0 !important;
         }
         .rich-text-editor .ql-container {
-          background-color: rgb(51 65 85) !important;
-          border-color: rgb(71 85 105) !important;
-          color: white !important;
+          background-color: transparent !important;
+          border-color: hsl(var(--border)) !important;
+          color: hsl(var(--card-foreground)) !important;
+          border-radius: 0 0 0.75rem 0.75rem !important;
         }
         .rich-text-editor .ql-editor {
-          color: white !important;
+          color: hsl(var(--card-foreground)) !important;
+          min-height: 200px;
+          padding: 16px !important;
         }
         .rich-text-editor .ql-editor.ql-blank::before {
-          color: rgb(148 163 184) !important;
+          color: hsl(var(--muted-foreground)) !important;
+          font-style: normal !important;
         }
         .rich-text-editor .ql-toolbar .ql-stroke {
-          stroke: rgb(148 163 184) !important;
+          stroke: hsl(var(--muted-foreground)) !important;
         }
         .rich-text-editor .ql-toolbar .ql-fill {
-          fill: rgb(148 163 184) !important;
+          fill: hsl(var(--muted-foreground)) !important;
+        }
+        .rich-text-editor .ql-toolbar .ql-picker-label {
+          color: hsl(var(--muted-foreground)) !important;
         }
         .rich-text-editor .ql-toolbar button:hover .ql-stroke {
-          stroke: white !important;
+          stroke: hsl(var(--foreground)) !important;
         }
         .rich-text-editor .ql-toolbar button:hover .ql-fill {
-          fill: white !important;
+          fill: hsl(var(--foreground)) !important;
         }
         .rich-text-editor .ql-toolbar button.ql-active .ql-stroke {
-          stroke: rgb(52 211 153) !important;
+          stroke: hsl(var(--primary)) !important;
         }
         .rich-text-editor .ql-toolbar button.ql-active .ql-fill {
-          fill: rgb(52 211 153) !important;
+          fill: hsl(var(--primary)) !important;
+        }
+        .rich-text-editor .ql-toolbar button:hover {
+          background-color: hsl(var(--muted) / 0.5) !important;
+          border-radius: 0.25rem;
         }
       `;
       document.head.appendChild(style);
     }
+
+    // Remove old dark theme style if present
+    const oldStyle = document.getElementById('quill-dark-theme');
+    if (oldStyle) oldStyle.remove();
   }, []);
 
   return (
@@ -88,9 +103,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         formats={formats}
         placeholder={placeholder}
         style={{
-          backgroundColor: 'rgb(51 65 85)',
-          borderRadius: '0.375rem',
-          border: '1px solid rgb(71 85 105)',
+          backgroundColor: 'hsl(var(--muted) / 0.3)',
+          borderRadius: '0.75rem',
+          border: '1px solid hsl(var(--border))',
         }}
       />
     </div>

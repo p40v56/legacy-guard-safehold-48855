@@ -55,10 +55,14 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [portalStale, setPortalStale] = useState(false);
   const [regeneratingShares, setRegeneratingShares] = useState(false);
   const [hasActiveShare, setHasActiveShare] = useState(false);
+  const [lastPortalAccess, setLastPortalAccess] = useState<string | null>(null);
+  const [portalAccessCount, setPortalAccessCount] = useState(0);
 
-  // Check if an active share exists on mount
+  // Check if an active share exists and fetch portal access info
   useEffect(() => {
     if (!user || isFree) return;
+    
+    // Check active share
     supabase
       .from('contact_shares')
       .select('id')
@@ -66,6 +70,32 @@ const ContactCard: React.FC<ContactCardProps> = ({
       .eq('user_id', user.id)
       .limit(1)
       .then(({ data }) => setHasActiveShare((data?.length ?? 0) > 0));
+
+    // Fetch last portal access from contact_access_tokens
+    supabase
+      .from('contact_access_tokens')
+      .select('last_accessed_at')
+      .eq('contact_id', contact.id)
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0 && data[0].last_accessed_at) {
+          setLastPortalAccess(data[0].last_accessed_at);
+        }
+      });
+
+    // Count portal access events from sent_notifications
+    supabase
+      .from('sent_notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('contact_id', contact.id)
+      .eq('user_id', user.id)
+      .eq('notification_type', 'portal_accessed')
+      .then(({ count }) => {
+        setPortalAccessCount(count || 0);
+      });
   }, [contact.id, user, isFree]);
 
   // Auto-regenerate portal shares when permissions change
@@ -388,6 +418,26 @@ const ContactCard: React.FC<ContactCardProps> = ({
                       <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
                         <Check className="w-3.5 h-3.5 text-success" />
                         Portal link is active for this contact
+                      </div>
+                    )}
+                    {/* Portal access activity */}
+                    {hasActiveShare && (
+                      <div className="bg-muted/30 rounded-xl p-3 space-y-2 mt-2">
+                        <p className="text-xs font-medium text-card-foreground">Portal Activity</p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{portalAccessCount} access{portalAccessCount !== 1 ? 'es' : ''}</span>
+                          </div>
+                          {lastPortalAccess ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground/60">Last:</span>
+                              <span>{formatDateEU(lastPortalAccess)}</span>
+                            </div>
+                          ) : (
+                            <span className="italic">Never accessed</span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

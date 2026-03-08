@@ -6,7 +6,7 @@ import { encryptFields, decryptFields } from '@/lib/crypto';
 import { supabase } from '@/integrations/supabase/client';
 import type { FinancialAsset, FinancialAssetInsert } from '@/types/financial';
 
-const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email'];
+const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email', 'category_specific_fields_json'];
 
 export const useFinancialAssets = () => {
   const { user } = useAuth();

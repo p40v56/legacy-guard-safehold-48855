@@ -388,7 +388,7 @@ export class ContactTypePermissionsService {
         user_id: userId,
         contact_type: contactType,
         default_permissions: permissions
-      }])
+      }], { onConflict: 'user_id,contact_type' })
       .select()
       .single();
     

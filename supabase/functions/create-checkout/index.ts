@@ -84,7 +84,7 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    const appBaseUrl = Deno.env.get("APP_BASE_URL") || req.headers.get("origin") || "https://legacy-guard-safehold-48855.lovable.app";
+    const appBaseUrl = req.headers.get("origin") || Deno.env.get("APP_BASE_URL") || "https://legacy-guard-safehold-48855.lovable.app";
 
     // Check current plan for prorated upgrade
     const { data: profile } = await supabaseAdmin

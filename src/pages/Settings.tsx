@@ -146,8 +146,11 @@ const Settings = () => {
           const { data, error } = await supabase.functions.invoke('verify-payment');
           if (error) throw error;
           if (data?.paid) {
-            toast({ title: 'Payment successful ✓', description: `Your plan has been upgraded to ${PLAN_LABELS[data.plan as PlanTier] || data.plan}.` });
-            window.location.href = '/settings?tab=account';
+            setUpgradedPlan(PLAN_LABELS[data.plan as PlanTier] || data.plan);
+            setUpgradedExpiry(data.expires_at);
+            setShowPaymentSuccess(true);
+            // Clean URL without full reload
+            navigate('/settings?tab=account', { replace: true });
           }
         } catch (error: any) {
           toast({ title: 'Verification pending', description: 'Your payment is being processed. Please refresh in a moment.', variant: 'default' });

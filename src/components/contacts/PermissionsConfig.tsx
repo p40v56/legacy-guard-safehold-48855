@@ -91,8 +91,7 @@ const PermissionsConfig = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Use Type Defaults Toggle - hidden when configuring the defaults themselves */}
-        {onUseTypeDefaultsChange !== undefined && onUseTypeDefaultsChange.toString() !== '() => {}' && (
+        {!hideDefaultsToggle && (
           <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
             <div>
               <Label className="text-foreground">Use Contact Type Defaults</Label>

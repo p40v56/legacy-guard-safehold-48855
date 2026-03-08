@@ -115,6 +115,16 @@ const Index = () => {
                 <div className="lv-trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>No plaintext on server</div>
               </div>
             </div>
+            <div className="reveal" style={{ transitionDelay: '0.7s' }}>
+              <div className="lv-hero-cta">
+                <button className="lv-btn-primary" onClick={() => navigate('/auth?mode=signup')}>
+                  Get started free
+                </button>
+                <button className="lv-btn-ghost" onClick={() => navigate('/auth')}>
+                  Sign in
+                </button>
+              </div>
+            </div>
           </div>
           <div className="lv-scroll"><div className="lv-scroll-line" /><span>Scroll</span></div>
         </section>

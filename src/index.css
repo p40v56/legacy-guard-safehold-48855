@@ -388,6 +388,33 @@ body:has(#lv-root) {
   font-family: 'DM Sans', sans-serif;
 }
 #lv-root .lv-trust-item svg { opacity: 0.6; }
+
+/* ── Hero CTA buttons ── */
+#lv-root .lv-hero-cta {
+  display: flex; align-items: center; justify-content: center;
+  gap: 16px; margin-top: 48px; flex-wrap: wrap;
+}
+#lv-root .lv-btn-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px 32px; border-radius: 99px;
+  background: white; color: #0D6EA8;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+  border: none; cursor: pointer;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#lv-root .lv-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 32px rgba(0,0,0,0.2); }
+#lv-root .lv-btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px 32px; border-radius: 99px;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.3) !important;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#lv-root .lv-btn-ghost:hover { background: rgba(255,255,255,0.2); }
 #lv-root .lv-scroll {
   position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 8px;

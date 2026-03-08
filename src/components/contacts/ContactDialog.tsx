@@ -9,6 +9,7 @@ import { EmergencyContact, ContactPermissions, ContactType } from '@/types/acces
 import { Shield } from 'lucide-react';
 import { User, Mail, Phone, Users, Hash, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface ContactDialogProps {
   isOpen: boolean;

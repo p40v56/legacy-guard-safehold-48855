@@ -507,7 +507,7 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="permissions" className="space-y-6 mt-6">
-            <ContactTypePermissions typePermissions={typePermissions} onUpdate={saveTypePermissions} />
+            <ContactTypePermissions typePermissions={typePermissions} onUpdate={handleSaveTypePermissions} />
             <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
           </TabsContent>
 

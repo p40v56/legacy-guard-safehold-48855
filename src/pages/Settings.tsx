@@ -525,6 +525,9 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+            ) : (
+              <UpgradePrompt message="Activation rules require the Essential plan or higher." featureKey="activationRules" />
+            )}
           </TabsContent>
 
           <TabsContent value="permissions" className="space-y-6 mt-6">

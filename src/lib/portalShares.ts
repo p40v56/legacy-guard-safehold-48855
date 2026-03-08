@@ -32,7 +32,7 @@ async function hashTokenString(rawToken: string): Promise<string> {
 
 const ENCRYPTED_DOC_FIELDS = ['title', 'description', 'content'];
 const ENCRYPTED_ACCOUNT_FIELDS = ['account_name', 'username', 'credentials', 'website_url', 'notes', 'email', 'platform'];
-const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email'];
+const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email', 'category_specific_fields_json'];
 const ENCRYPTED_CONTACT_FIELDS = ['name', 'phone', 'relationship', 'notes', 'custom_message'];
 const ENCRYPTED_PROFILE_FIELDS = ['first_name', 'last_name', 'emergency_instructions'];
 

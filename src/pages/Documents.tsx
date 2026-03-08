@@ -591,8 +591,8 @@ const Documents = () => {
                 <Label className="text-card-foreground">Document Content</Label>
                 <p className="text-xs text-muted-foreground mb-2">Write directly, or upload a file below. You can do both.</p>
                 <RichTextEditor
-                  value={formData.description}
-                  onChange={(value) => setFormData({...formData, description: value})}
+                  value={formData.content}
+                  onChange={(value) => setFormData({...formData, content: value})}
                   placeholder="Write your document content here — supports formatting..."
                 />
               </div>

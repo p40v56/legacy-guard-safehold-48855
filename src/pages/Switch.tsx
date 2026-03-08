@@ -222,6 +222,7 @@ const Switch = () => {
             gracePeriodActive={settings?.grace_period_active || false}
             gracePeriodEnd={settings?.grace_period_end}
             switchTriggered={settings?.switch_triggered || false}
+            gracePeriodHours={settings?.grace_period_hours ?? 24}
           />
 
           <div className="flex flex-col items-center gap-1">

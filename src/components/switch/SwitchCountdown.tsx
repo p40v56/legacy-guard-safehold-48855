@@ -12,6 +12,7 @@ interface SwitchCountdownProps {
   gracePeriodActive?: boolean;
   gracePeriodEnd?: string | null;
   switchTriggered?: boolean;
+  gracePeriodHours?: number;
 }
 
 const SwitchCountdown = ({ 
@@ -21,6 +22,7 @@ const SwitchCountdown = ({
   gracePeriodActive = false,
   gracePeriodEnd = null,
   switchTriggered = false,
+  gracePeriodHours = 24,
 }: SwitchCountdownProps) => {
   const countdown = useCountdown(isActive, currentDeadline, gracePeriodActive, gracePeriodEnd);
   const urgencyLevel = gracePeriodActive ? 'critical' : getUrgencyLevel(countdown);
@@ -191,9 +193,12 @@ const SwitchCountdown = ({
         )}
 
         {currentDeadline && (
-          <div className="mt-6 pt-4 border-t border-border/50">
-            <p className="text-muted-foreground text-sm text-center font-medium">
+          <div className="mt-6 pt-4 border-t border-border/50 text-center space-y-1">
+            <p className="text-muted-foreground text-sm font-medium">
               Deadline: {formatDateEU(currentDeadline)}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Grace period: {gracePeriodHours === 0 ? 'none — triggers immediately' : `${gracePeriodHours}h`}
             </p>
           </div>
         )}

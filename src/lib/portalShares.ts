@@ -16,6 +16,7 @@ import {
   encryptText,
   decryptText,
   decryptFields,
+  decryptFile,
 } from '@/lib/crypto';
 import { PLAN_LIMITS, PlanTier } from '@/hooks/usePlan';
 

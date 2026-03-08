@@ -195,6 +195,13 @@ const Auth = () => {
 
     setSignupLoading(true);
     setErrors({});
+
+    // Persist selected plan so it survives email confirmation flow
+    const planParam = searchParams.get('plan');
+    if (planParam === 'essential' || planParam === 'family') {
+      localStorage.setItem('pending_plan', planParam);
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
@@ -209,7 +216,13 @@ const Auth = () => {
       if (data.session) {
         await setupNewUser(signupData.password, data.user!.id);
         toast({ title: 'Account created!', description: 'Welcome to LegacyVault.' });
-        navigate('/dashboard');
+        const pendingPlan = localStorage.getItem('pending_plan');
+        if (pendingPlan) {
+          localStorage.removeItem('pending_plan');
+          navigate(`/settings?tab=account&checkout=${pendingPlan}`);
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         // Email confirmation required
         setSignupComplete(true);

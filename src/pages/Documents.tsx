@@ -6,7 +6,7 @@ import { useEncryption } from '@/contexts/EncryptionContext';
 import { encryptFields, decryptFields, encryptFile, decryptFile } from '@/lib/crypto';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,10 @@ import RichTextEditor from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Plus, Edit, Trash2, Download, Eye, Upload, Calendar, Shield, Link2 } from 'lucide-react';
+import {
+  FileText, Plus, Edit, Trash2, Download, Eye, Calendar, Link2,
+  Scale, Landmark, Heart, User, ShieldCheck, Home, HardDrive, FileUp
+} from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
@@ -33,6 +36,26 @@ interface LegacyDocument {
   created_at: string;
 }
 
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  legal: 'Legal',
+  financial: 'Financial',
+  medical: 'Medical',
+  personal: 'Personal',
+  insurance: 'Insurance',
+  property: 'Property',
+  other: 'Other',
+};
+
+const DOC_ICON_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
+  legal: { icon: <Scale className="w-5 h-5" />, color: 'text-blue-500', bg: 'bg-blue-500/15' },
+  financial: { icon: <Landmark className="w-5 h-5" />, color: 'text-emerald-500', bg: 'bg-emerald-500/15' },
+  medical: { icon: <Heart className="w-5 h-5" />, color: 'text-red-500', bg: 'bg-red-500/15' },
+  personal: { icon: <User className="w-5 h-5" />, color: 'text-purple-500', bg: 'bg-purple-500/15' },
+  insurance: { icon: <ShieldCheck className="w-5 h-5" />, color: 'text-amber-500', bg: 'bg-amber-500/15' },
+  property: { icon: <Home className="w-5 h-5" />, color: 'text-orange-500', bg: 'bg-orange-500/15' },
+  other: { icon: <FileText className="w-5 h-5" />, color: 'text-gray-400', bg: 'bg-gray-500/15' },
+};
+
 const Documents = () => {
   const { user } = useAuth();
   const { plan, limits } = usePlan();
@@ -42,6 +65,7 @@ const Documents = () => {
   const [documents, setDocuments] = useState<LegacyDocument[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVisibility, setFilterVisibility] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'type'>('date_desc');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDocument, setEditingDocument] = useState<LegacyDocument | null>(null);
   const [formData, setFormData] = useState({
@@ -77,6 +101,16 @@ const Documents = () => {
     });
   }, [documents, searchTerm, filterVisibility]);
 
+  const sortedDocuments = useMemo(() => {
+    return [...filteredDocuments].sort((a, b) => {
+      if (sortBy === 'date_desc') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === 'date_asc') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortBy === 'name') return (a.title || '').localeCompare(b.title || '');
+      if (sortBy === 'type') return (a.document_type || '').localeCompare(b.document_type || '');
+      return 0;
+    });
+  }, [filteredDocuments, sortBy]);
+
   const isDocLimitReached = limits.maxDocuments !== Infinity && documents.length >= limits.maxDocuments;
 
   useEffect(() => {
@@ -96,7 +130,6 @@ const Documents = () => {
 
       const linkMap: Record<string, string[]> = {};
 
-      // Process financial assets
       for (const asset of (financialsRes.data || [])) {
         const docIds = asset.attached_document_ids as string[] | null;
         if (!docIds || docIds.length === 0) continue;
@@ -113,7 +146,6 @@ const Documents = () => {
         }
       }
 
-      // Process accounts
       for (const acct of (accountsRes.data || [])) {
         const docIds = acct.attached_document_ids as string[] | null;
         if (!docIds || docIds.length === 0) continue;
@@ -271,7 +303,6 @@ const Documents = () => {
       return;
     }
 
-    // Check storage limit
     if (limits.maxStorageMb > 0 && limits.maxStorageMb !== Infinity) {
       try {
         const { data: sizeData } = await supabase
@@ -401,6 +432,10 @@ const Documents = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const formatDate = (doc: LegacyDocument) => {
+    return new Date(doc.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -444,7 +479,7 @@ const Documents = () => {
         )}
 
         {<>
-        {/* Search and Filter */}
+        {/* Search, Filter, Sort */}
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
@@ -461,7 +496,18 @@ const Documents = () => {
             <SelectContent className="bg-card border-border rounded-xl">
               <SelectItem value="all" className="rounded-lg">All Documents</SelectItem>
               <SelectItem value="private" className="rounded-lg">Private Only</SelectItem>
-              <SelectItem value="public" className="rounded-lg">Public Only</SelectItem>
+              <SelectItem value="public" className="rounded-lg">Shared Only</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <SelectTrigger className="w-full sm:w-36 bg-card/50 border-border rounded-xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border rounded-xl">
+              <SelectItem value="date_desc" className="rounded-lg">Newest first</SelectItem>
+              <SelectItem value="date_asc" className="rounded-lg">Oldest first</SelectItem>
+              <SelectItem value="name" className="rounded-lg">Name A–Z</SelectItem>
+              <SelectItem value="type" className="rounded-lg">By type</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -508,12 +554,24 @@ const Documents = () => {
                   </Select>
                 </div>
 
+                {/* Description field — CHANGE 4 */}
+                <div className="space-y-2 lg:col-span-2">
+                  <Label className="text-card-foreground">Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input
+                    value={formData.description || ''}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Brief description — shown in the document list without opening the file"
+                    className="h-12 bg-muted/50 border-border rounded-xl"
+                  />
+                </div>
+
+                {/* Visibility — CHANGE 3 */}
                 <div className="space-y-2 lg:col-span-2">
                   <Label className="text-card-foreground">Visibility</Label>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
                     <div>
-                      <div className="font-medium text-card-foreground">Make Public</div>
-                      <p className="text-sm text-muted-foreground">Allow emergency contacts to access this document</p>
+                      <div className="font-medium text-card-foreground">Share with all trusted contacts</div>
+                      <p className="text-sm text-muted-foreground">When enabled, all your trusted contacts can see this document in their portal. When disabled, only contacts with specific document permissions can access it.</p>
                     </div>
                     <Switch
                       checked={formData.is_public}
@@ -523,8 +581,10 @@ const Documents = () => {
                 </div>
               </div>
 
+              {/* Document Content — CHANGE 2 helper */}
               <div className="space-y-2">
                 <Label className="text-card-foreground">Document Content</Label>
+                <p className="text-xs text-muted-foreground mb-2">Write directly, or upload a file below. You can do both.</p>
                 <RichTextEditor
                   value={formData.description}
                   onChange={(value) => setFormData({...formData, description: value})}
@@ -532,16 +592,29 @@ const Documents = () => {
                 />
               </div>
 
+              {/* "or" separator — CHANGE 2 */}
+              <div className="flex items-center gap-4 my-2">
+                <div className="flex-1 border-t border-border" />
+                <span className="text-xs text-muted-foreground uppercase tracking-widest px-2">or upload a file</span>
+                <div className="flex-1 border-t border-border" />
+              </div>
+
+              {/* Upload — CHANGE 5 */}
               <div className="space-y-2">
                 <Label className="text-card-foreground">Upload File</Label>
                 {limits.fileUploads ? (
-                  <FileUpload
-                    onUpload={handleFileUpload}
-                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                    maxSize={10}
-                    disabled={uploading}
-                    className="bg-muted/30 border-border"
-                  />
+                  <>
+                    <FileUpload
+                      onUpload={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                      maxSize={10}
+                      disabled={uploading}
+                      className="bg-muted/30 border-border"
+                    />
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Accepted: PDF, Word (.doc, .docx), images (JPG, PNG) · Maximum 10 MB
+                    </p>
+                  </>
                 ) : (
                   <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
                     File uploads require the Essential plan or higher. Free plan supports text documents only.
@@ -571,7 +644,7 @@ const Documents = () => {
 
         {/* Documents List */}
         <div className="space-y-4">
-          {filteredDocuments.length === 0 ? (
+          {sortedDocuments.length === 0 ? (
             <div className="bg-muted/30 rounded-2xl p-12 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <FileText className="w-8 h-8 text-primary" />
@@ -594,59 +667,61 @@ const Documents = () => {
             </div>
           ) : (
             <div className="grid gap-4">
-              {filteredDocuments.map((document) => {
+              {sortedDocuments.map((document) => {
                 const links = reverseLinks[document.id];
+                const iconConfig = DOC_ICON_CONFIG[document.document_type] || DOC_ICON_CONFIG.other;
                 return (
                   <Card key={document.id} className="bg-muted/30 border-none rounded-2xl hover:bg-muted/50 transition-all duration-300 group">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
-                              <FileText className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <div className="flex items-center gap-4 mb-3">
+                            {/* Type-specific icon — CHANGE 7 */}
+                            <div className={`p-2 rounded-lg ${iconConfig.bg} transition-colors`}>
+                              <span className={iconConfig.color}>{iconConfig.icon}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="text-lg font-semibold text-foreground mb-1 truncate">{document.title}</h3>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {/* Type label — CHANGE 6 */}
+                                <Badge variant="outline" className="text-xs font-medium border-border text-muted-foreground">
+                                  {DOCUMENT_TYPE_LABELS[document.document_type] || document.document_type}
+                                </Badge>
+                                {/* Visibility badge — CHANGE 8 */}
                                 <Badge 
-                                  variant={document.is_public ? "default" : "secondary"} 
+                                  variant="secondary"
                                   className={`text-xs font-medium ${
                                     document.is_public 
-                                      ? 'bg-success/20 text-success border-success/30' 
+                                      ? 'bg-success/20 text-success border border-success/30' 
                                       : 'bg-muted text-muted-foreground border-border'
                                   }`}
                                 >
-                                  {document.is_public ? 'Public' : 'Private'}
+                                  {document.is_public ? 'Shared' : 'Private'}
                                 </Badge>
-                                <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                                  <Calendar className="w-3 h-3" />
-                                  {new Date(document.created_at).toLocaleDateString()}
-                                </div>
                               </div>
                             </div>
                           </div>
-                          
+
+                          {/* Description — CHANGE 9 */}
                           {document.description && (
-                            <p className="text-muted-foreground mb-4 leading-relaxed">{document.description}</p>
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">{document.description}</p>
                           )}
-                          
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            {document.file_type && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground font-medium">Type:</span>
-                                <span className="text-foreground">{document.file_type}</span>
-                              </div>
-                            )}
-                            
+
+                          {/* Date & file size — CHANGE 9 */}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formatDate(document)}
+                            </span>
                             {document.file_size && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground font-medium">Size:</span>
-                                <span className="text-foreground">{formatFileSize(document.file_size)}</span>
-                              </div>
+                              <span className="flex items-center gap-1">
+                                <HardDrive className="w-3 h-3" />
+                                {formatFileSize(document.file_size)}
+                              </span>
                             )}
                           </div>
 
-                          {/* Reverse links - "Used by" indicator */}
+                          {/* Reverse links */}
                           {links && links.length > 0 && (
                             <div className="flex items-center gap-2 mt-3 flex-wrap">
                               <Link2 className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />

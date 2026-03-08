@@ -61,7 +61,6 @@ function resolvePermissions(contact: any, typePermissions: any[]): ContactPermis
   }
   return contact.permissions || {};
 }
-}
 
 /**
  * Create encrypted portal shares for a contact after generating a portal token.

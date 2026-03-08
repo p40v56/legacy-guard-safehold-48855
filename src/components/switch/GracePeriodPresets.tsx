@@ -1,7 +1,8 @@
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
-import { useState } from 'react';
+import { Info, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface GracePeriodPresetsProps {
   gracePeriodHours: number;
@@ -17,6 +18,12 @@ const PRESETS = [
 const GracePeriodPresets = ({ gracePeriodHours, onGracePeriodChange }: GracePeriodPresetsProps) => {
   const isPreset = PRESETS.some(p => p.value === gracePeriodHours);
   const [showCustom, setShowCustom] = useState(!isPreset);
+  const [customValue, setCustomValue] = useState(String(gracePeriodHours));
+  const hasUnsavedChanges = showCustom && customValue !== String(gracePeriodHours);
+
+  useEffect(() => {
+    setCustomValue(String(gracePeriodHours));
+  }, [gracePeriodHours]);
 
   const handlePresetClick = (value: number) => {
     setShowCustom(false);
@@ -25,6 +32,14 @@ const GracePeriodPresets = ({ gracePeriodHours, onGracePeriodChange }: GracePeri
 
   const handleCustomClick = () => {
     setShowCustom(true);
+    setCustomValue(String(gracePeriodHours));
+  };
+
+  const handleSaveCustom = () => {
+    const hours = parseInt(customValue, 10);
+    if (!isNaN(hours) && hours >= 0 && hours <= 168) {
+      onGracePeriodChange(customValue);
+    }
   };
 
   return (
@@ -70,15 +85,27 @@ const GracePeriodPresets = ({ gracePeriodHours, onGracePeriodChange }: GracePeri
         </button>
       </div>
       {showCustom && (
-        <Input
-          type="number"
-          min={0}
-          max={168}
-          value={gracePeriodHours}
-          onChange={(e) => onGracePeriodChange(e.target.value)}
-          className="bg-input border-input max-w-32 mt-2"
-          placeholder="Hours"
-        />
+        <div className="flex items-center gap-2 mt-2">
+          <Input
+            type="number"
+            min={0}
+            max={168}
+            value={customValue}
+            onChange={(e) => setCustomValue(e.target.value)}
+            className="bg-input border-input max-w-32"
+            placeholder="Hours"
+          />
+          <span className="text-xs text-muted-foreground">hours</span>
+          <Button
+            size="sm"
+            onClick={handleSaveCustom}
+            disabled={!hasUnsavedChanges || isNaN(parseInt(customValue)) || parseInt(customValue) < 0 || parseInt(customValue) > 168}
+            className="rounded-xl px-4"
+          >
+            <Check className="w-4 h-4 mr-1" />
+            Save
+          </Button>
+        </div>
       )}
     </div>
   );

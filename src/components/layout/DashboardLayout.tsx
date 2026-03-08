@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { usePlan } from '@/hooks/usePlan';
+import { usePlan, PLAN_LABELS } from '@/hooks/usePlan';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 

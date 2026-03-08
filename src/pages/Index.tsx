@@ -36,11 +36,11 @@ const Index = () => {
         const target = parseInt(el.dataset.count || '0');
         const suffix = el.dataset.suffix || '';
         if (target === 0) { el.textContent = '0' + suffix; cObs.unobserve(el); return; }
-        const dur = target > 10000 ? 2200 : 1400;
+        const dur = target > 10000 ? 2800 : 1800;
         const start = performance.now();
         const step = (now: number) => {
           const p = Math.min((now - start) / dur, 1);
-          const eased = 1 - Math.pow(1 - p, 3);
+          const eased = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
           el.textContent = Math.floor(eased * target).toLocaleString() + suffix;
           if (p < 1) requestAnimationFrame(step); else
           { el.textContent = target.toLocaleString() + suffix; cObs.unobserve(el); }

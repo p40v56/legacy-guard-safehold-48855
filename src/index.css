@@ -595,9 +595,10 @@ body:has(#lv-root) {
 #lv-root .lv-num-item:last-child { border-right: none !important; }
 #lv-root .lv-num-val {
   font-family: 'DM Serif Display', serif !important;
-  font-size: clamp(42px, 5.5vw, 64px) !important;
+  font-size: clamp(32px, 4vw, 48px) !important;
   color: white !important; line-height: 1; margin-bottom: 8px;
   font-weight: 400 !important;
+  white-space: nowrap;
   text-shadow: 0 0 40px rgba(26,155,215,0.2);
 }
 #lv-root .lv-num-label {

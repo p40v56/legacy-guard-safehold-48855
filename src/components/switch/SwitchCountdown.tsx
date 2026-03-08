@@ -1,6 +1,6 @@
 
 import { Badge } from '@/components/ui/badge';
-import { Timer, AlertTriangle, Skull } from 'lucide-react';
+import { Timer, AlertTriangle, ShieldOff, ShieldAlert } from 'lucide-react';
 import { useCountdown } from '@/hooks/useCountdown';
 import { formatDateEU } from '@/utils/dateUtils';
 import { getUrgencyLevel, getUrgencyColors } from '@/utils/urgencyUtils';
@@ -28,24 +28,24 @@ const SwitchCountdown = ({
   const urgencyLevel = gracePeriodActive ? 'critical' : getUrgencyLevel(countdown);
   const colors = getUrgencyColors(urgencyLevel);
 
-  // System was triggered - show final state
+  // System was triggered - clean modern state
   if (switchTriggered) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-destructive/50 glass-strong transition-all duration-500">
-        <div className="absolute inset-0 bg-gradient-to-br from-destructive/30 to-transparent" />
+      <div className="relative overflow-hidden rounded-2xl border border-destructive/30 bg-destructive/5 backdrop-blur-sm transition-all duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 via-transparent to-destructive/5" />
         
         <div className="relative p-8">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="p-3 rounded-xl bg-destructive/30">
-              <Skull className="w-8 h-8 text-destructive" />
+            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+              <ShieldOff className="w-7 h-7 text-destructive" />
             </div>
           </div>
 
           <div className="text-center py-4">
-            <div className="text-4xl font-display font-bold text-destructive mb-3">
-              SYSTEM TRIGGERED
+            <div className="text-3xl font-display font-bold text-destructive mb-3 tracking-tight">
+              Switch Activated
             </div>
-            <p className="text-destructive/80 text-lg">
+            <p className="text-muted-foreground text-base">
               Your emergency contacts have been notified
             </p>
           </div>
@@ -58,67 +58,61 @@ const SwitchCountdown = ({
     return null;
   }
 
-  // Grace period mode
+  // Grace period mode - clean, urgent but not chaotic
   if (gracePeriodActive && gracePeriodEnd) {
     return (
-      <div className={`relative overflow-hidden rounded-2xl border-2 border-warning glass-strong transition-all duration-500 animate-pulse-subtle ring-2 ring-destructive/50 ring-offset-2 ring-offset-background`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-warning/30 to-destructive/20" />
-        
-        {/* Warning pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, currentColor 10px, currentColor 20px)',
-        }} />
+      <div className="relative overflow-hidden rounded-2xl border border-warning/40 bg-warning/5 backdrop-blur-sm transition-all duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-warning/10 via-transparent to-destructive/5" />
         
         <div className="relative p-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-warning/30 animate-pulse">
-                <AlertTriangle className="w-6 h-6 text-warning" />
+              <div className="p-2 rounded-xl bg-warning/10 border border-warning/20">
+                <ShieldAlert className="w-6 h-6 text-warning" />
               </div>
-              <span className="text-2xl font-display font-semibold text-warning">
-                ⚠️ GRACE PERIOD ACTIVE
+              <span className="text-xl font-display font-semibold text-warning">
+                Grace Period Active
               </span>
             </div>
-            <Badge variant="destructive" className="animate-pulse shadow-lg shadow-destructive/50">
-              CHECK IN NOW
+            <Badge variant="destructive" className="shadow-sm">
+              Check in now
             </Badge>
           </div>
 
-          <div className="bg-destructive/20 border border-destructive/30 rounded-xl p-4 mb-6">
-            <p className="text-center text-destructive font-medium">
-              You missed your check-in deadline! Check in before the grace period ends or your contacts will be notified.
+          <div className="bg-warning/5 border border-warning/20 rounded-xl p-4 mb-6">
+            <p className="text-center text-muted-foreground text-sm">
+              You missed your check-in deadline. Check in before the grace period ends or your contacts will be notified.
             </p>
           </div>
 
           {!countdown.isOverdue ? (
-            <div className="grid grid-cols-4 gap-6">
-              {(['days', 'hours', 'minutes', 'seconds'] as const).map((unit, index) => (
+            <div className="grid grid-cols-4 gap-4">
+              {(['days', 'hours', 'minutes', 'seconds'] as const).map((unit) => (
                 <div 
                   key={unit} 
-                  className="text-center p-6 rounded-2xl bg-warning/10 border border-warning/30 hover:scale-110 transition-all duration-300"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="text-center p-5 rounded-2xl bg-warning/5 border border-warning/20 transition-all duration-300 hover:bg-warning/10"
                 >
-                  <div className="text-5xl font-display font-bold text-warning mb-2 tabular-nums">
+                  <div className="text-4xl font-display font-bold text-warning mb-1.5 tabular-nums">
                     {countdown[unit].toString().padStart(2, '0')}
                   </div>
-                  <div className="text-xs text-warning/80 uppercase tracking-wider font-medium">
+                  <div className="text-[11px] text-warning/70 uppercase tracking-wider font-medium">
                     {unit}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 animate-bounce-in">
-              <div className="text-6xl font-display font-bold text-destructive mb-3 animate-pulse">
-                TRIGGERING...
+            <div className="text-center py-8">
+              <div className="text-4xl font-display font-bold text-destructive mb-3">
+                Triggering…
               </div>
-              <p className="text-destructive/80 text-xl">Your contacts are being notified</p>
+              <p className="text-muted-foreground text-base">Your contacts are being notified</p>
             </div>
           )}
 
-          <div className="mt-6 pt-4 border-t border-warning/30">
-            <p className="text-warning/80 text-sm text-center font-medium">
-              Grace Period Ends: {formatDateEU(gracePeriodEnd)}
+          <div className="mt-6 pt-4 border-t border-warning/20">
+            <p className="text-muted-foreground text-sm text-center">
+              Grace period ends: {formatDateEU(gracePeriodEnd)}
             </p>
           </div>
         </div>
@@ -128,73 +122,75 @@ const SwitchCountdown = ({
 
   // Normal countdown mode
   return (
-    <div className={`relative overflow-hidden rounded-2xl border-2 ${colors.border} glass-strong transition-all duration-500 hover:scale-[1.01] ${colors.pulse} ${urgencyLevel === 'critical' ? 'animate-pulse' : ''}`}>
+    <div className={`relative overflow-hidden rounded-2xl border ${colors.border} bg-card/50 backdrop-blur-sm transition-all duration-500 hover:scale-[1.005]`}>
       <div className={`absolute inset-0 bg-gradient-to-br ${
-        urgencyLevel === 'critical' ? 'from-destructive/20 to-transparent' : 
-        urgencyLevel === 'urgent' ? 'from-warning/20 to-transparent' : 
-        'from-primary/10 to-transparent'
-      } animate-gradient-x`} />
+        urgencyLevel === 'critical' ? 'from-destructive/10 to-transparent' : 
+        urgencyLevel === 'urgent' ? 'from-warning/10 to-transparent' : 
+        'from-primary/5 to-transparent'
+      }`} />
       
-      {/* Floating orbs */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-levitate" />
+      {/* Subtle ambient glow */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
       
       <div className="relative p-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl ${urgencyLevel === 'critical' ? 'bg-destructive/20 animate-pulse' : urgencyLevel === 'urgent' ? 'bg-warning/20' : 'bg-primary/20'} animate-pulse-subtle`}>
+            <div className={`p-2 rounded-xl border ${
+              urgencyLevel === 'critical' ? 'bg-destructive/10 border-destructive/20' : 
+              urgencyLevel === 'urgent' ? 'bg-warning/10 border-warning/20' : 
+              'bg-primary/10 border-primary/20'
+            }`}>
               <Timer className={`w-6 h-6 ${colors.text}`} />
             </div>
-            <span className="text-2xl font-display font-semibold">
-              {countdown.isOverdue ? 'CHECK-IN OVERDUE' : 'Next Check-in'}
+            <span className="text-xl font-display font-semibold">
+              {countdown.isOverdue ? 'Check-in Overdue' : 'Next Check-in'}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-border/50 bg-card/50 backdrop-blur-sm">
+            <Badge variant="outline" className="border-border/50 bg-card/50 backdrop-blur-sm text-xs">
               {deadlineMode === 'custom' ? 'Custom Deadline' : 'Frequency Based'}
             </Badge>
             {urgencyLevel === 'critical' && (
-              <Badge variant="destructive" className="animate-pulse shadow-lg shadow-destructive/50">
-                CRITICAL
+              <Badge variant="destructive" className="shadow-sm">
+                Critical
               </Badge>
             )}
             {urgencyLevel === 'urgent' && (
-              <Badge className="bg-warning/20 text-warning border-warning/30 animate-pulse-subtle">
-                URGENT
+              <Badge className="bg-warning/10 text-warning border-warning/30">
+                Urgent
               </Badge>
             )}
           </div>
         </div>
 
         {!countdown.isOverdue ? (
-          <div className="grid grid-cols-4 gap-6">
-            {(['days', 'hours', 'minutes', 'seconds'] as const).map((unit, index) => (
+          <div className="grid grid-cols-4 gap-4">
+            {(['days', 'hours', 'minutes', 'seconds'] as const).map((unit) => (
               <div 
                 key={unit} 
-                className={`text-center p-6 rounded-2xl glass hover:scale-110 transition-all duration-300 animate-bounce-in`}
-                style={{ animationDelay: `${index * 100}ms` }}
+                className="text-center p-5 rounded-2xl bg-muted/30 border border-border/50 transition-all duration-300 hover:bg-muted/50"
               >
-                <div className={`text-5xl font-display font-bold ${colors.text} mb-2 tabular-nums`}>
+                <div className={`text-4xl font-display font-bold ${colors.text} mb-1.5 tabular-nums`}>
                   {countdown[unit].toString().padStart(2, '0')}
                 </div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
                   {unit}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 animate-bounce-in">
-            <div className="text-6xl font-display font-bold text-destructive mb-3 animate-pulse">
-              ACTION REQUIRED
+          <div className="text-center py-8">
+            <div className="text-4xl font-display font-bold text-destructive mb-3">
+              Action Required
             </div>
-            <p className="text-destructive/80 text-xl">Your check-in deadline has passed</p>
+            <p className="text-muted-foreground text-base">Your check-in deadline has passed</p>
           </div>
         )}
 
         {currentDeadline && (
           <div className="mt-6 pt-4 border-t border-border/50 text-center space-y-1">
-            <p className="text-muted-foreground text-sm font-medium">
+            <p className="text-muted-foreground text-sm">
               Deadline: {formatDateEU(currentDeadline)}
             </p>
             <p className="text-muted-foreground text-xs">

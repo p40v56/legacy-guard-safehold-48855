@@ -64,6 +64,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fetch user email before deletion
+    let userEmail: string | null = null;
+    try {
+      const { data: { user: targetUser } } = await adminClient.auth.admin.getUserById(userId);
+      userEmail = targetUser?.email || null;
+    } catch { /* non-fatal */ }
+
     const tables = ['contacts', 'accounts', 'legacy_documents', 'activation_rules',
       'notification_settings', 'user_settings', 'check_in_history', 'check_in_tokens',
       'contact_access_tokens', 'contact_type_permissions', 'security_questions',
@@ -75,6 +82,23 @@ Deno.serve(async (req) => {
 
     const { error } = await adminClient.auth.admin.deleteUser(userId);
     if (error) throw error;
+
+    // Send deletion email (non-blocking)
+    if (userEmail) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+        await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+          body: JSON.stringify({
+            notificationType: 'account_deleted',
+            recipientEmail: userEmail,
+            deletedBy: 'admin',
+          }),
+        });
+      } catch { /* non-blocking */ }
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

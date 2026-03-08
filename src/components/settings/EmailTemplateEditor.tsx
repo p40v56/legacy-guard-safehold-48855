@@ -99,90 +99,107 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
     <div className="space-y-4 relative pb-20">
       {/* Grace Period Warning Email — FIRST (chronological order) */}
       <Collapsible defaultOpen={false}>
-      <Card className="bg-muted/30 border-none rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center justify-between">
-            <div className="flex items-center">
-              <Mail className="w-5 h-5 mr-2 text-warning" />
-              Grace Period Warning Email
-            </div>
-            <Badge variant="outline" className="text-xs border-warning/30 text-warning">Sent to you</Badge>
-          </CardTitle>
-          <p className="text-muted-foreground text-sm mt-2">This email is sent to you when the grace period begins after a missed check-in.</p>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div>
-            <Label className="text-foreground">Email Subject</Label>
-            <Input value={template.email_grace_subject} onChange={e => updateField('email_grace_subject', e.target.value)} placeholder="Grace period subject..." />
-            <VariablesInset />
-          </div>
-          <div>
-            <Label className="text-foreground">Introduction Message</Label>
-            <RichTextEditor value={template.email_grace_intro} onChange={v => updateField('email_grace_intro', v)} placeholder="Grace period intro text..." className="[&_.ql-editor]:!min-h-[100px]" />
-            <VariablesInset />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => sendTestEmail('grace_period')}
-            disabled={!!sendingTest}
-            className="rounded-xl"
-          >
-            {sendingTest === 'grace_period' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-            Send test email
-          </Button>
-        </CardContent>
-      </Card>
+        <Card className="bg-muted/30 border-none rounded-2xl">
+          <CollapsibleTrigger className="w-full text-left">
+            <CardHeader className="cursor-pointer">
+              <CardTitle className="text-foreground flex items-center justify-between">
+                <div className="flex items-center">
+                  <Mail className="w-5 h-5 mr-2 text-warning" />
+                  Grace Period Warning Email
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs border-warning/30 text-warning">Sent to you</Badge>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                </div>
+              </CardTitle>
+              <p className="text-muted-foreground text-sm mt-2">This email is sent to you when the grace period begins after a missed check-in.</p>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-5 pt-0">
+              <div>
+                <Label className="text-foreground">Email Subject</Label>
+                <Input value={template.email_grace_subject} onChange={e => updateField('email_grace_subject', e.target.value)} placeholder="Grace period subject..." />
+                <VariablesInset />
+              </div>
+              <div>
+                <Label className="text-foreground">Introduction Message</Label>
+                <RichTextEditor value={template.email_grace_intro} onChange={v => updateField('email_grace_intro', v)} placeholder="Grace period intro text..." className="[&_.ql-editor]:!min-h-[100px]" />
+                <VariablesInset />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sendTestEmail('grace_period')}
+                disabled={!!sendingTest}
+                className="rounded-xl"
+              >
+                {sendingTest === 'grace_period' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                Send test email
+              </Button>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Switch Triggered Email — SECOND */}
-      <Card className="bg-muted/30 border-none rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center justify-between">
-            <div className="flex items-center">
-              <Mail className="w-5 h-5 mr-2 text-destructive" />
-              Switch Triggered Email
-            </div>
-            <Badge variant="outline" className="text-xs border-destructive/30 text-destructive">Sent to contacts</Badge>
-          </CardTitle>
-          <p className="text-muted-foreground text-sm mt-2">This email is sent to your emergency contacts when the switch is triggered.</p>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div>
-            <Label className="text-foreground">Email Subject</Label>
-            <Input value={template.email_subject} onChange={e => updateField('email_subject', e.target.value)} placeholder="Email subject line..." />
-            <VariablesInset />
-          </div>
-          <Separator className="bg-border/50" />
-          <div>
-            <Label className="text-foreground">Header Title</Label>
-            <Input value={template.email_header_title} onChange={e => updateField('email_header_title', e.target.value)} placeholder="e.g. 🚨 Important Notification" />
-          </div>
-          <div>
-            <Label className="text-foreground">Header Subtitle</Label>
-            <Input value={template.email_header_subtitle} onChange={e => updateField('email_header_subtitle', e.target.value)} placeholder="e.g. Dead Man's Switch Activated" />
-          </div>
-          <Separator className="bg-border/50" />
-          <div>
-            <Label className="text-foreground">Introduction Message</Label>
-            <RichTextEditor value={template.email_intro_message} onChange={v => updateField('email_intro_message', v)} placeholder="Main introduction message..." className="[&_.ql-editor]:!min-h-[100px]" />
-            <VariablesInset />
-          </div>
-          <div>
-            <Label className="text-foreground">Footer Message</Label>
-            <RichTextEditor value={template.email_footer_message} onChange={v => updateField('email_footer_message', v)} placeholder="Footer text..." className="[&_.ql-editor]:!min-h-[100px]" />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => sendTestEmail('switch_triggered')}
-            disabled={!!sendingTest}
-            className="rounded-xl"
-          >
-            {sendingTest === 'switch_triggered' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-            Send test email
-          </Button>
-        </CardContent>
-      </Card>
+      <Collapsible defaultOpen={false}>
+        <Card className="bg-muted/30 border-none rounded-2xl">
+          <CollapsibleTrigger className="w-full text-left">
+            <CardHeader className="cursor-pointer">
+              <CardTitle className="text-foreground flex items-center justify-between">
+                <div className="flex items-center">
+                  <Mail className="w-5 h-5 mr-2 text-destructive" />
+                  Switch Triggered Email
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs border-destructive/30 text-destructive">Sent to contacts</Badge>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                </div>
+              </CardTitle>
+              <p className="text-muted-foreground text-sm mt-2">This email is sent to your emergency contacts when the switch is triggered.</p>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-5 pt-0">
+              <div>
+                <Label className="text-foreground">Email Subject</Label>
+                <Input value={template.email_subject} onChange={e => updateField('email_subject', e.target.value)} placeholder="Email subject line..." />
+                <VariablesInset />
+              </div>
+              <Separator className="bg-border/50" />
+              <div>
+                <Label className="text-foreground">Header Title</Label>
+                <Input value={template.email_header_title} onChange={e => updateField('email_header_title', e.target.value)} placeholder="e.g. 🚨 Important Notification" />
+              </div>
+              <div>
+                <Label className="text-foreground">Header Subtitle</Label>
+                <Input value={template.email_header_subtitle} onChange={e => updateField('email_header_subtitle', e.target.value)} placeholder="e.g. Dead Man's Switch Activated" />
+              </div>
+              <Separator className="bg-border/50" />
+              <div>
+                <Label className="text-foreground">Introduction Message</Label>
+                <RichTextEditor value={template.email_intro_message} onChange={v => updateField('email_intro_message', v)} placeholder="Main introduction message..." className="[&_.ql-editor]:!min-h-[100px]" />
+                <VariablesInset />
+              </div>
+              <div>
+                <Label className="text-foreground">Footer Message</Label>
+                <RichTextEditor value={template.email_footer_message} onChange={v => updateField('email_footer_message', v)} placeholder="Footer text..." className="[&_.ql-editor]:!min-h-[100px]" />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sendTestEmail('switch_triggered')}
+                disabled={!!sendingTest}
+                className="rounded-xl"
+              >
+                {sendingTest === 'switch_triggered' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                Send test email
+              </Button>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Preview */}
       <Card className="bg-muted/30 border-none rounded-2xl">

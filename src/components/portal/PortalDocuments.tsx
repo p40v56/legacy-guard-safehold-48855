@@ -83,6 +83,16 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
 
+      {documents.length >= 5 && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search documents..."
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 mb-4"
+        />
+      )}
+
       {Object.entries(grouped).map(([docType, docs]) => {
         const isOpen = openCategories.has(docType);
         return (

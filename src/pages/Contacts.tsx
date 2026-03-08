@@ -292,18 +292,40 @@ const Contacts = () => {
               )}
             </div>
           ) : (
-            filteredContacts.map((contact) => (
-              <ContactCard
-                key={contact.id}
-                contact={contact}
-                contactTypeLabels={contactTypeLabels}
-                onEdit={handleEditContact}
-                onDelete={(id) => setDeleteTargetId(id)}
-                onPermissionsChange={updateContactPermissions}
-                onUseTypeDefaultsChange={updateUseTypeDefaults}
-                isExpanded={expandedContactId === contact.id}
-                onToggleExpand={() => handleToggleExpand(contact.id)}
-              />
+            sortedContacts.map((contact, idx) => (
+              <div key={contact.id} className="flex items-center gap-2">
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[10px] text-muted-foreground font-medium">#{idx + 1}</span>
+                  <button
+                    onClick={() => handleReorder(contact.id, 'up')}
+                    disabled={idx === 0}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move up"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleReorder(contact.id, 'down')}
+                    disabled={idx === sortedContacts.length - 1}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move down"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex-1">
+                  <ContactCard
+                    contact={contact}
+                    contactTypeLabels={contactTypeLabels}
+                    onEdit={handleEditContact}
+                    onDelete={(id) => setDeleteTargetId(id)}
+                    onPermissionsChange={updateContactPermissions}
+                    onUseTypeDefaultsChange={updateUseTypeDefaults}
+                    isExpanded={expandedContactId === contact.id}
+                    onToggleExpand={() => handleToggleExpand(contact.id)}
+                  />
+                </div>
+              </div>
             ))
           )}
         </div>

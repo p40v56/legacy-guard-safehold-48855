@@ -258,6 +258,16 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
         </ul>
       </div>
 
+      {financialAssets.length >= 5 && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search assets..."
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 mb-4"
+        />
+      )}
+
       {CATEGORY_ORDER.filter(cat => grouped[cat]).map(cat => {
         const assets = grouped[cat];
         const isOpen = openCategories.has(cat);

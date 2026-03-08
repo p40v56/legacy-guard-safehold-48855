@@ -140,6 +140,16 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
 
+      {accounts.length >= 5 && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search accounts..."
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 mb-4"
+        />
+      )}
+
       {Object.entries(grouped).map(([type, accts]) => {
         const isOpen = openCategories.has(type);
         return (

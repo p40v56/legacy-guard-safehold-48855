@@ -338,10 +338,9 @@ export const useSettings = () => {
   const addActivationRule = () => {
     const newRule: ActivationRule = {
       id: `temp-${Date.now()}`,
-      target_type: 'category',
-      contact_category: 'immediate_family',
+      target_type: 'all',
       delay_hours: 0,
-      custom_message: 'This is an automated message.',
+      custom_message: '',
       enabled: true
     };
     setActivationRules(prev => [...prev, newRule]);

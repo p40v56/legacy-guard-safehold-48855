@@ -72,7 +72,7 @@ const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { rewrapVaultKey, vaultKey } = useEncryption();
-  const { plan, planExpiresAt, isExpired, rawPlan } = usePlan();
+  const { plan, limits, planExpiresAt, isExpired, rawPlan, isPaid, isFree } = usePlan();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const defaultTab = searchParams.get('tab') || 'profile';

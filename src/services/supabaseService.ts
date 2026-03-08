@@ -206,6 +206,12 @@ export class SettingsService {
       .single();
     
     if (error) throw error;
+
+    // Record in check-in history
+    await supabase
+      .from('check_in_history')
+      .insert({ user_id: userId, method: 'web', checked_in_at: now });
+
     return data;
   }
 }

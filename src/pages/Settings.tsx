@@ -81,7 +81,7 @@ const Settings = () => {
     activationRules, setActivationRules, typePermissions, setTypePermissions,
     loading, saving, saveProfile, saveNotifications, saveActivationRules,
     addActivationRule, updateActivationRule, deleteActivationRule,
-    emailTemplate, setEmailTemplate, saveEmailTemplate,
+    emailTemplate, setEmailTemplate, saveEmailTemplate, saveTypePermissions,
   } = useSettings();
 
   const { contacts: emergencyContacts, loading: contactsLoading } = useContacts();

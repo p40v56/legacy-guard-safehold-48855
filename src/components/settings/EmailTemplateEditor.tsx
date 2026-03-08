@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -10,6 +9,7 @@ import { useState } from 'react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 export interface EmailTemplateData {
   email_subject: string;
@@ -125,12 +125,12 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
           <Separator className="bg-border/50" />
           <div>
             <Label className="text-foreground">Introduction Message</Label>
-            <Textarea value={template.email_intro_message} onChange={e => updateField('email_intro_message', e.target.value)} placeholder="Main introduction message..." rows={4} className="resize-none" />
+            <RichTextEditor value={template.email_intro_message} onChange={v => updateField('email_intro_message', v)} placeholder="Main introduction message..." />
             <VariablesInset />
           </div>
           <div>
             <Label className="text-foreground">Footer Message</Label>
-            <Textarea value={template.email_footer_message} onChange={e => updateField('email_footer_message', e.target.value)} placeholder="Footer text..." rows={2} className="resize-none" />
+            <RichTextEditor value={template.email_footer_message} onChange={v => updateField('email_footer_message', v)} placeholder="Footer text..." />
           </div>
           <Button
             variant="outline"
@@ -165,7 +165,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
           </div>
           <div>
             <Label className="text-foreground">Introduction Message</Label>
-            <Textarea value={template.email_grace_intro} onChange={e => updateField('email_grace_intro', e.target.value)} placeholder="Grace period intro text..." rows={3} className="resize-none" />
+            <RichTextEditor value={template.email_grace_intro} onChange={v => updateField('email_grace_intro', v)} placeholder="Grace period intro text..." />
             <VariablesInset />
           </div>
           <Button

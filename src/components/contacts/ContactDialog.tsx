@@ -9,6 +9,7 @@ import { EmergencyContact, ContactPermissions, ContactType } from '@/types/acces
 import { Shield } from 'lucide-react';
 import { User, Mail, Phone, Users, Hash, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface ContactDialogProps {
   isOpen: boolean;
@@ -153,6 +154,17 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
                 Can Receive Messages
               </Label>
             </div>
+          </div>
+
+          {/* Custom Message */}
+          <div className="space-y-2">
+            <Label className="text-card-foreground font-medium">Personal Message <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <p className="text-xs text-muted-foreground">A personal message included in the notification email sent to this contact when the switch fires.</p>
+            <RichTextEditor
+              value={contactData.custom_message || ''}
+              onChange={(value) => setContactData({ ...contactData, custom_message: value })}
+              placeholder="Write a personal message for this contact..."
+            />
           </div>
 
           <Button

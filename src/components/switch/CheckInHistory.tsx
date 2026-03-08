@@ -17,6 +17,7 @@ interface CheckInEntry {
 const methodIcons: Record<string, React.ReactNode> = {
   web: <Monitor className="w-4 h-4 text-primary" />,
   email: <Mail className="w-4 h-4 text-primary" />,
+  email_link: <Mail className="w-4 h-4 text-primary" />,
   sms: <Phone className="w-4 h-4 text-primary" />,
 };
 

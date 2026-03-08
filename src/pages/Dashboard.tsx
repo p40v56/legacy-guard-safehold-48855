@@ -11,7 +11,7 @@ import SecurityBadge from '@/components/dashboard/SecurityBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DashboardStats } from '@/types/common';
-import { DashboardService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
+import { DashboardService, SettingsService, ProfileService, ActivationRulesService } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountdown } from '@/hooks/useCountdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -116,6 +116,26 @@ const Dashboard = () => {
       await ProfileService.updateProfile(user.id, { setup_wizard_dismissed: true });
     } catch (error) {
       console.error('Error dismissing wizard:', error);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!user) return;
+    try {
+      await SettingsService.updateSettings(user.id, {
+        is_active: false,
+        grace_period_active: false,
+        grace_period_end: null,
+        switch_triggered: false,
+        switch_triggered_at: null,
+      });
+      await fetchStats();
+      toast({
+        title: 'System deactivated',
+        description: 'Your Dead Man\'s Switch is now off. Check in to reactivate.',
+      });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to deactivate', variant: 'destructive' });
     }
   };
 
@@ -259,12 +279,31 @@ const Dashboard = () => {
                 </Button>
               </Link>
             ) : (countdown.isOverdue || settings?.grace_period_active) && !settings?.switch_triggered ? (
-              <Link to="/switch">
-                <Button size="sm" variant="destructive" className="rounded-full px-5 animate-pulse">
-                  Check in now
+              <div className="flex items-center gap-2">
+                <Link to="/switch">
+                  <Button size="sm" variant="destructive" className="rounded-full px-5 animate-pulse">
+                    Check in now
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeactivate}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+                >
+                  Deactivate
                 </Button>
-              </Link>
-            ) : null}
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDeactivate}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+              >
+                Deactivate
+              </Button>
+            )}
           </div>
 
           {/* Warning Banners */}

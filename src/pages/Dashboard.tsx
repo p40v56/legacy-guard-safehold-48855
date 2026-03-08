@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { decryptFields } from '@/lib/crypto';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import { useToast } from '@/hooks/use-toast';

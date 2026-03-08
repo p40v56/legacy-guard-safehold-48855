@@ -547,14 +547,24 @@ const Settings = () => {
                           <p>💾 {lim.maxStorageMb === 0 ? 'No file storage' : lim.maxStorageMb >= 1024 ? `${lim.maxStorageMb / 1024} GB storage` : `${lim.maxStorageMb} MB storage`}</p>
                           <p>{lim.portalAccess ? '✓ Contact portals' : '✗ No contact portals'}</p>
                         </div>
-                        {!isCurrent && tier !== 'free' && (
-                          <a
-                            href={`mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault upgrade request — ${PLAN_LABELS[tier]} plan`)}&body=${encodeURIComponent(`I'd like to upgrade to the ${PLAN_LABELS[tier]} plan (${PLAN_PRICES[tier]}). My account email is: ${userEmail}`)}`}
-                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                          >
-                            Upgrade to {PLAN_LABELS[tier]} →
-                          </a>
-                        )}
+                        {!isCurrent && (() => {
+                          const planOrder = { free: 0, essential: 1, family: 2 };
+                          const currentOrder = planOrder[plan] || 0;
+                          const tierOrder = planOrder[tier] || 0;
+                          const isUpgrade = tierOrder > currentOrder;
+                          const isDowngrade = tierOrder < currentOrder;
+                          const actionLabel = isUpgrade ? `Upgrade to ${PLAN_LABELS[tier]}` : isDowngrade ? `Switch to ${PLAN_LABELS[tier]}` : '';
+                          const subjectAction = isUpgrade ? 'upgrade' : 'plan change';
+                          const bodyAction = isUpgrade ? `upgrade to` : `switch to`;
+                          return (
+                            <a
+                              href={`mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault ${subjectAction} request — ${PLAN_LABELS[tier]} plan`)}&body=${encodeURIComponent(`I'd like to ${bodyAction} the ${PLAN_LABELS[tier]} plan (${PLAN_PRICES[tier]}). My account email is: ${userEmail}`)}`}
+                              className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${isDowngrade ? 'text-muted-foreground hover:text-foreground' : 'text-primary hover:text-primary/80'}`}
+                            >
+                              {actionLabel} →
+                            </a>
+                          );
+                        })()}
                       </div>
                     );
                   })}

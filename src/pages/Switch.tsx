@@ -325,15 +325,43 @@ const Switch = () => {
             switchTriggered={settings?.switch_triggered || false}
           />
 
-          <div className="flex justify-center gap-3">
-            <Button
-              onClick={performCheckIn}
-              size="lg"
-              className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium shadow-lg shadow-primary/20"
-            >
-              <CheckCircle className="w-5 h-5 mr-2" />
-              Perform Check-in Now
-            </Button>
+          <div className="flex flex-col items-center gap-1">
+            {settings?.is_active ? (
+              <Button
+                onClick={performCheckIn}
+                size="lg"
+                className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium shadow-lg shadow-primary/20"
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Check in now
+              </Button>
+            ) : (
+              <div className="text-center space-y-3">
+                <Button
+                  onClick={performCheckIn}
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium shadow-lg shadow-primary/20"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  Activate & check in
+                </Button>
+                <p className="text-muted-foreground text-sm">
+                  Your first check-in will activate the switch and start your countdown.
+                </p>
+              </div>
+            )}
+            {settings?.is_active && (
+              <div className="flex justify-center mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeactivate}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+                >
+                  Deactivate system
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

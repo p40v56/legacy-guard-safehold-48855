@@ -51,6 +51,7 @@ interface GracePeriodWarningRequest {
   gracePeriodHours: number;
   graceEndDate: string;
   emailTemplate?: EmailTemplate;
+  checkInUrl?: string | null;
 }
 
 interface SwitchTriggeredRequest {

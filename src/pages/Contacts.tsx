@@ -168,12 +168,48 @@ const Contacts = () => {
     }
   };
 
+  const sortedContacts = useMemo(() => {
+    return [...filteredContacts].sort((a, b) => (a.priority_order ?? 99) - (b.priority_order ?? 99));
+  }, [filteredContacts]);
+
+  const handleReorder = async (contactId: string, direction: 'up' | 'down') => {
+    const sorted = [...contacts].sort((a, b) => (a.priority_order ?? 99) - (b.priority_order ?? 99));
+    const idx = sorted.findIndex(c => c.id === contactId);
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === sorted.length - 1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const current = sorted[idx];
+    const swap = sorted[swapIdx];
+    const currentOrder = current.priority_order ?? idx;
+    const swapOrder = swap.priority_order ?? swapIdx;
+    await Promise.all([
+      supabase.from('contacts').update({ priority_order: swapOrder }).eq('id', current.id),
+      supabase.from('contacts').update({ priority_order: currentOrder }).eq('id', swap.id),
+    ]);
+    // Optimistic local update via re-fetch pattern - contacts hook will pick up changes
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-pulse">
-            <Shield className="w-6 h-6 text-white" />
+        <div className="space-y-6">
+          <div className="mb-8">
+            <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Contacts</h1>
+            <p className="text-muted-foreground">Your trusted contacts</p>
+          </div>
+          <div className="space-y-3">
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-muted/30 rounded-2xl p-5 animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-muted rounded-xl" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-muted rounded w-1/3" />
+                    <div className="h-3 bg-muted rounded w-1/4" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </DashboardLayout>

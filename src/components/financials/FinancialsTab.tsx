@@ -151,7 +151,7 @@ const FinancialsTab: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {(Object.entries(grouped) as [FinancialCategory, FinancialAsset[]][]).map(([cat, catAssets]) => (
-            <Collapsible key={cat} defaultOpen>
+            <Collapsible key={cat}>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                 <span className="font-semibold text-foreground">{CATEGORY_LABELS[cat]} ({catAssets.length})</span>
                 <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />

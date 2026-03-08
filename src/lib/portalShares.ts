@@ -99,7 +99,7 @@ export async function createPortalShares(
 
   const profile = profileRes.data;
   const userPlan = profile?.plan || 'free';
-  const isFree = userPlan === 'free';
+  const tierLimits = PLAN_LIMITS[(userPlan === 'paid' ? 'essential' : userPlan) as PlanTier] || PLAN_LIMITS.free;
 
   // Decrypt profile names
   const decryptedProfileValues = profile ? await decryptFields(profile, ENCRYPTED_PROFILE_FIELDS, vaultKey) : {};

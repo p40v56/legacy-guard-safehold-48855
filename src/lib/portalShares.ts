@@ -285,22 +285,22 @@ export async function createPortalShares(
         file_type: fileBundle?.file_type || d.file_type || null,
       };
     })),
-    accounts: accounts.map((a) => ({
+    accounts: await Promise.all(accounts.map(async (a) => ({
       id: a.id, account_name: a.account_name, platform: a.platform, username: a.username,
       email: a.email, account_type: a.account_type, importance: a.importance,
       closure_action: a.closure_action, notes: a.notes, website_url: a.website_url,
       credentials: a.credentials || null,
       updated_at: a.updated_at,
-      attached_documents: resolveAttachedDocs(a.attached_document_ids),
-    })),
-    financialAssets: financialAssets.map((f) => ({
+      attached_documents: await resolveAttachedDocs(a.attached_document_ids),
+    }))),
+    financialAssets: await Promise.all(financialAssets.map(async (f) => ({
       id: f.id, name: f.name, category: f.category, institution: f.institution,
       reference_number: f.reference_number, estimated_value: f.estimated_value,
       notes: f.notes, contact_name: f.contact_name, contact_phone: f.contact_phone,
       contact_email: f.contact_email, category_specific_fields: f.category_specific_fields || {},
       updated_at: f.updated_at,
-      attached_documents: resolveAttachedDocs(f.attached_document_ids),
-    })),
+      attached_documents: await resolveAttachedDocs(f.attached_document_ids),
+    }))),
     permissions,
   };
 

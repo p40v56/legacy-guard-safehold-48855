@@ -49,6 +49,7 @@ const Contacts = () => {
 
   const getDefaultPermissions = (contactType: ContactType): ContactPermissions => ({
     digital_accounts: { all_accounts: false, by_category: [], specific_accounts: [] },
+    financial_assets: { all_assets: false, by_category: [], specific_assets: [] },
     legacy_documents: { all_documents: false, by_category: [], specific_documents: [] },
     contact_information: false,
     emergency_instructions: false,

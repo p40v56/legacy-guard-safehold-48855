@@ -29,6 +29,11 @@ const defaultPermissions: ContactPermissions = {
     by_category: [],
     specific_accounts: [],
   },
+  financial_assets: {
+    all_assets: false,
+    by_category: [],
+    specific_assets: [],
+  },
   legacy_documents: {
     all_documents: false,
     by_category: [],

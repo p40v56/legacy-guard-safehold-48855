@@ -134,6 +134,8 @@ const Settings = () => {
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     const paymentPlan = searchParams.get('plan');
+    const checkoutPlan = searchParams.get('checkout');
+
     if (paymentStatus === 'success' && paymentPlan) {
       const verifyPayment = async () => {
         try {
@@ -141,7 +143,6 @@ const Settings = () => {
           if (error) throw error;
           if (data?.paid) {
             toast({ title: 'Payment successful ✓', description: `Your plan has been upgraded to ${PLAN_LABELS[data.plan as PlanTier] || data.plan}.` });
-            // Reload to reflect new plan
             window.location.href = '/settings?tab=account';
           }
         } catch (error: any) {
@@ -149,6 +150,9 @@ const Settings = () => {
         }
       };
       verifyPayment();
+    } else if (checkoutPlan && (checkoutPlan === 'essential' || checkoutPlan === 'family')) {
+      // Auto-trigger checkout after signup/login with plan param
+      handleStripeCheckout(checkoutPlan as PlanTier);
     }
   }, []);
 

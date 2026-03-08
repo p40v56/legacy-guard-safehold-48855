@@ -51,6 +51,7 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
   const { token } = useParams();
   const navigate = useNavigate();
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   if (accounts.length === 0) return null;
 

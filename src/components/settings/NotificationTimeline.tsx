@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Bell, Plus, Trash2, Info, ChevronDown, Save } from 'lucide-react';
+import { Bell, Plus, Trash2, Info, ChevronDown, Save, ChevronRight } from 'lucide-react';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 
 type ContactCategory = 'immediate_family' | 'extended_family' | 'close_friends' | 'professional' | 'legal' | 'financial';
@@ -59,22 +60,32 @@ const WaveCard = ({
   const waveLabel = isImmediate ? '⚡ Immediate notification' : `⏱ After ${rule.delay_hours} hours`;
 
   return (
-    <div className="border border-border rounded-2xl p-5 space-y-4 bg-card/50">
-      {/* Wave header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-base font-semibold text-card-foreground">{waveLabel}</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full ${rule.enabled ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
-            {rule.enabled ? 'Active' : 'Disabled'}
+    <Collapsible defaultOpen={false} className="border border-border rounded-2xl bg-card/50 overflow-hidden">
+      <CollapsibleTrigger className="w-full text-left p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
+            <span className="text-base font-semibold text-card-foreground">{waveLabel}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${rule.enabled ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
+              {rule.enabled ? 'Active' : 'Disabled'}
+            </span>
+          </div>
+          {/* Summary when collapsed: show target info */}
+          <span className="text-xs text-muted-foreground">
+            {rule.target_type === 'category' && rule.contact_category ? contactTypeLabels[rule.contact_category] : rule.target_type === 'contacts' ? `${(rule.contact_ids || []).length} contact(s)` : ''}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch checked={rule.enabled} onCheckedChange={(v) => updateActivationRule(rule.id, { enabled: v })} />
-          <button onClick={() => deleteActivationRule(rule.id)} className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="px-5 pb-5 space-y-4">
+          {/* Enable toggle with label */}
+          <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-xl">
+            <Switch checked={rule.enabled} onCheckedChange={(v) => updateActivationRule(rule.id, { enabled: v })} />
+            <div>
+              <span className="text-sm font-medium text-card-foreground">{rule.enabled ? 'Wave active' : 'Wave disabled'}</span>
+              <p className="text-xs text-muted-foreground">{rule.enabled ? 'This wave will fire when your switch activates' : 'Enable this wave to include it in your notification plan'}</p>
+            </div>
+          </div>
 
       {/* When to notify */}
       <div className="space-y-3 p-4 bg-muted/20 rounded-xl">
@@ -183,7 +194,17 @@ const WaveCard = ({
           </div>
         )}
       </div>
-    </div>
+
+          {/* Delete button */}
+          <div className="flex justify-end pt-2 border-t border-border">
+            <button onClick={() => deleteActivationRule(rule.id)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors">
+              <Trash2 className="w-3.5 h-3.5" />
+              Remove wave
+            </button>
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 

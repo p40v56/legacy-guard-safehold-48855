@@ -28,7 +28,11 @@ export const useFinancialAssets = () => {
       const decryptedAssets = await Promise.all((data || []).map(async (asset) => {
         if (vaultKey) {
           const decryptedValues = await decryptFields(asset, ENCRYPTED_FINANCIAL_FIELDS, vaultKey);
-          return { ...asset, ...decryptedValues } as unknown as FinancialAsset;
+          // Parse category_specific_fields from encrypted JSON, with fallback to raw column
+          const csf = decryptedValues.category_specific_fields_json
+            ? (() => { try { return JSON.parse(decryptedValues.category_specific_fields_json as string); } catch { return {}; } })()
+            : ((asset as any).category_specific_fields || {});
+          return { ...asset, ...decryptedValues, category_specific_fields: csf } as unknown as FinancialAsset;
         }
         return asset as unknown as FinancialAsset;
       }));

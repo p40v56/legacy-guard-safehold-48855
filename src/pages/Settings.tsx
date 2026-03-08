@@ -224,6 +224,7 @@ const Settings = () => {
     }
   };
 
+  const handleVerifyVault = async () => {
     if (!vaultKey || !user) {
       toast({ title: 'Vault locked', description: 'Unlock your vault first.', variant: 'destructive' });
       return;

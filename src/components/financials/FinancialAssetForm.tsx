@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { PoundSterling, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
+import { CURRENCIES, getCurrency, DEFAULT_CURRENCY, formatNumberWithSeparators, stripFormatting } from '@/lib/currency';
+import type { CurrencyCode } from '@/lib/currency';
 import type { FinancialAsset, FinancialCategory, FinancialAssetInsert } from '@/types/financial';
 import { CATEGORY_LABELS } from '@/types/financial';
 import { useContacts } from '@/hooks/useContacts';

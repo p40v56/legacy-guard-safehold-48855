@@ -45,6 +45,14 @@ const Auth = () => {
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
 
+  // MFA state
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaLoading, setMfaLoading] = useState(false);
+
   useEffect(() => {
     const m = searchParams.get('mode');
     if (m === 'signup') setMode('signup');

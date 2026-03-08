@@ -128,7 +128,7 @@ const SwitchCountdown = ({
 
   // Normal countdown mode
   return (
-    <div className={`relative overflow-hidden rounded-2xl border-2 ${colors.border} glass-strong transition-all duration-500 hover:scale-[1.01] ${colors.pulse}`}>
+    <div className={`relative overflow-hidden rounded-2xl border-2 ${colors.border} glass-strong transition-all duration-500 hover:scale-[1.01] ${colors.pulse} ${urgencyLevel === 'critical' ? 'animate-pulse' : ''}`}>
       <div className={`absolute inset-0 bg-gradient-to-br ${
         urgencyLevel === 'critical' ? 'from-destructive/20 to-transparent' : 
         urgencyLevel === 'urgent' ? 'from-warning/20 to-transparent' : 

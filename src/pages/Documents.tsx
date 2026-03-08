@@ -610,16 +610,56 @@ const Documents = () => {
                 <Label className="text-card-foreground">Upload File</Label>
                 {limits.fileUploads ? (
                   <>
-                    <FileUpload
-                      onUpload={handleFileUpload}
-                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                      maxSize={10}
-                      disabled={uploading}
-                      className="bg-muted/30 border-border"
-                    />
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Accepted: PDF, Word (.doc, .docx), images (JPG, PNG) · Maximum 10 MB
-                    </p>
+                    {(formData as any).file_path ? (
+                      <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                          <FileUp className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-card-foreground truncate">
+                            {formData.title || 'File attached'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(formData as any).file_type || 'File'} · {formatFileSize((formData as any).file_size)} · Encrypted & uploaded ✓
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setFormData(prev => {
+                            const next = { ...prev };
+                            delete (next as any).file_path;
+                            delete (next as any).file_type;
+                            delete (next as any).file_size;
+                            delete (next as any).file_iv;
+                            return next;
+                          })}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <FileUpload
+                        onUpload={handleFileUpload}
+                        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                        maxSize={10}
+                        disabled={uploading}
+                        className="bg-muted/30 border-border"
+                      />
+                    )}
+                    {uploading && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                        <LoadingSpinner size="sm" />
+                        <span>Encrypting and uploading file...</span>
+                      </div>
+                    )}
+                    {!(formData as any).file_path && !uploading && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Accepted: PDF, Word (.doc, .docx), images (JPG, PNG) · Maximum 10 MB
+                      </p>
+                    )}
                   </>
                 ) : (
                   <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">

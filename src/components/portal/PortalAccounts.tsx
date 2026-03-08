@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Monitor, Mail, ArrowLeft, FileText, Download, Lock } from 'lucide-react';
+import { Globe, Monitor, Mail, ArrowLeft, FileText, Download, Lock, ChevronDown, ChevronRight } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface AttachedDocument {
@@ -51,6 +51,7 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
   const { token } = useParams();
   const navigate = useNavigate();
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   if (accounts.length === 0) return null;
 
@@ -132,89 +133,106 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
 
-      {Object.entries(grouped).map(([type, accts]) => (
-        <div key={type} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Monitor className="w-4 h-4 text-gray-500" />
-            <h4 className="text-gray-900 font-medium text-sm">{ACCOUNT_TYPE_LABELS[type] || type}</h4>
-            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{accts.length}</span>
-          </div>
+      {Object.entries(grouped).map(([type, accts]) => {
+        const isOpen = openCategories.has(type);
+        return (
+          <div key={type} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <button
+              onClick={() => {
+                setOpenCategories(prev => {
+                  const next = new Set(prev);
+                  next.has(type) ? next.delete(type) : next.add(type);
+                  return next;
+                });
+              }}
+              className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+            >
+              <Monitor className="w-4 h-4 text-gray-500" />
+              <span className="text-gray-900 font-medium flex-1">{ACCOUNT_TYPE_LABELS[type] || type}</span>
+              <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-2">{accts.length}</span>
+              {isOpen ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+            </button>
 
-          {accts.map(acct => {
-            const closure = acct.closure_action ? (closureLabels[acct.closure_action] || { title: acct.closure_action, guidance: '' }) : null;
+            {isOpen && (
+              <div className="border-t border-gray-200 divide-y divide-gray-100">
+                {accts.map(acct => {
+                  const closure = acct.closure_action ? (closureLabels[acct.closure_action] || { title: acct.closure_action, guidance: '' }) : null;
 
-            return (
-              <div key={acct.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div>
-                    <h5 className="text-gray-900 font-medium">{acct.platform || acct.account_name}</h5>
-                    {acct.username && <p className="text-gray-500 text-sm">Username: {acct.username}</p>}
-                    {acct.credentials && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <Lock className="w-3 h-3 text-gray-400" />
-                        <span className="text-gray-500 text-sm">
-                          {revealedCredentials.has(acct.id) ? acct.credentials : '••••••••'}
-                        </span>
-                        <button
-                          onClick={() => setRevealedCredentials(prev => {
-                            const next = new Set(prev);
-                            next.has(acct.id) ? next.delete(acct.id) : next.add(acct.id);
-                            return next;
-                          })}
-                          className="text-blue-500 text-xs hover:underline ml-1"
-                        >
-                          {revealedCredentials.has(acct.id) ? 'Hide' : 'Reveal'}
-                        </button>
+                  return (
+                    <div key={acct.id} className="p-5">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div>
+                          <h5 className="text-gray-900 font-medium">{acct.platform || acct.account_name}</h5>
+                          {acct.username && <p className="text-gray-500 text-sm">Username: {acct.username}</p>}
+                          {acct.credentials && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <Lock className="w-3 h-3 text-gray-400" />
+                              <span className="text-gray-500 text-sm">
+                                {revealedCredentials.has(acct.id) ? acct.credentials : '••••••••'}
+                              </span>
+                              <button
+                                onClick={() => setRevealedCredentials(prev => {
+                                  const next = new Set(prev);
+                                  next.has(acct.id) ? next.delete(acct.id) : next.add(acct.id);
+                                  return next;
+                                })}
+                                className="text-blue-500 text-xs hover:underline ml-1"
+                              >
+                                {revealedCredentials.has(acct.id) ? 'Hide' : 'Reveal'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {acct.importance && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            acct.importance === 'critical' ? 'bg-red-100 text-red-700' :
+                            acct.importance === 'high' ? 'bg-amber-100 text-amber-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {acct.importance}
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  {acct.importance && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      acct.importance === 'critical' ? 'bg-red-100 text-red-700' :
-                      acct.importance === 'high' ? 'bg-amber-100 text-amber-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {acct.importance}
-                    </span>
-                  )}
-                </div>
 
-                <div className="space-y-1.5 text-sm">
-                  {acct.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-3 h-3 text-gray-400" />
-                      <a href={`mailto:${acct.email}`} className="text-blue-600 hover:underline">{acct.email}</a>
+                      <div className="space-y-1.5 text-sm">
+                        {acct.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-3 h-3 text-gray-400" />
+                            <a href={`mailto:${acct.email}`} className="text-blue-600 hover:underline">{acct.email}</a>
+                          </div>
+                        )}
+                        {acct.website_url && (
+                          <div className="flex items-center gap-2">
+                            <Globe className="w-3 h-3 text-gray-400" />
+                            <a href={acct.website_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{acct.website_url}</a>
+                          </div>
+                        )}
+                      </div>
+
+                      {closure && (
+                        <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                          <p className="text-gray-800 text-sm font-medium">{closure.title}</p>
+                          {closure.guidance && <p className="text-gray-500 text-xs mt-0.5">{closure.guidance}</p>}
+                        </div>
+                      )}
+
+                      {acct.notes && <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>}
+
+                      {renderAttachedDocs(acct.attached_documents)}
+
+                      {acct.updated_at && (
+                        <p className="text-gray-400 text-xs mt-3">
+                          Updated {new Date(acct.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      )}
                     </div>
-                  )}
-                  {acct.website_url && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-3 h-3 text-gray-400" />
-                      <a href={acct.website_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{acct.website_url}</a>
-                    </div>
-                  )}
-                </div>
-
-                {closure && (
-                  <div className="mt-3 bg-gray-50 rounded-lg p-3">
-                    <p className="text-gray-800 text-sm font-medium">{closure.title}</p>
-                    {closure.guidance && <p className="text-gray-500 text-xs mt-0.5">{closure.guidance}</p>}
-                  </div>
-                )}
-
-                {acct.notes && <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{acct.notes}</p>}
-
-                {renderAttachedDocs(acct.attached_documents)}
-
-                {acct.updated_at && (
-                  <p className="text-gray-400 text-xs mt-3">
-                    Updated {new Date(acct.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      ))}
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

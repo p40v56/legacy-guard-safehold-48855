@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Download, ArrowLeft } from 'lucide-react';
+import { FileText, Download, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 
@@ -38,6 +38,7 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
   const { token } = useParams();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   if (documents.length === 0) return null;
 
@@ -56,6 +57,14 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
     });
   };
 
+  const toggleCategory = (cat: string) => {
+    setOpenCategories(prev => {
+      const next = new Set(prev);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
+  };
+
   const formatDate = (doc: PortalDocument) => {
     const dateStr = doc.updated_at || doc.created_at;
     return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -67,106 +76,107 @@ const PortalDocuments: React.FC<PortalDocumentsProps> = ({ documents }) => {
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
 
-      {Object.entries(grouped).map(([docType, docs]) => (
-        <div key={docType} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-gray-500" />
-            <h4 className="text-gray-900 font-medium text-sm">{formatDocumentType(docType)}</h4>
-            <span className="text-gray-400 text-xs">({docs.length})</span>
-          </div>
+      {Object.entries(grouped).map(([docType, docs]) => {
+        const isOpen = openCategories.has(docType);
+        return (
+          <div key={docType} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <button
+              onClick={() => toggleCategory(docType)}
+              className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+            >
+              <FileText className="w-4 h-4 text-gray-500" />
+              <span className="text-gray-900 font-medium flex-1">{formatDocumentType(docType)}</span>
+              <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full mr-2">{docs.length}</span>
+              {isOpen ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+            </button>
 
-          {docs.map(doc => {
-            const isExpanded = expanded.has(doc.id);
-            const isLong = doc.content && doc.content.length > CONTENT_PREVIEW_LENGTH;
+            {isOpen && (
+              <div className="border-t border-gray-200 divide-y divide-gray-100">
+                {docs.map(doc => {
+                  const isExpanded = expanded.has(doc.id);
+                  const isLong = doc.content && doc.content.length > CONTENT_PREVIEW_LENGTH;
 
-            return (
-              <div key={doc.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h5 className="text-gray-900 font-medium mb-1">{doc.title}</h5>
-                {doc.description && <p className="text-gray-500 text-sm mb-3">{doc.description}</p>}
-                {LEGAL_DISCLAIMERS[doc.document_type] && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-                    <p className="text-amber-800 text-xs leading-relaxed">⚠️ {LEGAL_DISCLAIMERS[doc.document_type]}</p>
-                  </div>
-                )}
-                {doc.content && (
-                  <div className="mb-3">
-                    {isHtml(doc.content) ? (
-                      <>
-                        {isLong && !isExpanded ? (
-                          <>
-                            <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm leading-relaxed">
-                              {doc.content.replace(/<[^>]*>/g, '').slice(0, CONTENT_PREVIEW_LENGTH)}…
-                            </div>
-                            <button
-                              onClick={() => toggleExpand(doc.id)}
-                              className="text-blue-600 text-xs mt-2 hover:underline"
-                            >
-                              Read full document →
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <div
-                              className="bg-gray-50 rounded-lg p-4 prose prose-sm max-w-none text-gray-700"
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(doc.content) }}
-                            />
-                            {isLong && (
-                              <button
-                                onClick={() => toggleExpand(doc.id)}
-                                className="text-blue-600 text-xs mt-2 hover:underline"
-                              >
-                                ← Collapse
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <pre className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                        {doc.content}
-                      </pre>
-                    )}
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-xs">
-                    Updated {formatDate(doc)}
-                  </span>
-                  {doc.file_data ? (
-                    <button
-                      onClick={() => {
-                        try {
-                          const binary = atob(doc.file_data!);
-                          const bytes = new Uint8Array(binary.length);
-                          for (let i = 0; i < binary.length; i++) {
-                            bytes[i] = binary.charCodeAt(i);
-                          }
-                          const blob = new Blob([bytes], { type: doc.file_type || 'application/octet-stream' });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = doc.title || 'document';
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                        } catch (err) {
-                          console.error('Failed to download document:', err);
-                        }
-                      }}
-                      className="inline-flex items-center gap-1.5 text-blue-600 text-xs hover:underline"
-                    >
-                      <Download className="w-3 h-3" />Download
-                    </button>
-                  ) : doc.file_path ? (
-                    <span className="text-gray-400 text-xs italic">File unavailable in portal</span>
-                  ) : null}
-                </div>
+                  return (
+                    <div key={doc.id} className="p-5">
+                      <h5 className="text-gray-900 font-medium mb-1">{doc.title}</h5>
+                      {doc.description && <p className="text-gray-500 text-sm mb-3">{doc.description}</p>}
+                      {LEGAL_DISCLAIMERS[doc.document_type] && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                          <p className="text-amber-800 text-xs leading-relaxed">⚠️ {LEGAL_DISCLAIMERS[doc.document_type]}</p>
+                        </div>
+                      )}
+                      {doc.content && (
+                        <div className="mb-3">
+                          {isHtml(doc.content) ? (
+                            <>
+                              {isLong && !isExpanded ? (
+                                <>
+                                  <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm leading-relaxed">
+                                    {doc.content.replace(/<[^>]*>/g, '').slice(0, CONTENT_PREVIEW_LENGTH)}…
+                                  </div>
+                                  <button onClick={() => toggleExpand(doc.id)} className="text-blue-600 text-xs mt-2 hover:underline">
+                                    Read full document →
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <div
+                                    className="bg-gray-50 rounded-lg p-4 prose prose-sm max-w-none text-gray-700"
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(doc.content) }}
+                                  />
+                                  {isLong && (
+                                    <button onClick={() => toggleExpand(doc.id)} className="text-blue-600 text-xs mt-2 hover:underline">
+                                      ← Collapse
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <pre className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                              {doc.content}
+                            </pre>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">Updated {formatDate(doc)}</span>
+                        {doc.file_data ? (
+                          <button
+                            onClick={() => {
+                              try {
+                                const binary = atob(doc.file_data!);
+                                const bytes = new Uint8Array(binary.length);
+                                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                                const blob = new Blob([bytes], { type: doc.file_type || 'application/octet-stream' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = doc.title || 'document';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                              } catch (err) {
+                                console.error('Failed to download document:', err);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 text-blue-600 text-xs hover:underline"
+                          >
+                            <Download className="w-3 h-3" />Download
+                          </button>
+                        ) : doc.file_path ? (
+                          <span className="text-gray-400 text-xs italic">File unavailable in portal</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      ))}
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

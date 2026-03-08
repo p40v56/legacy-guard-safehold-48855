@@ -76,7 +76,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 };
 
 const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) => {
-  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(CATEGORY_ORDER));
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const { token } = useParams();
   const navigate = useNavigate();

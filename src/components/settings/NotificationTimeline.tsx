@@ -277,6 +277,17 @@ const NotificationTimeline = ({
         )}
       </div>
 
+      {/* Fallback warning when no rules configured */}
+      {activationRules.length === 0 && (
+        <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/30 rounded-xl">
+          <span className="text-warning text-lg">⚠</span>
+          <div>
+            <p className="text-sm font-medium text-card-foreground">No notification waves configured</p>
+            <p className="text-sm text-muted-foreground">When your switch fires, all trusted contacts will be notified immediately. Add waves below to control timing and who receives what.</p>
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
       {sortedRules.length === 0 ? (
         <div className="text-center py-12 space-y-3">

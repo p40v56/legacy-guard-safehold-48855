@@ -57,19 +57,36 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [hasActiveShare, setHasActiveShare] = useState(false);
   const [lastPortalAccess, setLastPortalAccess] = useState<string | null>(null);
   const [portalAccessCount, setPortalAccessCount] = useState(0);
+  const [shareLastUpdated, setShareLastUpdated] = useState<string | null>(null);
+  const [dataLastUpdated, setDataLastUpdated] = useState<string | null>(null);
 
   // Check if an active share exists and fetch portal access info
   useEffect(() => {
     if (!user || isFree) return;
     
-    // Check active share
+    // Check active share and get updated_at
     supabase
       .from('contact_shares')
-      .select('id')
+      .select('id, updated_at')
       .eq('contact_id', contact.id)
       .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
       .limit(1)
-      .then(({ data }) => setHasActiveShare((data?.length ?? 0) > 0));
+      .then(({ data }) => {
+        setHasActiveShare((data?.length ?? 0) > 0);
+        if (data?.[0]) setShareLastUpdated(data[0].updated_at);
+      });
+
+    // Check if user data was modified after portal was generated
+    supabase
+      .from('legacy_documents')
+      .select('updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data?.[0]) setDataLastUpdated(data[0].updated_at);
+      });
 
     // Fetch last portal access from contact_access_tokens
     supabase
@@ -347,6 +364,15 @@ const ContactCard: React.FC<ContactCardProps> = ({
                 </div>
               </TabsContent>
               <TabsContent value="portal" className="space-y-4 mt-4">
+                {hasActiveShare && shareLastUpdated && dataLastUpdated && new Date(dataLastUpdated) > new Date(shareLastUpdated) && (
+                  <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/30 rounded-xl text-sm mb-3">
+                    <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Portal may be out of date</p>
+                      <p className="text-muted-foreground">Data was updated after this portal was generated. Regenerate to ensure your contact sees the latest information.</p>
+                    </div>
+                  </div>
+                )}
                 {!vaultKey && (
                   <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm mb-3">
                     <Lock className="w-4 h-4 shrink-0" />

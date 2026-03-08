@@ -218,7 +218,7 @@ const Dashboard = () => {
   const securityItems = [
     { label: 'Vault Auto-Lock', enabled: true, explanation: `Your vault automatically locks after ${autoLockLabel} of inactivity, clearing encryption keys from memory.` },
     { label: 'Data Encryption', enabled: true, explanation: 'All data is encrypted client-side with AES-256-GCM before reaching our servers. We operate on a zero-knowledge basis.' },
-    { label: 'Backup Status', enabled: true, explanation: 'Your encrypted data is automatically backed up and replicated across multiple zones.' },
+    { label: 'EU Data Storage', enabled: true, explanation: 'Your encrypted data is stored on Supabase infrastructure in the EU region, replicated across multiple availability zones.' },
     { label: 'Emergency Contacts', enabled: stats.contactsCount > 0, explanation: `You have configured ${stats.contactsCount} trusted contact${stats.contactsCount !== 1 ? 's' : ''}.` },
   ];
 

@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database, ChevronDown, Info, Check } from 'lucide-react';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database, ChevronDown, Info, Check, ShieldCheck, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
@@ -95,6 +95,13 @@ const Settings = () => {
   // Auto-lock timeout
   const [autoLockMinutes, setAutoLockMinutes] = useState(15);
 
+  // Vault integrity check
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{ ok: number; failed: number; total: number } | null>(null);
+
+  // Session management
+  const [signingOutAll, setSigningOutAll] = useState(false);
+
   useEffect(() => {
     const stored = localStorage.getItem('vault_auto_lock_minutes');
     if (stored) setAutoLockMinutes(parseInt(stored));
@@ -104,6 +111,57 @@ const Settings = () => {
     setAutoLockMinutes(minutes);
     localStorage.setItem('vault_auto_lock_minutes', minutes.toString());
     toast({ title: 'Auto-lock updated', description: `Vault will lock after ${minutes === 60 ? '1 hour' : minutes === 240 ? '4 hours' : `${minutes} minutes`} of inactivity.` });
+  };
+
+  const handleVerifyVault = async () => {
+    if (!vaultKey || !user) {
+      toast({ title: 'Vault locked', description: 'Unlock your vault first.', variant: 'destructive' });
+      return;
+    }
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const results = { ok: 0, failed: 0, total: 0 };
+      const [docsRes, accountsRes, contactsRes, financialsRes] = await Promise.all([
+        supabase.from('legacy_documents').select('id, title, title_iv').eq('user_id', user.id),
+        supabase.from('accounts').select('id, account_name, account_name_iv').eq('user_id', user.id),
+        supabase.from('contacts').select('id, name, name_iv').eq('user_id', user.id),
+        supabase.from('financial_assets').select('id, name, name_iv').eq('user_id', user.id),
+      ]);
+      const allItems = [
+        ...(docsRes.data || []).map(d => ({ id: d.id, value: d.title, iv: d.title_iv })),
+        ...(accountsRes.data || []).map(a => ({ id: a.id, value: a.account_name, iv: a.account_name_iv })),
+        ...(contactsRes.data || []).map(c => ({ id: c.id, value: c.name, iv: c.name_iv })),
+        ...(financialsRes.data || []).map(f => ({ id: f.id, value: f.name, iv: f.name_iv })),
+      ].filter(item => item.iv);
+      results.total = allItems.length;
+      for (const item of allItems) {
+        try {
+          await decryptFields({ value: item.value, value_iv: item.iv }, ['value'], vaultKey);
+          results.ok++;
+        } catch {
+          results.failed++;
+        }
+      }
+      setVerifyResult(results);
+    } catch (error) {
+      toast({ title: 'Verification failed', description: 'Could not complete vault check.', variant: 'destructive' });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleSignOutAll = async () => {
+    setSigningOutAll(true);
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+      toast({ title: 'Signed out everywhere', description: 'All active sessions have been terminated.' });
+      navigate('/auth');
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to sign out all sessions.', variant: 'destructive' });
+    } finally {
+      setSigningOutAll(false);
+    }
   };
 
   // GDPR state
@@ -232,8 +290,12 @@ const Settings = () => {
 
       text += `\n--- DOCUMENTS ---\n`;
       documents.forEach((d: any) => {
-        text += `• ${d.title || 'Untitled'} | Type: ${d.document_type || ''} | Created: ${d.created_at?.split('T')[0] || ''}\n`;
-        if (d.content) text += `  Content: ${d.content.substring(0, 200)}${d.content.length > 200 ? '...' : ''}\n`;
+        text += `\n${d.title || 'Untitled'}`;
+        text += `\n  Type: ${d.document_type || 'unknown'}`;
+        if (d.description) text += `\n  Description: ${d.description}`;
+        text += `\n  Added: ${d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'unknown'}`;
+        if (d.content) text += `\n  Content: ${d.content.substring(0, 200)}${d.content.length > 200 ? '...' : ''}`;
+        text += '\n';
       });
 
       text += `\n--- DIGITAL ACCOUNTS ---\n`;
@@ -569,6 +631,62 @@ const Settings = () => {
                     ) : (
                       <UpgradePrompt message="Security questions require the Essential plan or higher." featureKey="securityQuestions" />
                     )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            <Collapsible defaultOpen={false}>
+              <Card className="bg-muted/30 border-none rounded-2xl">
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardHeader className="cursor-pointer">
+                    <CardTitle className="text-foreground flex items-center justify-between">
+                      <div className="flex items-center"><ShieldCheck className="w-5 h-5 mr-2 text-primary" />Vault Integrity</div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <p className="text-sm text-muted-foreground">
+                      Verify that all your encrypted data can be successfully decrypted with your current password.
+                    </p>
+                    <Button onClick={handleVerifyVault} disabled={verifying} variant="outline" className="rounded-xl">
+                      {verifying ? (<><LoadingSpinner size="sm" className="mr-2" />Verifying...</>) : (<><ShieldCheck className="w-4 h-4 mr-2" />Verify vault integrity</>)}
+                    </Button>
+                    {verifyResult && (
+                      <div className={`rounded-xl p-4 border ${verifyResult.failed === 0 ? 'bg-success/10 border-success/30' : 'bg-destructive/10 border-destructive/30'}`}>
+                        {verifyResult.failed === 0 ? (
+                          <p className="text-sm text-success font-medium">✓ All {verifyResult.total} encrypted items verified successfully.</p>
+                        ) : (
+                          <p className="text-sm text-destructive font-medium">⚠ {verifyResult.failed} of {verifyResult.total} items could not be decrypted. Your vault key may have changed. Try changing your password.</p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            <Collapsible defaultOpen={false}>
+              <Card className="bg-muted/30 border-none rounded-2xl">
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardHeader className="cursor-pointer">
+                    <CardTitle className="text-foreground flex items-center justify-between">
+                      <div className="flex items-center"><LogOut className="w-5 h-5 mr-2 text-primary" />Sessions</div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <p className="text-sm text-muted-foreground">
+                      If you think your account has been compromised, sign out of all devices immediately.
+                    </p>
+                    <Button onClick={handleSignOutAll} disabled={signingOutAll} variant="destructive" className="rounded-xl">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {signingOutAll ? 'Signing out...' : 'Sign out of all devices'}
+                    </Button>
                   </CardContent>
                 </CollapsibleContent>
               </Card>

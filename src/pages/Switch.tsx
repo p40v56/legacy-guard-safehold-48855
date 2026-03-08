@@ -28,14 +28,6 @@ const Switch = () => {
   const [emailCheckinEnabled, setEmailCheckinEnabled] = useState(false);
   const [smsCheckinEnabled, setSmsCheckinEnabled] = useState(false);
 
-  // Email preview state
-  const [showEmailPreview, setShowEmailPreview] = useState(false);
-  const [emailPreviewHtml, setEmailPreviewHtml] = useState<string | null>(null);
-  const [loadingPreview, setLoadingPreview] = useState(false);
-  const [sendingTest, setSendingTest] = useState(false);
-  const [previewTab, setPreviewTab] = useState<'grace_period' | 'switch_triggered'>('grace_period');
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (user) fetchSettings();

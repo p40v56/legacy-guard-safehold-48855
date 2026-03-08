@@ -8,6 +8,7 @@ import { CATEGORY_LABELS } from '@/types/financial';
 import { supabase } from '@/integrations/supabase/client';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { decryptFields } from '@/lib/crypto';
+import { formatCurrencyValue } from '@/lib/currency';
 
 const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; bg: string; iconColor: string }> = {
   bank_account: { icon: <Landmark className="w-5 h-5" />, bg: 'bg-blue-500/15', iconColor: 'text-blue-500' },

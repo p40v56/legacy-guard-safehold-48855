@@ -217,6 +217,7 @@ const Documents = () => {
         file_path: (formData as any).file_path || null,
         file_type: (formData as any).file_type || null,
         file_size: (formData as any).file_size || null,
+        file_iv: (formData as any).file_iv || null,
       };
 
       if (vaultKey) {

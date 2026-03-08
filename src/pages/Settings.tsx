@@ -479,68 +479,95 @@ const Settings = () => {
           </TabsContent>
 
           {/* ─── SECURITY TAB ─── */}
-          <TabsContent value="security" className="space-y-6 mt-6">
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Lock className="w-5 h-5 mr-2 text-primary" />Change Password</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-foreground">Current Password</Label>
-                  <Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="Enter current password" />
-                </div>
-                <div>
-                  <Label className="text-foreground">New Password</Label>
-                  <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password" />
-                </div>
-                <div>
-                  <Label className="text-foreground">Confirm New Password</Label>
-                  <Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-                </div>
-                <Button onClick={handleChangePassword} disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword} variant="default">
-                  {changingPassword ? (<><LoadingSpinner size="sm" className="mr-2" />Changing...</>) : (<><Lock className="w-4 h-4 mr-2" />Change Password</>)}
-                </Button>
-              </CardContent>
-            </Card>
+          <TabsContent value="security" className="space-y-4 mt-6">
+            <Collapsible defaultOpen={false}>
+              <Card className="bg-muted/30 border-none rounded-2xl">
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardHeader className="cursor-pointer">
+                    <CardTitle className="text-foreground flex items-center justify-between">
+                      <div className="flex items-center"><Lock className="w-5 h-5 mr-2 text-primary" />Change Password</div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <div>
+                      <Label className="text-foreground">Current Password</Label>
+                      <Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="Enter current password" />
+                    </div>
+                    <div>
+                      <Label className="text-foreground">New Password</Label>
+                      <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password" />
+                    </div>
+                    <div>
+                      <Label className="text-foreground">Confirm New Password</Label>
+                      <Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
+                    </div>
+                    <Button onClick={handleChangePassword} disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword} variant="default">
+                      {changingPassword ? (<><LoadingSpinner size="sm" className="mr-2" />Changing...</>) : (<><Lock className="w-4 h-4 mr-2" />Change Password</>)}
+                    </Button>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Vault Auto-Lock</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Select value={autoLockMinutes.toString()} onValueChange={(v) => handleAutoLockChange(parseInt(v))}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 minutes</SelectItem>
-                    <SelectItem value="15">15 minutes (default)</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                    <SelectItem value="240">4 hours</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  When your vault locks, encryption keys are cleared from memory. You will need to re-enter your password to access encrypted data.
-                </p>
-              </CardContent>
-            </Card>
+            <Collapsible defaultOpen={false}>
+              <Card className="bg-muted/30 border-none rounded-2xl">
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardHeader className="cursor-pointer">
+                    <CardTitle className="text-foreground flex items-center justify-between">
+                      <div className="flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Vault Auto-Lock</div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <Select value={autoLockMinutes.toString()} onValueChange={(v) => handleAutoLockChange(parseInt(v))}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 minutes</SelectItem>
+                        <SelectItem value="15">15 minutes (default)</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="60">1 hour</SelectItem>
+                        <SelectItem value="240">4 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      When your vault locks, encryption keys are cleared from memory. You will need to re-enter your password to access encrypted data.
+                    </p>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Portal Security Questions</CardTitle>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Contacts must answer a security question before accessing their portal. Add questions here to protect portal access.
-                </p>
-              </CardHeader>
-              <CardContent>
-                {limits.securityQuestions ? (
-                  <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
-                ) : (
-                  <UpgradePrompt message="Security questions require the Essential plan or higher." featureKey="securityQuestions" />
-                )}
-              </CardContent>
-            </Card>
+            <Collapsible defaultOpen={false}>
+              <Card className="bg-muted/30 border-none rounded-2xl">
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardHeader className="cursor-pointer">
+                    <CardTitle className="text-foreground flex items-center justify-between">
+                      <div className="flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Portal Security Questions</div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground mt-2 text-left">
+                      Contacts must answer a security question before accessing their portal.
+                    </p>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    {limits.securityQuestions ? (
+                      <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
+                    ) : (
+                      <UpgradePrompt message="Security questions require the Essential plan or higher." featureKey="securityQuestions" />
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           </TabsContent>
 
           {/* ─── SWITCH EMAILS TAB ─── */}

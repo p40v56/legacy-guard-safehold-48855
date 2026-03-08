@@ -111,6 +111,20 @@ const Dashboard = () => {
 
   const handleToggleSystem = async () => {
     if (!user || !settings) return;
+
+    // If trying to activate and switch is not set up (no deadline scheduled), redirect to /switch
+    if (!settings.is_active) {
+      const hasDeadline = settings.next_check_in_due || settings.custom_deadline;
+      if (!hasDeadline) {
+        toast({
+          title: "Setup Required",
+          description: "Please configure your Dead Man's Switch before activating it.",
+        });
+        navigate('/switch');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       await SettingsService.updateSettings(user.id, { is_active: !settings.is_active });

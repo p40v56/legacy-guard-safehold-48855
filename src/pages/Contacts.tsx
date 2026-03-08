@@ -182,12 +182,15 @@ const Contacts = () => {
     const swap = sorted[swapIdx];
     const currentOrder = current.priority_order ?? idx;
     const swapOrder = swap.priority_order ?? swapIdx;
-    await Promise.all([
+    const [res1, res2] = await Promise.all([
       supabase.from('contacts').update({ priority_order: swapOrder }).eq('id', current.id),
       supabase.from('contacts').update({ priority_order: currentOrder }).eq('id', swap.id),
     ]);
-    // Optimistic local update via re-fetch pattern - contacts hook will pick up changes
-    window.location.reload();
+    if (res1.error || res2.error) {
+      toast({ title: 'Error', description: 'Failed to reorder contacts', variant: 'destructive' });
+      return;
+    }
+    await refetchContacts();
   };
 
   if (loading) {

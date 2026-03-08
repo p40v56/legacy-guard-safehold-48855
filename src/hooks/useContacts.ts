@@ -236,5 +236,6 @@ export const useContacts = () => {
     deleteContact,
     updateContactPermissions,
     updateUseTypeDefaults,
+    refetchContacts: fetchContacts,
   };
 };

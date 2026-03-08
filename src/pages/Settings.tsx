@@ -70,6 +70,21 @@ const contactTypeLabels: Record<ContactCategory, string> = {
   financial: 'Financial',
 };
 
+const getPasswordStrength = (password: string): { label: string; color: string; width: string } => {
+  if (password.length === 0) return { label: '', color: '', width: '0%' };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  if (score <= 1) return { label: 'Weak', color: 'bg-destructive', width: '20%' };
+  if (score === 2) return { label: 'Fair', color: 'bg-orange-500', width: '40%' };
+  if (score === 3) return { label: 'Good', color: 'bg-yellow-500', width: '60%' };
+  if (score === 4) return { label: 'Strong', color: 'bg-primary', width: '80%' };
+  return { label: 'Very Strong', color: 'bg-success', width: '100%' };
+};
+
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();

@@ -198,7 +198,7 @@ const SwitchCountdown = ({
               Deadline: {formatDateEU(currentDeadline)}
             </p>
             <p className="text-muted-foreground text-xs">
-              Grace period: {gracePeriodHours === 0 ? 'none — triggers immediately' : `${gracePeriodHours}h`}
+              Grace period: {gracePeriodHours === 0 ? 'No grace period — fires immediately' : `${gracePeriodHours}h`}
             </p>
           </div>
         )}

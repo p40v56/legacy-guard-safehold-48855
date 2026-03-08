@@ -167,15 +167,19 @@ const SwitchConfiguration = ({
 
         <p className="text-sm text-card-foreground">
           ⏳ Grace period: {settings.grace_period_hours === 0
-            ? <span className="text-destructive font-medium">none — triggers immediately</span>
+            ? <span className="text-destructive font-medium">No grace period — switch fires immediately on missed deadline</span>
             : `${settings.grace_period_hours} hours`
           }
         </p>
 
         <p className="text-xs text-muted-foreground mt-1">
           {settings.deadline_mode === 'frequency'
-            ? `If you miss your check-in, a ${settings.grace_period_hours}h grace period starts${settings.grace_period_hours === 0 ? ' and your switch fires immediately' : ', then your contacts are notified'}.`
-            : `If you do not check in before the deadline, a ${settings.grace_period_hours}h grace period starts${settings.grace_period_hours === 0 ? ' and your switch fires immediately' : ', then your contacts are notified'}.`
+            ? (settings.grace_period_hours === 0
+              ? 'If you miss your check-in, your switch fires immediately with no warning period.'
+              : `If you miss your check-in, a ${settings.grace_period_hours}-hour grace period starts, then your contacts are notified.`)
+            : (settings.grace_period_hours === 0
+              ? 'If you do not check in before the deadline, your switch fires immediately with no warning period.'
+              : `If you do not check in before the deadline, a ${settings.grace_period_hours}-hour grace period starts, then your contacts are notified.`)
           }
         </p>
       </div>

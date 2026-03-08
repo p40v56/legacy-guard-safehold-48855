@@ -258,7 +258,7 @@ const PortalFinancials: React.FC<PortalFinancialsProps> = ({ financialAssets }) 
         </ul>
       </div>
 
-      {financialAssets.length >= 5 && (
+      {financialAssets.length >= 3 && (
         <input
           type="text"
           value={searchQuery}

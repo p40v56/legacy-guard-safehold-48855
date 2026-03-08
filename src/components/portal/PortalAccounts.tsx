@@ -140,7 +140,7 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
       </button>
 
-      {accounts.length >= 5 && (
+      {accounts.length >= 3 && (
         <input
           type="text"
           value={searchQuery}

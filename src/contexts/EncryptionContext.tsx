@@ -47,6 +47,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   const [reauthLoading, setReauthLoading] = useState(false);
   const [reauthError, setReauthError] = useState('');
   const lastActivityRef = useRef(Date.now());
+  const tabHiddenAtRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
 
   const isUnlocked = vaultKey !== null;
@@ -207,11 +208,21 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
     }, 30_000);
 
     const handleVisibility = () => {
-      if (document.hidden) return;
-      // Check on tab return
-      if (Date.now() - lastActivityRef.current > getAutoLockMs()) {
-        lock();
+      if (document.hidden) {
+        // Record the moment we left, so the inactivity timer
+        // starts from tab-hide, not from last interaction before hide
+        tabHiddenAtRef.current = Date.now();
+        return;
       }
+      // On tab return, measure time away from the tab-hide moment
+      const hiddenAt = tabHiddenAtRef.current || lastActivityRef.current;
+      if (Date.now() - hiddenAt > getAutoLockMs()) {
+        lock();
+      } else {
+        // Reset activity so the user isn't immediately locked
+        lastActivityRef.current = Date.now();
+      }
+      tabHiddenAtRef.current = null;
     };
 
     window.addEventListener('mousemove', updateActivity, { passive: true });

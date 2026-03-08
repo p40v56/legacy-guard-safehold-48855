@@ -302,35 +302,13 @@ const Switch = () => {
         </Collapsible>
 
         {/* Section 3: Check-in Methods */}
-        <Collapsible defaultOpen>
-          <div className="bg-muted/30 rounded-2xl p-6">
-            <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                    <Smartphone className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-medium text-card-foreground">Check-in Methods</h3>
-                    <p className="text-sm text-muted-foreground">Configure how you check in</p>
-                  </div>
-                </div>
-                <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200" />
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-6">
-                <CheckInMethods
-                  smsCheckinEnabled={smsCheckinEnabled}
-                  hasPhone={hasPhone}
-                  smsNotificationsEnabled={smsNotificationsEnabled}
-                  onSmsCheckinChange={(v) => plan !== 'free' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
-                  isPaidPlan={plan !== 'free'}
-                />
-              </div>
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+        <CheckInMethods
+          smsCheckinEnabled={smsCheckinEnabled}
+          hasPhone={hasPhone}
+          smsNotificationsEnabled={smsNotificationsEnabled}
+          onSmsCheckinChange={(v) => plan !== 'free' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
+          isPaidPlan={plan !== 'free'}
+        />
 
         {/* Section 4: Check-in History */}
         <CheckInHistory />

@@ -41,9 +41,10 @@ serve(async (req) => {
     let keepExpiry: string | null = null;
 
     for (const session of sessions.data) {
+      const userId = session.metadata?.supabase_user_id || session.metadata?.user_id;
       if (
         session.payment_status === "paid" &&
-        session.metadata?.user_id === user.id
+        userId === user.id
       ) {
         latestPaidPlan = session.metadata?.plan || null;
         paymentDate = new Date((session.created || 0) * 1000).toISOString();

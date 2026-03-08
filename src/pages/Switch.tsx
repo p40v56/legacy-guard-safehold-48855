@@ -265,7 +265,7 @@ const Switch = () => {
         </div>
 
         {/* Section 2: Configuration */}
-        <Collapsible defaultOpen>
+        <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
           <div className="bg-muted/30 rounded-2xl p-6">
             <CollapsibleTrigger className="w-full">
               <div className="flex items-center justify-between">
@@ -278,7 +278,7 @@ const Switch = () => {
                     <p className="text-sm text-muted-foreground">Customize your switch settings</p>
                   </div>
                 </div>
-                <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200" />
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${configOpen ? 'rotate-180' : ''}`} />
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>

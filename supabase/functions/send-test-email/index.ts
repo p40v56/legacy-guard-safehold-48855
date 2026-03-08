@@ -140,6 +140,13 @@ const handler = async (req: Request): Promise<Response> => {
     // Send mode — mark as test
     subject = `[TEST] ${subject}`;
 
+    if (!RESEND_API_KEY) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Email service not configured — RESEND_API_KEY missing.' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },

@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import { useToast } from '@/hooks/use-toast';
-import { Users, CreditCard, FileText, Shield, Timer, ArrowRight, Check, AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react';
+import { Users, Monitor, FileText, Shield, Timer, ArrowRight, Check, AlertTriangle, CheckCircle, ChevronDown, Landmark } from 'lucide-react';
 import SecurityBadge from '@/components/dashboard/SecurityBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

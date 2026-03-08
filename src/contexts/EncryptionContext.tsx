@@ -50,13 +50,14 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   const tabHiddenAtRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
   const unlockingRef = useRef(false);
+  const wasUnlockedRef = useRef(false); // tracks if vault was ever unlocked this session
 
   const isUnlocked = vaultKey !== null;
 
   const lock = useCallback(() => {
     setVaultKey(null);
-    // Don't show reauth if no user is logged in
-    if (userIdRef.current) {
+    // Only show reauth if vault was previously unlocked (auto-lock scenario)
+    if (userIdRef.current && wasUnlockedRef.current) {
       setShowReauth(true);
     }
   }, []);
@@ -88,6 +89,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
 
       setVaultKey(decryptedVaultKey);
       userIdRef.current = userId;
+      wasUnlockedRef.current = true;
       lastActivityRef.current = Date.now();
       setShowReauth(false);
       setReauthPassword('');
@@ -143,6 +145,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
 
       setVaultKey(newVaultKey);
       userIdRef.current = userId;
+      wasUnlockedRef.current = true;
       lastActivityRef.current = Date.now();
 
       // Send welcome email (non-blocking)
@@ -249,14 +252,12 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       if (event === 'SIGNED_OUT') {
         setVaultKey(null);
         userIdRef.current = null;
+        wasUnlockedRef.current = false;
         setShowReauth(false);
       } else if ((event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
-        // If user is logged in but vault is locked, prompt for password
-        // Skip if unlock is currently in progress (login flow)
-        if (!vaultKey && !unlockingRef.current) {
-          userIdRef.current = session.user.id;
-          setShowReauth(true);
-        }
+        // Just track the user id; don't show reauth popup here.
+        // The reauth popup is only triggered by the auto-lock timer.
+        userIdRef.current = session.user.id;
       }
     });
     return () => subscription.unsubscribe();

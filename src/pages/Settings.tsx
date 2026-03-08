@@ -267,7 +267,9 @@ const Settings = () => {
     if (!user) return;
     setDeletingAccount(true);
     try {
-      const { data, error } = await supabase.functions.invoke('delete-own-account');
+      const { data, error } = await supabase.functions.invoke('delete-own-account', {
+        body: { password: deletePassword },
+      });
       if (error) throw error;
       await supabase.auth.signOut();
       toast({ title: "Account deleted", description: "Your account has been permanently deleted." });

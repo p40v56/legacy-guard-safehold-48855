@@ -298,11 +298,12 @@ const Admin = () => {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             {[
               { label: 'Total Users', value: stats.total_users, icon: Users },
               { label: 'Free Users', value: stats.free_users, icon: Users },
-              { label: 'Paid Users', value: stats.paid_users, icon: CreditCard },
+              { label: 'Essential', value: stats.essential_users, icon: CreditCard },
+              { label: 'Family', value: stats.family_users, icon: Crown },
               { label: 'Active Switches', value: stats.active_switches, icon: Timer },
               { label: 'Checked In Today', value: stats.checked_in_today, icon: Shield },
             ].map((stat) => (

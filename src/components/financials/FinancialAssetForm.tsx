@@ -119,8 +119,8 @@ const FinancialAssetForm: React.FC<FinancialAssetFormProps> = ({ initialData, on
   return (
     <div className="bg-muted/30 rounded-2xl p-6">
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-          <PoundSterling className="w-6 h-6 text-primary" />
+        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-xl font-bold text-primary">
+          {selectedCurrency.symbol}
         </div>
         <h3 className="text-xl font-medium text-card-foreground">
           {initialData ? 'Edit Financial Asset' : 'Add Financial Asset'}

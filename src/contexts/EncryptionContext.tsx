@@ -62,6 +62,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const unlock = useCallback(async (password: string, userId: string): Promise<boolean> => {
+    unlockingRef.current = true;
     try {
       // Fetch profile for salt + encrypted vault key
       const { data: profile, error } = await supabase

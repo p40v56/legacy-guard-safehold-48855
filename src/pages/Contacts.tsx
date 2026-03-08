@@ -7,7 +7,7 @@ import ContactPermissionsDialog from '@/components/contacts/ContactPermissionsDi
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, Filter, Shield, RefreshCw } from 'lucide-react';
+import { Users, UserPlus, Filter, Shield, RefreshCw, ChevronUp, ChevronDown } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { useContacts } from '@/hooks/useContacts';

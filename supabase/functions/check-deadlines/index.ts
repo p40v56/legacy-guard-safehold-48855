@@ -46,6 +46,8 @@ interface UserSettings {
   grace_period_end: string | null;
   switch_triggered: boolean;
   switch_triggered_at: string | null;
+  email_checkin_enabled: boolean;
+  check_in_frequency: string;
 }
 
 interface Contact {
@@ -243,20 +245,22 @@ async function startGracePeriod(
     return { success: true };
   }
 
-  // Generate a one-click check-in token for the reminder email
+  // Generate a one-click check-in token only if email check-in is enabled
   let checkInUrl: string | null = null;
-  try {
-    const checkInToken = crypto.randomUUID();
-    const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    await supabase.from('check_in_tokens').insert({
-      user_id: userId,
-      token: checkInToken,
-      expires_at: tokenExpiry,
-      method: 'email_link',
-    });
-    checkInUrl = `${APP_BASE_URL}/functions/v1/check-in-via-token?token=${checkInToken}`;
-  } catch (tokenErr) {
-    console.error("Failed to generate check-in token:", tokenErr);
+  if (userSettings.email_checkin_enabled) {
+    try {
+      const checkInToken = crypto.randomUUID();
+      const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from('check_in_tokens').insert({
+        user_id: userId,
+        token: checkInToken,
+        expires_at: tokenExpiry,
+        method: 'email_link',
+      });
+      checkInUrl = `${APP_BASE_URL}/functions/v1/check-in-via-token?token=${checkInToken}`;
+    } catch (tokenErr) {
+      console.error("Failed to generate check-in token:", tokenErr);
+    }
   }
 
   try {
@@ -640,7 +644,24 @@ const handler = async (req: Request): Promise<Response> => {
             const userEmail = await getUserEmail(supabase, userId);
             if (userEmail) {
               const hoursLabel = hoursUntilDeadline <= 24 ? '24 hours' : '48 hours';
-              const checkInUrl = `${APP_BASE_URL}/switch`;
+              
+              // Only generate email check-in link if email check-in is enabled
+              let checkInUrl: string | null = null;
+              if (settings.email_checkin_enabled) {
+                try {
+                  const checkInToken = crypto.randomUUID();
+                  const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+                  await supabase.from('check_in_tokens').insert({
+                    user_id: userId,
+                    token: checkInToken,
+                    expires_at: tokenExpiry,
+                    method: 'email_link',
+                  });
+                  checkInUrl = `${APP_BASE_URL}/functions/v1/check-in-via-token?token=${checkInToken}`;
+                } catch (tokenErr) {
+                  console.error("Failed to generate pre-deadline check-in token:", tokenErr);
+                }
+              }
 
               await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
                 method: 'POST',
@@ -653,7 +674,7 @@ const handler = async (req: Request): Promise<Response> => {
                   graceEndDate: deadline.toISOString(),
                   userName: userEmail,
                   isPreDeadlineReminder: true,
-                  checkInUrl,
+                  ...(checkInUrl ? { checkInUrl } : {}),
                 }),
               });
 

@@ -410,26 +410,6 @@ const Switch = () => {
         <CheckInHistory />
       </div>
 
-      <AlertDialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
-        <AlertDialogContent className="glass-strong border-none rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-card-foreground flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2 text-warning" />
-              System Deactivated
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Your Dead Man's Switch is currently deactivated. Activating will perform a check-in and start your countdown from now.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleActivateAndCheckIn} className="bg-primary hover:bg-primary/90 rounded-xl">
-              Activate & Check-in
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Email Preview Dialog */}
       <Dialog open={showEmailPreview} onOpenChange={(open) => { if (!open) handleCloseEmailPreview(); }}>
         <DialogContent className="bg-card border-border rounded-2xl max-w-[640px] max-h-[90vh] flex flex-col">

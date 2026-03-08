@@ -379,6 +379,7 @@ export const useSettings = () => {
     saveProfile,
     saveNotifications,
     saveActivationRules,
+    saveTypePermissions,
     saveEmailTemplate,
     addActivationRule,
     updateActivationRule,

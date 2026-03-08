@@ -197,6 +197,31 @@ export async function createPortalShares(
       }));
   };
 
+  // Helper to download and decrypt a file from storage, returning base64
+  const MAX_FILE_SIZE_FOR_BUNDLE = 5 * 1024 * 1024; // 5MB
+  async function decryptFileForBundle(doc: any): Promise<{ file_data: string; file_type: string } | null> {
+    if (!doc.file_path || !doc.file_iv) return null;
+    try {
+      const { data: fileBlob, error } = await supabase.storage
+        .from('documents')
+        .download(doc.file_path);
+      if (error || !fileBlob) return null;
+      if (fileBlob.size > MAX_FILE_SIZE_FOR_BUNDLE) return null;
+      const encryptedBuffer = await fileBlob.arrayBuffer();
+      const decryptedBuffer = await decryptFile(encryptedBuffer, doc.file_iv, vaultKey);
+      // Convert to base64
+      const bytes = new Uint8Array(decryptedBuffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return { file_data: btoa(binary), file_type: doc.file_type || 'application/octet-stream' };
+    } catch (e) {
+      console.error('Failed to decrypt file for portal bundle:', e);
+      return null;
+    }
+  }
+
   // Custom message resolution
   let customMessage = decryptedContact.custom_message || null;
   if (!customMessage && rulesRes.data) {

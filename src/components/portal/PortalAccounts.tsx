@@ -76,18 +76,23 @@ const PortalAccounts: React.FC<PortalAccountsProps> = ({ accounts }) => {
     download: { title: 'Download data before closing', guidance: "Use the platform's data export feature to download all data, then request closure." },
   };
 
-  const handleDocDownload = async (doc: AttachedDocument) => {
-    if (!doc.file_path) return;
+  const handleDocDownload = (doc: AttachedDocument) => {
+    if (!doc.file_data) return;
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/get-document-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ token, documentId: doc.id, filePath: doc.file_path }),
-      });
-      if (!response.ok) throw new Error('Failed to get download URL');
-      const result = await response.json();
-      if (result.signedUrl) window.open(result.signedUrl, '_blank');
+      const binary = atob(doc.file_data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: doc.file_type || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.title || 'document';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download error:', error);
     }

@@ -96,8 +96,9 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
   };
 
   return (
-    <div className="space-y-6 relative pb-20">
+    <div className="space-y-4 relative pb-20">
       {/* Grace Period Warning Email — FIRST (chronological order) */}
+      <Collapsible defaultOpen={false}>
       <Card className="bg-muted/30 border-none rounded-2xl">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center justify-between">

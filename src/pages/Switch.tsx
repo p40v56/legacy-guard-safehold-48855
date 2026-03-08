@@ -33,12 +33,6 @@ const Switch = () => {
     if (user) fetchSettings();
   }, [user]);
 
-  // Clean up blob URL on unmount or modal close
-  useEffect(() => {
-    return () => {
-      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
-    };
-  }, []);
 
   const calculateNextCheckIn = (frequency: CheckInFrequency, fromDate: Date = new Date()) => {
     const nextDate = new Date(fromDate);

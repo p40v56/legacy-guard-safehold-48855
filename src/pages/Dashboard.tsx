@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { decryptFields } from '@/lib/crypto';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import { formatDateEU } from '@/utils/dateUtils';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { vaultKey } = useEncryption();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
@@ -110,6 +111,20 @@ const Dashboard = () => {
 
   const handleToggleSystem = async () => {
     if (!user || !settings) return;
+
+    // If trying to activate and switch is not set up (no deadline scheduled), redirect to /switch
+    if (!settings.is_active) {
+      const hasDeadline = settings.next_check_in_due || settings.custom_deadline;
+      if (!hasDeadline) {
+        toast({
+          title: "Setup Required",
+          description: "Please configure your Dead Man's Switch before activating it.",
+        });
+        navigate('/switch');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       await SettingsService.updateSettings(user.id, { is_active: !settings.is_active });

@@ -631,6 +631,62 @@ const Settings = () => {
                 </CollapsibleContent>
               </Card>
             </Collapsible>
+
+            <Collapsible defaultOpen={false}>
+              <Card className="bg-muted/30 border-none rounded-2xl">
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardHeader className="cursor-pointer">
+                    <CardTitle className="text-foreground flex items-center justify-between">
+                      <div className="flex items-center"><ShieldCheck className="w-5 h-5 mr-2 text-primary" />Vault Integrity</div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <p className="text-sm text-muted-foreground">
+                      Verify that all your encrypted data can be successfully decrypted with your current password.
+                    </p>
+                    <Button onClick={handleVerifyVault} disabled={verifying} variant="outline" className="rounded-xl">
+                      {verifying ? (<><LoadingSpinner size="sm" className="mr-2" />Verifying...</>) : (<><ShieldCheck className="w-4 h-4 mr-2" />Verify vault integrity</>)}
+                    </Button>
+                    {verifyResult && (
+                      <div className={`rounded-xl p-4 border ${verifyResult.failed === 0 ? 'bg-success/10 border-success/30' : 'bg-destructive/10 border-destructive/30'}`}>
+                        {verifyResult.failed === 0 ? (
+                          <p className="text-sm text-success font-medium">✓ All {verifyResult.total} encrypted items verified successfully.</p>
+                        ) : (
+                          <p className="text-sm text-destructive font-medium">⚠ {verifyResult.failed} of {verifyResult.total} items could not be decrypted. Your vault key may have changed. Try changing your password.</p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            <Collapsible defaultOpen={false}>
+              <Card className="bg-muted/30 border-none rounded-2xl">
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardHeader className="cursor-pointer">
+                    <CardTitle className="text-foreground flex items-center justify-between">
+                      <div className="flex items-center"><LogOut className="w-5 h-5 mr-2 text-primary" />Sessions</div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <p className="text-sm text-muted-foreground">
+                      If you think your account has been compromised, sign out of all devices immediately.
+                    </p>
+                    <Button onClick={handleSignOutAll} disabled={signingOutAll} variant="destructive" className="rounded-xl">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {signingOutAll ? 'Signing out...' : 'Sign out of all devices'}
+                    </Button>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           </TabsContent>
 
           {/* ─── SWITCH EMAILS TAB ─── */}

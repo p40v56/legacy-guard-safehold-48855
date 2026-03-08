@@ -17,6 +17,7 @@ import {
   decryptText,
   decryptFields,
 } from '@/lib/crypto';
+import { PLAN_LIMITS, PlanTier } from '@/hooks/usePlan';
 
 /** Hash the raw token string (not bytes) for DB lookup — must match portal side */
 async function hashTokenString(rawToken: string): Promise<string> {

@@ -35,6 +35,8 @@ interface AdminStats {
   total_users: number;
   free_users: number;
   paid_users: number;
+  essential_users: number;
+  family_users: number;
   active_switches: number;
   checked_in_today: number;
 }

@@ -52,6 +52,7 @@ const VariablesInset = () => (
 
 const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'John' }: EmailTemplateEditorProps) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [previewType, setPreviewType] = useState<'switch_triggered' | 'grace_period'>('switch_triggered');
   const [sendingTest, setSendingTest] = useState<string | null>(null);
   const { toast } = useToast();
 

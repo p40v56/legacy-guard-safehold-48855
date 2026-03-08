@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Landmark, Shield, TrendingUp, Wallet, Home, CreditCard, Package, FileText, Phone, RefreshCw } from 'lucide-react';
 import type { FinancialAsset, FinancialCategory } from '@/types/financial';
 import { CATEGORY_LABELS } from '@/types/financial';
-import { formatCurrencyValue, getCurrency, getAssetCurrency, fetchFxRates, convertCurrency, FxRates } from '@/lib/currency';
+import { CURRENCIES, formatCurrencyValue, getCurrency, getAssetCurrency, fetchFxRates, convertCurrency, FxRates } from '@/lib/currency';
 
 const CATEGORY_ICON_MAP: Record<FinancialCategory, React.ReactNode> = {
   bank_account: <Landmark className="w-4 h-4" />,

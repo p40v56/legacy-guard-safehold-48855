@@ -270,9 +270,15 @@ export async function createPortalShares(
     emergencyInstructions: permissions.emergency_instructions ? decryptedProfile?.emergency_instructions : null,
     switchTriggeredAt: settingsRes.data?.switch_triggered_at || null,
     keyProfessionals,
-    documents: documents.map((d) => ({
-      id: d.id, title: d.title, content: d.content, document_type: d.document_type,
-      description: d.description, created_at: d.created_at, updated_at: d.updated_at, file_path: d.file_path,
+    documents: await Promise.all(documents.map(async (d) => {
+      const fileBundle = await decryptFileForBundle(d);
+      return {
+        id: d.id, title: d.title, content: d.content, document_type: d.document_type,
+        description: d.description, created_at: d.created_at, updated_at: d.updated_at,
+        file_path: d.file_path,
+        file_data: fileBundle?.file_data || null,
+        file_type: fileBundle?.file_type || d.file_type || null,
+      };
     })),
     accounts: accounts.map((a) => ({
       id: a.id, account_name: a.account_name, platform: a.platform, username: a.username,

@@ -113,6 +113,57 @@ const Settings = () => {
     toast({ title: 'Auto-lock updated', description: `Vault will lock after ${minutes === 60 ? '1 hour' : minutes === 240 ? '4 hours' : `${minutes} minutes`} of inactivity.` });
   };
 
+  const handleVerifyVault = async () => {
+    if (!vaultKey || !user) {
+      toast({ title: 'Vault locked', description: 'Unlock your vault first.', variant: 'destructive' });
+      return;
+    }
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const results = { ok: 0, failed: 0, total: 0 };
+      const [docsRes, accountsRes, contactsRes, financialsRes] = await Promise.all([
+        supabase.from('legacy_documents').select('id, title, title_iv').eq('user_id', user.id),
+        supabase.from('accounts').select('id, account_name, account_name_iv').eq('user_id', user.id),
+        supabase.from('contacts').select('id, name, name_iv').eq('user_id', user.id),
+        supabase.from('financial_assets').select('id, name, name_iv').eq('user_id', user.id),
+      ]);
+      const allItems = [
+        ...(docsRes.data || []).map(d => ({ id: d.id, value: d.title, iv: d.title_iv })),
+        ...(accountsRes.data || []).map(a => ({ id: a.id, value: a.account_name, iv: a.account_name_iv })),
+        ...(contactsRes.data || []).map(c => ({ id: c.id, value: c.name, iv: c.name_iv })),
+        ...(financialsRes.data || []).map(f => ({ id: f.id, value: f.name, iv: f.name_iv })),
+      ].filter(item => item.iv);
+      results.total = allItems.length;
+      for (const item of allItems) {
+        try {
+          await decryptFields({ value: item.value, value_iv: item.iv }, ['value'], vaultKey);
+          results.ok++;
+        } catch {
+          results.failed++;
+        }
+      }
+      setVerifyResult(results);
+    } catch (error) {
+      toast({ title: 'Verification failed', description: 'Could not complete vault check.', variant: 'destructive' });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleSignOutAll = async () => {
+    setSigningOutAll(true);
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+      toast({ title: 'Signed out everywhere', description: 'All active sessions have been terminated.' });
+      navigate('/auth');
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to sign out all sessions.', variant: 'destructive' });
+    } finally {
+      setSigningOutAll(false);
+    }
+  };
+
   // GDPR state
   const [exporting, setExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

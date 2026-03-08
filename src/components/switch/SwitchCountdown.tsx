@@ -12,6 +12,7 @@ interface SwitchCountdownProps {
   gracePeriodActive?: boolean;
   gracePeriodEnd?: string | null;
   switchTriggered?: boolean;
+  gracePeriodHours?: number;
 }
 
 const SwitchCountdown = ({ 

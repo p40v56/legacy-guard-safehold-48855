@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, PoundSterling } from 'lucide-react';
+import { Plus, PoundSterling, Landmark } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { usePlan } from '@/hooks/usePlan';
 import { useFinancialAssets } from '@/hooks/useFinancialAssets';

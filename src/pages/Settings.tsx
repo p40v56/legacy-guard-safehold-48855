@@ -109,6 +109,49 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // Stripe checkout
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  const handleStripeCheckout = async (tier: PlanTier) => {
+    if (tier === 'free') return;
+    setCheckoutLoading(tier);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: tier },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Could not start checkout', variant: 'destructive' });
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  // Handle payment success redirect
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const paymentPlan = searchParams.get('plan');
+    if (paymentStatus === 'success' && paymentPlan) {
+      const verifyPayment = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('verify-payment');
+          if (error) throw error;
+          if (data?.paid) {
+            toast({ title: 'Payment successful ✓', description: `Your plan has been upgraded to ${PLAN_LABELS[data.plan as PlanTier] || data.plan}.` });
+            // Reload to reflect new plan
+            window.location.href = '/settings?tab=account';
+          }
+        } catch (error: any) {
+          toast({ title: 'Verification pending', description: 'Your payment is being processed. Please refresh in a moment.', variant: 'default' });
+        }
+      };
+      verifyPayment();
+    }
+  }, []);
+
   // Auto-lock timeout
   const [autoLockMinutes, setAutoLockMinutes] = useState(15);
 

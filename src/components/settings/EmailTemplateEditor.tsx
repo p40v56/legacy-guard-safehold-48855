@@ -125,7 +125,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
           <Separator className="bg-border/50" />
           <div>
             <Label className="text-foreground">Introduction Message</Label>
-            <Textarea value={template.email_intro_message} onChange={e => updateField('email_intro_message', e.target.value)} placeholder="Main introduction message..." rows={4} className="resize-none" />
+            <RichTextEditor value={template.email_intro_message} onChange={v => updateField('email_intro_message', v)} placeholder="Main introduction message..." />
             <VariablesInset />
           </div>
           <div>

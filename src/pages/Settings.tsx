@@ -11,14 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
@@ -76,7 +74,7 @@ const Settings = () => {
   const { plan, limits, planExpiresAt, isExpired, rawPlan, isPaid, isFree } = usePlan();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const defaultTab = searchParams.get('tab') || 'profile';
+  const defaultTab = searchParams.get('tab') || 'account';
   const {
     profile, setProfile, notifications, setNotifications,
     activationRules, setActivationRules, typePermissions, setTypePermissions,
@@ -108,9 +106,26 @@ const Settings = () => {
 
   // GDPR state
   const [exporting, setExporting] = useState(false);
-  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
+
+  // Account activity
+  const [lastSignIn, setLastSignIn] = useState<string | null>(null);
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        setLastSignIn(data.user.last_sign_in_at || null);
+        setAccountCreatedAt(data.user.created_at || null);
+      }
+    };
+    fetchActivity();
+  }, []);
+
+  const passwordChangedAt = typeof window !== 'undefined' ? localStorage.getItem('password_last_changed_at') : null;
 
   const handleExportData = async () => {
     if (!user) return;
@@ -176,6 +191,75 @@ const Settings = () => {
     }
   };
 
+  const handleExportReadable = async () => {
+    if (!user) return;
+    if (!vaultKey) {
+      toast({ title: "Vault Locked", description: "Unlock your vault first to export your data.", variant: "destructive" });
+      return;
+    }
+    setExporting(true);
+    try {
+      const [contactsRes, docsRes, accountsRes, financialsRes] = await Promise.all([
+        supabase.from('contacts').select('*').eq('user_id', user.id),
+        supabase.from('legacy_documents').select('*').eq('user_id', user.id),
+        supabase.from('accounts').select('*').eq('user_id', user.id),
+        supabase.from('financial_assets').select('*').eq('user_id', user.id),
+      ]);
+
+      const decryptAll = async (rows: any[], fields: string[]) =>
+        Promise.all((rows || []).map(async (r) => {
+          try {
+            const dec = await decryptFields(r, fields, vaultKey!);
+            return { ...r, ...dec };
+          } catch { return r; }
+        }));
+
+      const contacts = await decryptAll(contactsRes.data || [], ['name', 'phone', 'relationship', 'notes', 'custom_message']);
+      const documents = await decryptAll(docsRes.data || [], ['title', 'description', 'content']);
+      const accounts = await decryptAll(accountsRes.data || [], ['account_name', 'username', 'website_url', 'notes', 'email', 'platform']);
+      const financialAssets = await decryptAll(financialsRes.data || [], ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email']);
+
+      const date = new Date().toLocaleDateString();
+      let text = `=== LEGACYVAULT EXPORT ===\nExported: ${date}\n\n`;
+
+      text += `--- CONTACTS ---\n`;
+      contacts.forEach((c: any) => {
+        text += `• ${c.name || 'Unnamed'} | ${c.email || ''} | ${c.phone || ''} | Type: ${c.contact_type || ''}\n`;
+      });
+
+      text += `\n--- DOCUMENTS ---\n`;
+      documents.forEach((d: any) => {
+        text += `• ${d.title || 'Untitled'} | Type: ${d.document_type || ''} | Created: ${d.created_at?.split('T')[0] || ''}\n`;
+        if (d.content) text += `  Content: ${d.content.substring(0, 200)}${d.content.length > 200 ? '...' : ''}\n`;
+      });
+
+      text += `\n--- DIGITAL ACCOUNTS ---\n`;
+      accounts.forEach((a: any) => {
+        text += `• ${a.account_name || 'Unnamed'} | Type: ${a.account_type || ''} | Email: ${a.email || ''} | Username: ${a.username || ''} | Closure: ${a.closure_action || ''}\n`;
+      });
+
+      text += `\n--- FINANCIAL ASSETS ---\n`;
+      financialAssets.forEach((f: any) => {
+        const ref = f.reference_number ? f.reference_number.replace(/./g, (c: string, i: number) => i < f.reference_number.length - 4 ? '•' : c) : '';
+        text += `• ${f.name || 'Unnamed'} | Category: ${f.category || ''} | Institution: ${f.institution || ''} | Ref: ${ref} | Value: ${f.estimated_value ? `$${f.estimated_value.toLocaleString()}` : 'N/A'}\n`;
+      });
+
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `legacyvault-export-${new Date().toISOString().split('T')[0]}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Export complete", description: "Your data has been downloaded as readable text." });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({ title: "Error", description: "Failed to export data", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (!user) return;
     setDeletingAccount(true);
@@ -190,7 +274,7 @@ const Settings = () => {
       toast({ title: "Error", description: error.message || "Failed to delete account", variant: "destructive" });
     } finally {
       setDeletingAccount(false);
-      setShowDeleteAccountDialog(false);
+      setShowDeleteConfirm(false);
       setDeleteConfirmText('');
     }
   };
@@ -207,7 +291,6 @@ const Settings = () => {
     }
     setChangingPassword(true);
     try {
-      // Verify old password by re-authenticating
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password: currentPassword,
@@ -219,11 +302,11 @@ const Settings = () => {
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
       if (updateError) throw updateError;
       
-      // Re-wrap the vault key with the new password
       if (user.id) {
         await rewrapVaultKey(newPassword, user.id);
       }
       
+      localStorage.setItem('password_last_changed_at', new Date().toISOString());
       toast({ title: "Success", description: "Password updated successfully" });
       setCurrentPassword('');
       setNewPassword('');
@@ -250,6 +333,11 @@ const Settings = () => {
     }));
   };
 
+  const formatActivityDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Unknown';
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
   if (loading || contactsLoading) {
     return (
       <DashboardLayout>
@@ -271,28 +359,34 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-muted/30 rounded-2xl p-1.5 mb-6 overflow-x-auto">
-            <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
-              <User className="w-4 h-4 mr-2" />Profile
-            </TabsTrigger>
-            <TabsTrigger value="email" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
-              <Mail className="w-4 h-4 mr-2" />Email
-            </TabsTrigger>
-            <TabsTrigger value="activation" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
-              <AlertTriangle className="w-4 h-4 mr-2" />Rules
-            </TabsTrigger>
-            <TabsTrigger value="permissions" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
-              <Shield className="w-4 h-4 mr-2" />Permissions
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
-              <Bell className="w-4 h-4 mr-2" />Alerts
-            </TabsTrigger>
-            <TabsTrigger value="privacy" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all">
-              <Database className="w-4 h-4 mr-2" />Privacy
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
+            <TabsList className="inline-flex w-max min-w-full bg-muted/30 rounded-2xl p-1.5 mb-6">
+              <TabsTrigger value="account" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
+                <User className="w-4 h-4 mr-1.5" />Account
+              </TabsTrigger>
+              <TabsTrigger value="security" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
+                <Lock className="w-4 h-4 mr-1.5" />Security
+              </TabsTrigger>
+              <TabsTrigger value="emails" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
+                <Mail className="w-4 h-4 mr-1.5" />Switch Emails
+              </TabsTrigger>
+              <TabsTrigger value="activation" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
+                <AlertTriangle className="w-4 h-4 mr-1.5" />Activation Rules
+              </TabsTrigger>
+              <TabsTrigger value="access" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
+                <Shield className="w-4 h-4 mr-1.5" />Access Control
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
+                <Bell className="w-4 h-4 mr-1.5" />Notifications
+              </TabsTrigger>
+              <TabsTrigger value="privacy" className="rounded-xl data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm text-muted-foreground font-medium transition-all px-3 py-2">
+                <Database className="w-4 h-4 mr-1.5" />Privacy
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="profile" className="space-y-6 mt-6">
+          {/* ─── ACCOUNT TAB ─── */}
+          <TabsContent value="account" className="space-y-6 mt-6">
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center"><User className="w-5 h-5 mr-2 text-primary" />Profile Information</CardTitle>
@@ -303,7 +397,14 @@ const Settings = () => {
                   <div><Label className="text-foreground">Last Name</Label><Input value={profile.last_name} onChange={e => setProfile({...profile, last_name: e.target.value})} placeholder="Enter your last name" /></div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div><Label className="text-foreground">Email</Label><Input value={profile.email} disabled /><p className="text-xs text-muted-foreground mt-1">Email cannot be changed here</p></div>
+                  <div>
+                    <Label className="text-foreground">Email</Label>
+                    <Input value={profile.email} disabled />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      To change your email address, contact{' '}
+                      <a href="mailto:support@legacyvault.app" className="text-primary hover:underline">support@legacyvault.app</a>
+                    </p>
+                  </div>
                   <div><Label className="text-foreground">Phone Number</Label><Input value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} placeholder="+1 (555) 123-4567" /></div>
                 </div>
                 <Button onClick={saveProfile} disabled={saving} variant="default">
@@ -311,6 +412,7 @@ const Settings = () => {
                 </Button>
               </CardContent>
             </Card>
+
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader><CardTitle className="text-foreground">Account Status & Plan</CardTitle></CardHeader>
               <CardContent className="space-y-4">
@@ -343,7 +445,7 @@ const Settings = () => {
                     const lim = PLAN_LIMITS[tier];
                     const userEmail = user?.email || '';
                     return (
-                      <div key={tier} className={`rounded-xl p-4 border ${isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}>
+                      <div key={tier} className={`rounded-xl p-4 border ${isCurrent ? 'border-2 border-primary bg-primary/5 shadow-md' : 'border-border bg-muted/20'}`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <h4 className="font-medium text-card-foreground">{PLAN_LABELS[tier]}</h4>
@@ -373,7 +475,10 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
+          {/* ─── SECURITY TAB ─── */}
+          <TabsContent value="security" className="space-y-6 mt-6">
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center"><Lock className="w-5 h-5 mr-2 text-primary" />Change Password</CardTitle>
@@ -399,32 +504,46 @@ const Settings = () => {
 
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Security</CardTitle>
+                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Vault Auto-Lock</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground font-medium">Vault Auto-Lock Timeout</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Your vault automatically locks after this period of inactivity, clearing encryption keys from memory.
-                  </p>
-                  <Select value={autoLockMinutes.toString()} onValueChange={(v) => handleAutoLockChange(parseInt(v))}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5 minutes</SelectItem>
-                      <SelectItem value="15">15 minutes (default)</SelectItem>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={autoLockMinutes.toString()} onValueChange={(v) => handleAutoLockChange(parseInt(v))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 minutes</SelectItem>
+                    <SelectItem value="15">15 minutes (default)</SelectItem>
+                    <SelectItem value="30">30 minutes</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                    <SelectItem value="240">4 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  When your vault locks, encryption keys are cleared from memory. You will need to re-enter your password to access encrypted data.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/30 border-none rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Portal Security Questions</CardTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Contacts must answer a security question before accessing their portal. Add questions here to protect portal access.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {limits.securityQuestions ? (
+                  <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
+                ) : (
+                  <UpgradePrompt message="Security questions require the Essential plan or higher." featureKey="securityQuestions" />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="email" className="space-y-6 mt-6">
+          {/* ─── SWITCH EMAILS TAB ─── */}
+          <TabsContent value="emails" className="space-y-6 mt-6">
             {limits.customEmail ? (
               <EmailTemplateEditor template={emailTemplate} onChange={setEmailTemplate} onSave={saveEmailTemplate} saving={saving} userName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'} />
             ) : (
@@ -432,18 +551,21 @@ const Settings = () => {
             )}
           </TabsContent>
 
+          {/* ─── ACTIVATION RULES TAB ─── */}
           <TabsContent value="activation" className="space-y-6 mt-6">
             {limits.activationRules ? (
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center justify-between">
-                  <div className="flex items-center"><AlertTriangle className="w-5 h-5 mr-2 text-destructive" />Dead Man's Switch Activation Rules</div>
+                  <div className="flex items-center"><AlertTriangle className="w-5 h-5 mr-2 text-destructive" />Activation Rules</div>
                   <Button onClick={addActivationRule} size="sm" variant="default"><Plus className="w-4 h-4 mr-2" />Add Rule</Button>
                 </CardTitle>
                 <p className="text-muted-foreground text-sm mt-2">Configure what happens when your Dead Man's Switch is triggered. Rules are executed in order based on delay times.</p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {activationRules.map((rule, index) => (
+                {activationRules.map((rule, index) => {
+                  const isImmediate = rule.delay_hours === 0;
+                  return (
                   <div key={rule.id} className="border border-border rounded-lg p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -451,14 +573,9 @@ const Settings = () => {
                         <Switch checked={rule.enabled} onCheckedChange={checked => updateActivationRule(rule.id, { enabled: checked })} />
                         <span className="text-foreground text-sm">{rule.enabled ? 'Enabled' : 'Disabled'}</span>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-2 text-muted-foreground">
-                          <Clock className="w-4 h-4" /><span className="text-sm">{rule.delay_hours === 0 ? 'Immediate' : `${rule.delay_hours}h delay`}</span>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => deleteActivationRule(rule.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => deleteActivationRule(rule.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-foreground">Target Type</Label>
                         <Select value={rule.target_type} onValueChange={value => updateActivationRule(rule.id, { target_type: value as 'category' | 'contacts', contact_category: value === 'category' ? 'immediate_family' : undefined, contact_ids: value === 'contacts' ? [] : undefined })}>
@@ -477,11 +594,35 @@ const Settings = () => {
                           </Select>
                         </div>
                       )}
-                      <div>
-                        <Label className="text-foreground">Delay (hours)</Label>
-                        <Input type="number" min="0" max="8760" value={rule.delay_hours} onChange={e => updateActivationRule(rule.id, { delay_hours: parseInt(e.target.value) || 0 })} />
-                      </div>
                     </div>
+
+                    {/* Notification timing */}
+                    <div className="space-y-3">
+                      <Label className="text-foreground">Notification timing</Label>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={isImmediate}
+                          onCheckedChange={checked => updateActivationRule(rule.id, { delay_hours: checked ? 0 : 24 })}
+                        />
+                        <span className="text-sm text-foreground">
+                          {isImmediate ? 'Notify immediately when switch fires' : 'Notify after a delay'}
+                        </span>
+                      </div>
+                      {!isImmediate && (
+                        <div className="flex items-center gap-2 ml-12">
+                          <Input
+                            type="number"
+                            min="1"
+                            max="8760"
+                            value={rule.delay_hours}
+                            onChange={e => updateActivationRule(rule.id, { delay_hours: parseInt(e.target.value) || 1 })}
+                            className="w-24 bg-muted/30 border-border rounded-xl"
+                          />
+                          <span className="text-sm text-muted-foreground">hours after switch fires</span>
+                        </div>
+                      )}
+                    </div>
+
                     {rule.target_type === 'contacts' && (
                       <div>
                         <Label className="text-foreground">Select Contacts</Label>
@@ -510,9 +651,10 @@ const Settings = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 <div className="pt-4 border-t border-border">
-                  <Button onClick={saveActivationRules} variant="destructive"><Save className="w-4 h-4 mr-2" />Save Activation Rules</Button>
+                  <Button onClick={saveActivationRules} variant="default"><Save className="w-4 h-4 mr-2" />Save Activation Rules</Button>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                   <div className="flex items-center space-x-2"><FileText className="w-4 h-4 text-primary" /><span className="text-foreground font-medium">How Activation Works</span></div>
@@ -531,15 +673,12 @@ const Settings = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="permissions" className="space-y-6 mt-6">
+          {/* ─── ACCESS CONTROL TAB ─── */}
+          <TabsContent value="access" className="space-y-6 mt-6">
             <ContactTypePermissions typePermissions={typePermissions} onUpdate={handleSaveTypePermissions} />
-            {limits.securityQuestions ? (
-              <SecurityQuestionsManager contacts={emergencyContacts} contactTypeLabels={contactTypeLabels} />
-            ) : (
-              <UpgradePrompt message="Security questions require the Essential plan or higher." featureKey="securityQuestions" />
-            )}
           </TabsContent>
 
+          {/* ─── NOTIFICATIONS TAB ─── */}
           <TabsContent value="notifications" className="space-y-6 mt-6">
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader><CardTitle className="text-foreground flex items-center"><Bell className="w-5 h-5 mr-2 text-primary" />Notification Preferences</CardTitle></CardHeader>
@@ -560,8 +699,27 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="bg-muted/30 border-none rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Portal access alerts</CardTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  You are automatically notified by email when a trusted contact accesses their portal (once per 24 hours per contact).
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-foreground font-medium text-sm">Portal access notifications</p>
+                    <p className="text-sm text-muted-foreground">Email sent when a contact opens their portal</p>
+                  </div>
+                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Always on</Badge>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
+          {/* ─── PRIVACY TAB ─── */}
           <TabsContent value="privacy" className="space-y-6 mt-6">
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
@@ -571,9 +729,38 @@ const Settings = () => {
                 <p className="text-sm text-muted-foreground">
                   Download a complete copy of all your data including contacts, documents, accounts, and financial assets. Data is decrypted locally before export.
                 </p>
-                <Button onClick={handleExportData} disabled={exporting} variant="default">
-                  {exporting ? (<><LoadingSpinner size="sm" className="mr-2" />Exporting...</>) : (<><Download className="w-4 h-4 mr-2" />Download my data (JSON)</>)}
-                </Button>
+                <div className="flex flex-wrap gap-3">
+                  <Button onClick={handleExportData} disabled={exporting} variant="default">
+                    {exporting ? (<><LoadingSpinner size="sm" className="mr-2" />Exporting...</>) : (<><Download className="w-4 h-4 mr-2" />Download as JSON</>)}
+                  </Button>
+                  <Button onClick={handleExportReadable} disabled={exporting} variant="outline">
+                    <FileText className="w-4 h-4 mr-2" />Download as readable text
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/30 border-none rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center"><Clock className="w-5 h-5 mr-2 text-primary" />Recent account activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Last sign in</span>
+                    <span className="text-sm text-foreground font-medium">{formatActivityDate(lastSignIn)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Password last changed</span>
+                    <span className="text-sm text-foreground font-medium">{passwordChangedAt ? formatActivityDate(passwordChangedAt) : 'Never'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Account created</span>
+                    <span className="text-sm text-foreground font-medium">{formatActivityDate(accountCreatedAt)}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -583,12 +770,44 @@ const Settings = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Permanently delete your account and all associated data. This action cannot be undone.
-                  </p>
-                  <Button onClick={() => setShowDeleteAccountDialog(true)} variant="destructive">
-                    <Trash2 className="w-4 h-4 mr-2" />Delete my account
-                  </Button>
+                  {!showDeleteConfirm ? (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Permanently delete your account and all associated data. This action cannot be undone.
+                      </p>
+                      <Button onClick={() => setShowDeleteConfirm(true)} variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 rounded-xl">
+                        <Trash2 className="w-4 h-4 mr-2" />Delete my account
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-sm text-destructive font-medium">
+                        This will permanently delete all your data. This cannot be undone.
+                      </p>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Type <span className="font-mono font-bold text-foreground">DELETE</span> to confirm:</p>
+                        <Input
+                          value={deleteConfirmText}
+                          onChange={e => setDeleteConfirmText(e.target.value)}
+                          placeholder="Type DELETE"
+                          className="bg-background border-destructive/30 rounded-xl"
+                        />
+                      </div>
+                      <div className="flex gap-3">
+                        <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} className="rounded-xl">
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
+                          onClick={handleDeleteAccount}
+                        >
+                          {deletingAccount ? <LoadingSpinner size="sm" className="mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                          Delete permanently
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Your encryption keys are derived from your password. Once deleted, your data cannot be recovered by anyone.
@@ -597,39 +816,6 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Delete Account Confirmation Dialog */}
-        <Dialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
-          <DialogContent className="bg-card border-border rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-destructive flex items-center">
-                <AlertTriangle className="w-5 h-5 mr-2" />Permanently delete your account
-              </DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              This will delete all your data including contacts, documents, financial information, and your vault. This cannot be undone.
-            </p>
-            <div className="space-y-2">
-              <Label className="text-foreground">Type <span className="font-mono font-bold">DELETE</span> to confirm</Label>
-              <Input
-                value={deleteConfirmText}
-                onChange={e => setDeleteConfirmText(e.target.value)}
-                placeholder="Type DELETE to confirm"
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => { setShowDeleteAccountDialog(false); setDeleteConfirmText(''); }}>Cancel</Button>
-              <Button
-                variant="destructive"
-                disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
-                onClick={handleDeleteAccount}
-              >
-                {deletingAccount ? <LoadingSpinner size="sm" className="mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                Delete Permanently
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );

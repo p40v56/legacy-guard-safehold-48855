@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Eye, EyeOff, Save, Info, Send } from 'lucide-react';
+import { Mail, Eye, EyeOff, Save, Info, Send, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +53,7 @@ const VariablesInset = () => (
 const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'John' }: EmailTemplateEditorProps) => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewType, setPreviewType] = useState<'switch_triggered' | 'grace_period'>('switch_triggered');
+  const [previewKey, setPreviewKey] = useState(0);
   const [sendingTest, setSendingTest] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -94,8 +95,44 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
   };
 
   return (
-    <div className="space-y-6">
-      {/* Switch Triggered Email */}
+    <div className="space-y-6 relative pb-20">
+      {/* Grace Period Warning Email — FIRST (chronological order) */}
+      <Card className="bg-muted/30 border-none rounded-2xl">
+        <CardHeader>
+          <CardTitle className="text-foreground flex items-center justify-between">
+            <div className="flex items-center">
+              <Mail className="w-5 h-5 mr-2 text-warning" />
+              Grace Period Warning Email
+            </div>
+            <Badge variant="outline" className="text-xs border-warning/30 text-warning">Sent to you</Badge>
+          </CardTitle>
+          <p className="text-muted-foreground text-sm mt-2">This email is sent to you when the grace period begins after a missed check-in.</p>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div>
+            <Label className="text-foreground">Email Subject</Label>
+            <Input value={template.email_grace_subject} onChange={e => updateField('email_grace_subject', e.target.value)} placeholder="Grace period subject..." />
+            <VariablesInset />
+          </div>
+          <div>
+            <Label className="text-foreground">Introduction Message</Label>
+            <RichTextEditor value={template.email_grace_intro} onChange={v => updateField('email_grace_intro', v)} placeholder="Grace period intro text..." className="[&_.ql-editor]:!min-h-[100px]" />
+            <VariablesInset />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => sendTestEmail('grace_period')}
+            disabled={!!sendingTest}
+            className="rounded-xl"
+          >
+            {sendingTest === 'grace_period' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+            Send test email
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Switch Triggered Email — SECOND */}
       <Card className="bg-muted/30 border-none rounded-2xl">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center justify-between">
@@ -125,12 +162,12 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
           <Separator className="bg-border/50" />
           <div>
             <Label className="text-foreground">Introduction Message</Label>
-            <RichTextEditor value={template.email_intro_message} onChange={v => updateField('email_intro_message', v)} placeholder="Main introduction message..." />
+            <RichTextEditor value={template.email_intro_message} onChange={v => updateField('email_intro_message', v)} placeholder="Main introduction message..." className="[&_.ql-editor]:!min-h-[100px]" />
             <VariablesInset />
           </div>
           <div>
             <Label className="text-foreground">Footer Message</Label>
-            <RichTextEditor value={template.email_footer_message} onChange={v => updateField('email_footer_message', v)} placeholder="Footer text..." />
+            <RichTextEditor value={template.email_footer_message} onChange={v => updateField('email_footer_message', v)} placeholder="Footer text..." className="[&_.ql-editor]:!min-h-[100px]" />
           </div>
           <Button
             variant="outline"
@@ -145,42 +182,6 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
         </CardContent>
       </Card>
 
-      {/* Grace Period Warning Email */}
-      <Card className="bg-muted/30 border-none rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center justify-between">
-            <div className="flex items-center">
-              <Mail className="w-5 h-5 mr-2 text-warning" />
-              Grace Period Warning Email
-            </div>
-            <Badge variant="outline" className="text-xs border-warning/30 text-warning">Sent to you</Badge>
-          </CardTitle>
-          <p className="text-muted-foreground text-sm mt-2">This email is sent to you when the grace period begins after a missed check-in.</p>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div>
-            <Label className="text-foreground">Email Subject</Label>
-            <Input value={template.email_grace_subject} onChange={e => updateField('email_grace_subject', e.target.value)} placeholder="Grace period subject..." />
-            <VariablesInset />
-          </div>
-          <div>
-            <Label className="text-foreground">Introduction Message</Label>
-            <RichTextEditor value={template.email_grace_intro} onChange={v => updateField('email_grace_intro', v)} placeholder="Grace period intro text..." />
-            <VariablesInset />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => sendTestEmail('grace_period')}
-            disabled={!!sendingTest}
-            className="rounded-xl"
-          >
-            {sendingTest === 'grace_period' ? <LoadingSpinner size="sm" className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-            Send test email
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Preview */}
       <Card className="bg-muted/30 border-none rounded-2xl">
         <CardHeader>
@@ -189,23 +190,22 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
               <Eye className="w-5 h-5 mr-2 text-primary" />
               Email Preview
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="rounded-xl">
-              {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-              {showPreview ? 'Hide' : 'Show'} Preview
-            </Button>
+            <div className="flex gap-2">
+              {showPreview && (
+                <Button variant="outline" size="sm" onClick={() => setPreviewKey(k => k + 1)} className="rounded-xl">
+                  <RefreshCw className="w-4 h-4 mr-2" />Refresh
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="rounded-xl">
+                {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                {showPreview ? 'Hide' : 'Show'} Preview
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         {showPreview && (
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4" key={previewKey}>
             <div className="flex gap-2">
-              <Button
-                variant={previewType === 'switch_triggered' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPreviewType('switch_triggered')}
-                className="rounded-xl"
-              >
-                Switch Triggered
-              </Button>
               <Button
                 variant={previewType === 'grace_period' ? 'default' : 'outline'}
                 size="sm"
@@ -213,6 +213,14 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                 className="rounded-xl"
               >
                 Grace Period Warning
+              </Button>
+              <Button
+                variant={previewType === 'switch_triggered' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPreviewType('switch_triggered')}
+                className="rounded-xl"
+              >
+                Switch Triggered
               </Button>
             </div>
 
@@ -224,7 +232,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                 </div>
                 <div className="bg-card p-6 space-y-4">
                   <p className="text-foreground">Dear <strong>Contact Name</strong>,</p>
-                  <p className="text-muted-foreground text-sm">{resolveVariable(template.email_intro_message)}</p>
+                  <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_intro_message) }} />
                   <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
                     <h3 className="text-warning font-medium text-sm">⚠️ Emergency Instructions</h3>
                     <p className="text-muted-foreground text-xs mt-1">Your emergency instructions will appear here...</p>
@@ -234,7 +242,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                     <p className="text-muted-foreground text-xs mt-1">Shared documents will appear here...</p>
                   </div>
                   <hr className="border-border" />
-                  <p className="text-muted-foreground text-xs text-center">{template.email_footer_message}</p>
+                  <div className="text-muted-foreground text-xs text-center" dangerouslySetInnerHTML={{ __html: template.email_footer_message }} />
                 </div>
               </div>
             ) : (
@@ -245,7 +253,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
                 </div>
                 <div className="bg-card p-6 space-y-4">
                   <p className="text-foreground">Hello <strong>{userName}</strong>,</p>
-                  <p className="text-muted-foreground text-sm">{resolveVariable(template.email_grace_intro)}</p>
+                  <div className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: resolveVariable(template.email_grace_intro) }} />
                   <div className="bg-destructive/10 border-2 border-destructive p-5 rounded-lg text-center">
                     <p className="text-destructive font-semibold text-sm">⏰ GRACE PERIOD ENDS:</p>
                     <p className="text-destructive text-lg font-bold mt-1">{new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString()}</p>
@@ -273,10 +281,12 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
         </div>
       </div>
 
-      {/* Save Button */}
-      <Button onClick={onSave} disabled={saving} variant="default" className="w-full sm:w-auto">
-        {saving ? (<><LoadingSpinner size="sm" className="mr-2" />Saving...</>) : (<><Save className="w-4 h-4 mr-2" />Save Email Templates</>)}
-      </Button>
+      {/* Sticky Save Button */}
+      <div className="sticky bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t border-border py-4 -mx-1 px-1 z-10">
+        <Button onClick={onSave} disabled={saving} variant="default" className="w-full sm:w-auto">
+          {saving ? (<><LoadingSpinner size="sm" className="mr-2" />Saving...</>) : (<><Save className="w-4 h-4 mr-2" />Save Email Templates</>)}
+        </Button>
+      </div>
     </div>
   );
 };

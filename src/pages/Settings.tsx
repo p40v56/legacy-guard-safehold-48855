@@ -655,7 +655,23 @@ const Settings = () => {
                 {isExpired && planExpiresAt && (
                   <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
                     <p className="text-sm text-destructive font-medium">Your plan expired on {formatDateEUShort(planExpiresAt)}.</p>
-                    <p className="text-sm text-muted-foreground mt-1">Your data is preserved. Contact us to renew.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Your data is preserved. Renew to restore full access.</p>
+                    <div className="flex gap-3 mt-3">
+                      <button
+                        onClick={() => handleStripeCheckout('essential')}
+                        disabled={checkoutLoading === 'essential'}
+                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                      >
+                        {checkoutLoading === 'essential' ? 'Redirecting...' : 'Renew Essential (£49/year) →'}
+                      </button>
+                      <button
+                        onClick={() => handleStripeCheckout('family')}
+                        disabled={checkoutLoading === 'family'}
+                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                      >
+                        {checkoutLoading === 'family' ? 'Redirecting...' : 'Renew Family (£99/year) →'}
+                      </button>
+                    </div>
                   </div>
                 )}
                 {isPaid && !isExpired && planExpiresAt && (

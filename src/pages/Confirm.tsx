@@ -83,7 +83,13 @@ const Confirm = () => {
       const success = await setupNewUser(password, userId);
       if (!success) throw new Error('Vault setup failed');
       toast({ title: 'Vault created!', description: 'Your secure vault is ready.' });
-      navigate('/dashboard');
+      const pendingPlan = localStorage.getItem('pending_plan');
+      if (pendingPlan) {
+        localStorage.removeItem('pending_plan');
+        navigate(`/settings?tab=account&checkout=${pendingPlan}`);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Failed to set up vault', variant: 'destructive' });
     } finally {

@@ -56,8 +56,8 @@ const FinancialAssetCard: React.FC<FinancialAssetCardProps> = ({ asset, onEdit, 
     fetchDocs();
   }, [asset.attached_document_ids, vaultKey]);
 
-  const formatCurrency = (v: number) =>
-    new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
+  const assetCurrency = csf.currency || 'GBP';
+  const formatCurrency = (v: number) => formatCurrencyValue(v, assetCurrency);
 
   const csf = asset.category_specific_fields || {};
   const typeConfig = CATEGORY_CONFIG[asset.category] || CATEGORY_CONFIG.other;

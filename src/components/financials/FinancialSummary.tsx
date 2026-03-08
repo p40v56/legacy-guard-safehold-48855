@@ -52,7 +52,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
       <CardContent className="p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 rounded-xl bg-primary/10">
-            <PoundSterling className="w-5 h-5 text-primary" />
+            <span className="text-lg font-bold text-primary">{mainCurrencyInfo.symbol}</span>
           </div>
           <h3 className="text-lg font-semibold text-foreground">Financial Summary</h3>
         </div>

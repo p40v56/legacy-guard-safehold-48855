@@ -130,7 +130,7 @@ const EmailTemplateEditor = ({ template, onChange, onSave, saving, userName = 'J
           </div>
           <div>
             <Label className="text-foreground">Footer Message</Label>
-            <Textarea value={template.email_footer_message} onChange={e => updateField('email_footer_message', e.target.value)} placeholder="Footer text..." rows={2} className="resize-none" />
+            <RichTextEditor value={template.email_footer_message} onChange={v => updateField('email_footer_message', v)} placeholder="Footer text..." />
           </div>
           <Button
             variant="outline"

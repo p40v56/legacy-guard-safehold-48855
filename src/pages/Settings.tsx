@@ -646,16 +646,16 @@ const Settings = () => {
                           const tierOrder = planOrder[tier] || 0;
                           const isUpgrade = tierOrder > currentOrder;
                           const isDowngrade = tierOrder < currentOrder;
-                          const actionLabel = isUpgrade ? `Upgrade to ${PLAN_LABELS[tier]}` : isDowngrade ? `Switch to ${PLAN_LABELS[tier]}` : '';
-                          const subjectAction = isUpgrade ? 'upgrade' : 'plan change';
-                          const bodyAction = isUpgrade ? `upgrade to` : `switch to`;
+                          if (tier === 'free') return null;
+                          const actionLabel = isUpgrade ? `Upgrade to ${PLAN_LABELS[tier]}` : `Switch to ${PLAN_LABELS[tier]}`;
                           return (
-                            <a
-                              href={`mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault ${subjectAction} request — ${PLAN_LABELS[tier]} plan`)}&body=${encodeURIComponent(`I'd like to ${bodyAction} the ${PLAN_LABELS[tier]} plan (${PLAN_PRICES[tier]}). My account email is: ${userEmail}`)}`}
-                              className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${isDowngrade ? 'text-muted-foreground hover:text-foreground' : 'text-primary hover:text-primary/80'}`}
+                            <button
+                              onClick={() => handleStripeCheckout(tier)}
+                              disabled={checkoutLoading === tier}
+                              className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${isDowngrade ? 'text-muted-foreground hover:text-foreground' : 'text-primary hover:text-primary/80'}`}
                             >
-                              {actionLabel} →
-                            </a>
+                              {checkoutLoading === tier ? 'Redirecting...' : `${actionLabel} →`}
+                            </button>
                           );
                         })()}
                       </div>

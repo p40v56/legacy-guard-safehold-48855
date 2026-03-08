@@ -847,7 +847,7 @@ body:has(#lv-root) {
 }
 #lv-root .lv-process::after {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 120px;
-  background: linear-gradient(to bottom, transparent, #0D1B2A);
+  background: linear-gradient(to bottom, transparent, #072a42);
   pointer-events: none;
 }
 #lv-root .lv-steps {

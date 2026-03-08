@@ -72,6 +72,22 @@ serve(async (req) => {
 
       if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
 
+      // Send upgrade confirmation email (non-blocking)
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+        await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: supabaseKey },
+          body: JSON.stringify({
+            notificationType: "plan_upgrade",
+            recipientEmail: user.email,
+            planLabel: latestPaidPlan === "family" ? "Family" : "Essential",
+            expiresAt: expiresAt.toISOString(),
+          }),
+        });
+      } catch { /* non-blocking */ }
+
       return new Response(JSON.stringify({
         paid: true,
         plan: latestPaidPlan,

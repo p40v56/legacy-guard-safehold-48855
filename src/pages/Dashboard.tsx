@@ -190,18 +190,18 @@ const Dashboard = () => {
       actionLabel: stats.contactsCount < 3 ? 'Add a contact' : 'Manage',
     },
     {
-      name: 'Financial Assets',
-      href: '/accounts?tab=financials',
-      icon: Shield,
-      contextInfo: 'Estate & legacy assets',
-      actionLabel: 'Manage',
-    },
-    {
-      name: 'Accounts',
+      name: 'Digital Accounts',
       href: '/accounts',
-      icon: CreditCard,
+      icon: Monitor,
       contextInfo: `${stats.accountsCount} account${stats.accountsCount !== 1 ? 's' : ''}`,
       actionLabel: stats.accountsCount === 0 ? 'Add an account' : 'Manage',
+    },
+    {
+      name: 'Financial Assets',
+      href: '/financials',
+      icon: Landmark,
+      contextInfo: 'Estate & legacy assets',
+      actionLabel: 'Manage',
     },
     {
       name: 'Documents',

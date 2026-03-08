@@ -165,7 +165,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Bottom Floating Navigation */}
       <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
         <div className="floating-nav px-2 py-2 flex items-center gap-1">
-          {navigationItems.slice(0, 5).map((item) => {
+          {navigationItems.slice(0, 6).map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             return (

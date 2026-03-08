@@ -26,13 +26,11 @@ interface DigitalAccount {
 }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  banking: 'Banking & Finance',
-  social_media: 'Social Media',
+  social: 'Social Media',
   email: 'Email',
-  shopping: 'Shopping',
-  utilities: 'Utilities',
-  healthcare: 'Healthcare',
+  work: 'Work & Professional',
   entertainment: 'Entertainment',
+  financial: 'Financial',
   other: 'Other',
 };
 

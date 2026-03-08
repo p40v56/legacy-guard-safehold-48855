@@ -16,6 +16,7 @@ import {
   encryptText,
   decryptText,
   decryptFields,
+  decryptFile,
 } from '@/lib/crypto';
 import { PLAN_LIMITS, PlanTier } from '@/hooks/usePlan';
 
@@ -182,19 +183,49 @@ export async function createPortalShares(
     financialAssets = financialAssets.slice(0, tierLimits.maxFinancialAssets);
   }
 
-  // Helper to resolve attached documents from allDocs
-  const resolveAttachedDocs = (docIds: string[] | null | undefined) => {
+  // Helper to resolve attached documents from allDocs (with file data)
+  const resolveAttachedDocs = async (docIds: string[] | null | undefined) => {
     if (!docIds || docIds.length === 0) return [];
-    return docIds
+    const found = docIds
       .map((docId: string) => allDocs.find((d: any) => d.id === docId))
-      .filter(Boolean)
-      .map((d: any) => ({
+      .filter(Boolean);
+    return Promise.all(found.map(async (d: any) => {
+      const fileBundle = await decryptFileForBundle(d);
+      return {
         id: d.id,
         title: d.title,
         file_path: d.file_path || null,
         document_type: d.document_type,
-      }));
+        file_data: fileBundle?.file_data || null,
+        file_type: fileBundle?.file_type || d.file_type || null,
+      };
+    }));
   };
+
+  // Helper to download and decrypt a file from storage, returning base64
+  const MAX_FILE_SIZE_FOR_BUNDLE = 5 * 1024 * 1024; // 5MB
+  async function decryptFileForBundle(doc: any): Promise<{ file_data: string; file_type: string } | null> {
+    if (!doc.file_path || !doc.file_iv) return null;
+    try {
+      const { data: fileBlob, error } = await supabase.storage
+        .from('documents')
+        .download(doc.file_path);
+      if (error || !fileBlob) return null;
+      if (fileBlob.size > MAX_FILE_SIZE_FOR_BUNDLE) return null;
+      const encryptedBuffer = await fileBlob.arrayBuffer();
+      const decryptedBuffer = await decryptFile(encryptedBuffer, doc.file_iv, vaultKey);
+      // Convert to base64
+      const bytes = new Uint8Array(decryptedBuffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return { file_data: btoa(binary), file_type: doc.file_type || 'application/octet-stream' };
+    } catch (e) {
+      console.error('Failed to decrypt file for portal bundle:', e);
+      return null;
+    }
+  }
 
   // Custom message resolution
   let customMessage = decryptedContact.custom_message || null;
@@ -244,26 +275,32 @@ export async function createPortalShares(
     emergencyInstructions: permissions.emergency_instructions ? decryptedProfile?.emergency_instructions : null,
     switchTriggeredAt: settingsRes.data?.switch_triggered_at || null,
     keyProfessionals,
-    documents: documents.map((d) => ({
-      id: d.id, title: d.title, content: d.content, document_type: d.document_type,
-      description: d.description, created_at: d.created_at, updated_at: d.updated_at, file_path: d.file_path,
+    documents: await Promise.all(documents.map(async (d) => {
+      const fileBundle = await decryptFileForBundle(d);
+      return {
+        id: d.id, title: d.title, content: d.content, document_type: d.document_type,
+        description: d.description, created_at: d.created_at, updated_at: d.updated_at,
+        file_path: d.file_path,
+        file_data: fileBundle?.file_data || null,
+        file_type: fileBundle?.file_type || d.file_type || null,
+      };
     })),
-    accounts: accounts.map((a) => ({
+    accounts: await Promise.all(accounts.map(async (a) => ({
       id: a.id, account_name: a.account_name, platform: a.platform, username: a.username,
       email: a.email, account_type: a.account_type, importance: a.importance,
       closure_action: a.closure_action, notes: a.notes, website_url: a.website_url,
       credentials: a.credentials || null,
       updated_at: a.updated_at,
-      attached_documents: resolveAttachedDocs(a.attached_document_ids),
-    })),
-    financialAssets: financialAssets.map((f) => ({
+      attached_documents: await resolveAttachedDocs(a.attached_document_ids),
+    }))),
+    financialAssets: await Promise.all(financialAssets.map(async (f) => ({
       id: f.id, name: f.name, category: f.category, institution: f.institution,
       reference_number: f.reference_number, estimated_value: f.estimated_value,
       notes: f.notes, contact_name: f.contact_name, contact_phone: f.contact_phone,
       contact_email: f.contact_email, category_specific_fields: f.category_specific_fields || {},
       updated_at: f.updated_at,
-      attached_documents: resolveAttachedDocs(f.attached_document_ids),
-    })),
+      attached_documents: await resolveAttachedDocs(f.attached_document_ids),
+    }))),
     permissions,
   };
 

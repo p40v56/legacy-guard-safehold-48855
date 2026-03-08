@@ -19,8 +19,8 @@ interface PermissionsConfigProps {
 const digitalAccountCategories: { value: DigitalAccountCategory; label: string }[] = [
   { value: 'social', label: 'Social Media' },
   { value: 'email', label: 'Email Accounts' },
-  { value: 'cloud', label: 'Cloud Storage' },
-  { value: 'subscription', label: 'Subscriptions' },
+  { value: 'work', label: 'Work & Professional' },
+  { value: 'entertainment', label: 'Entertainment' },
   { value: 'other', label: 'Other' },
 ];
 

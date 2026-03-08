@@ -145,6 +145,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
 
       setVaultKey(newVaultKey);
       userIdRef.current = userId;
+      wasUnlockedRef.current = true;
       lastActivityRef.current = Date.now();
 
       // Send welcome email (non-blocking)

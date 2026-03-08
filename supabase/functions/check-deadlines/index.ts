@@ -339,11 +339,24 @@ async function triggerSwitch(
 
   const switchTriggeredAt = userSettings.switch_triggered_at || now.toISOString();
 
+  // Build query for already-sent notifications — only consider those sent AFTER the current trigger
+  let alreadySentQuery = supabase
+    .from("sent_notifications")
+    .select("contact_id")
+    .eq("user_id", userId)
+    .eq("notification_type", "switch_triggered")
+    .eq("status", "sent");
+
+  // Only skip contacts notified after the current switch trigger time
+  if (switchTriggeredAt) {
+    alreadySentQuery = alreadySentQuery.gte("sent_at", switchTriggeredAt);
+  }
+
   const [contactsRes, typePermissionsRes, rulesRes, alreadySentRes] = await Promise.all([
     supabase.from("contacts").select("*").eq("user_id", userId).eq("can_receive_messages", true),
     supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
     supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
-    supabase.from("sent_notifications").select("contact_id").eq("user_id", userId).eq("notification_type", "switch_triggered").eq("status", "sent"),
+    alreadySentQuery,
   ]);
 
   const contacts = (contactsRes.data || []) as Contact[];

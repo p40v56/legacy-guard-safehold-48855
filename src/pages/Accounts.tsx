@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import { useAccounts } from '@/hooks/useAccounts';
-import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
+import { usePlan } from '@/hooks/usePlan';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { decryptFields } from '@/lib/crypto';
 import { supabase } from '@/integrations/supabase/client';

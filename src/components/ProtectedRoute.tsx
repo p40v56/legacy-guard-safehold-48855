@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading, isDeactivated } = useAuth();
+  const { user, loading, isDeactivated, mfaPending } = useAuth();
 
   if (loading) {
     return (
@@ -24,6 +24,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  // Block access if MFA is required but not yet verified
+  if (mfaPending) {
+    return <Navigate to="/auth" replace />;
   }
 
   if (isDeactivated) {

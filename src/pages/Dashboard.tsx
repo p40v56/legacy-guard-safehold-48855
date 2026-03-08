@@ -241,11 +241,6 @@ const Dashboard = () => {
               <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground">
                 {getTimeOfDay()}{firstName ? `, ${firstName}` : ''}!
               </h1>
-              {alertBadge && (
-                <Badge className={`${alertBadge.color} border-none text-xs font-medium`}>
-                  {alertBadge.label}
-                </Badge>
-              )}
             </div>
             <p className="text-muted-foreground">Welcome to your dashboard</p>
           </div>

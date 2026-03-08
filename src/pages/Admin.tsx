@@ -39,6 +39,7 @@ interface AdminStats {
   family_users: number;
   active_switches: number;
   checked_in_today: number;
+  triggered_switches: number;
 }
 
 const Admin = () => {
@@ -80,7 +81,7 @@ const Admin = () => {
         supabase.rpc('admin_get_stats'),
         supabase.rpc('admin_get_user_emails' as any, { row_limit: 500 }),
         supabase.from('sent_notifications').select('id, user_id, contact_id, created_at, status, acknowledged_at').eq('notification_type', 'portal_accessed').order('created_at', { ascending: false }).limit(50),
-        supabase.from('user_settings').select('user_id, switch_triggered_at, grace_period_active, grace_period_end').eq('switch_triggered', true).order('switch_triggered_at', { ascending: false }),
+        supabase.rpc('admin_get_triggered_switches' as any),
       ]);
 
       if (profilesResult.data) {
@@ -311,6 +312,7 @@ const Admin = () => {
               { label: 'Essential', value: stats.essential_users, icon: CreditCard },
               { label: 'Family', value: stats.family_users, icon: Crown },
               { label: 'Active Switches', value: stats.active_switches, icon: Timer },
+              { label: 'Triggered', value: stats.triggered_switches, icon: AlertTriangle },
               { label: 'Checked In Today', value: stats.checked_in_today, icon: Shield },
             ].map((stat) => (
               <Card key={stat.label} className="bg-muted/30 border-none rounded-2xl">

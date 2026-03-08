@@ -902,6 +902,15 @@ export type Database = {
     }
     Functions: {
       admin_get_stats: { Args: never; Returns: Json }
+      admin_get_triggered_switches: {
+        Args: never
+        Returns: {
+          grace_period_active: boolean
+          grace_period_end: string
+          switch_triggered_at: string
+          user_id: string
+        }[]
+      }
       admin_get_user_emails: {
         Args: { row_limit?: number }
         Returns: {

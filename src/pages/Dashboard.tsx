@@ -259,12 +259,31 @@ const Dashboard = () => {
                 </Button>
               </Link>
             ) : (countdown.isOverdue || settings?.grace_period_active) && !settings?.switch_triggered ? (
-              <Link to="/switch">
-                <Button size="sm" variant="destructive" className="rounded-full px-5 animate-pulse">
-                  Check in now
+              <div className="flex items-center gap-2">
+                <Link to="/switch">
+                  <Button size="sm" variant="destructive" className="rounded-full px-5 animate-pulse">
+                    Check in now
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeactivate}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+                >
+                  Deactivate
                 </Button>
-              </Link>
-            ) : null}
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDeactivate}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl text-xs"
+              >
+                Deactivate
+              </Button>
+            )}
           </div>
 
           {/* Warning Banners */}

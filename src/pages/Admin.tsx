@@ -346,16 +346,18 @@ const Admin = () => {
                     </td>
                     <td className="p-4">
                       {(() => {
-                        const isExpired = u.plan === 'paid' && u.plan_expires_at && new Date(u.plan_expires_at) <= new Date();
+                        const isPaidTier = u.plan === 'essential' || u.plan === 'family';
+                        const isExpired = isPaidTier && u.plan_expires_at && new Date(u.plan_expires_at) <= new Date();
                         return (
                           <>
                             <Badge className={
                               isExpired ? 'bg-destructive/20 text-destructive border-destructive/30' :
-                              u.plan === 'paid' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-muted text-muted-foreground'
+                              u.plan === 'family' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                              u.plan === 'essential' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-muted text-muted-foreground'
                             }>
-                              {isExpired ? 'Expired' : u.plan === 'paid' ? 'Paid' : 'Free'}
+                              {isExpired ? 'Expired' : u.plan === 'family' ? 'Family' : u.plan === 'essential' ? 'Essential' : 'Free'}
                             </Badge>
-                            {u.plan === 'paid' && u.plan_expires_at && (
+                            {isPaidTier && u.plan_expires_at && (
                               <p className={cn("text-xs mt-1", isExpired ? 'text-destructive' : 'text-muted-foreground')}>
                                 {isExpired ? 'Expired' : 'Expires'} {formatDateEUShort(u.plan_expires_at)}
                               </p>

@@ -70,10 +70,10 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({ assets }) => {
   const byCategory = assets.reduce<Record<string, { count: number; value: number }>>((acc, a) => {
     if (!acc[a.category]) acc[a.category] = { count: 0, value: 0 };
     acc[a.category].count++;
-    if (isMultiCurrency && fxRates) {
+    if (needsConversion && fxRates) {
       const cur = getAssetCurrency(a.category_specific_fields as Record<string, any>);
       acc[a.category].value += convertCurrency(a.estimated_value || 0, cur, mainCurrency, fxRates);
-    } else {
+    } else if (!needsConversion) {
       acc[a.category].value += a.estimated_value || 0;
     }
     return acc;

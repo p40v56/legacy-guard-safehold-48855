@@ -281,6 +281,7 @@ const Settings = () => {
       setDeletingAccount(false);
       setShowDeleteConfirm(false);
       setDeleteConfirmText('');
+      setDeletePassword('');
     }
   };
 

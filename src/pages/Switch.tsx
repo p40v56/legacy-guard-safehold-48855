@@ -348,8 +348,8 @@ const Switch = () => {
           smsCheckinEnabled={smsCheckinEnabled}
           hasPhone={hasPhone}
           smsNotificationsEnabled={smsNotificationsEnabled}
-          onSmsCheckinChange={(v) => plan === 'paid' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
-          isPaidPlan={plan === 'paid'}
+          onSmsCheckinChange={(v) => plan !== 'free' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
+          isPaidPlan={plan !== 'free'}
         />
 
         {/* Section 4: Check-in History */}

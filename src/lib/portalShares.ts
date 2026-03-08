@@ -17,6 +17,7 @@ import {
   decryptText,
   decryptFields,
 } from '@/lib/crypto';
+import { PLAN_LIMITS, PlanTier } from '@/hooks/usePlan';
 
 /** Hash the raw token string (not bytes) for DB lookup — must match portal side */
 async function hashTokenString(rawToken: string): Promise<string> {
@@ -98,7 +99,7 @@ export async function createPortalShares(
 
   const profile = profileRes.data;
   const userPlan = profile?.plan || 'free';
-  const isFree = userPlan === 'free';
+  const tierLimits = PLAN_LIMITS[(userPlan === 'paid' ? 'essential' : userPlan) as PlanTier] || PLAN_LIMITS.free;
 
   // Decrypt profile names
   const decryptedProfileValues = profile ? await decryptFields(profile, ENCRYPTED_PROFILE_FIELDS, vaultKey) : {};
@@ -116,28 +117,30 @@ export async function createPortalShares(
     })
   );
 
-  // Filter documents by permissions
+  // Filter documents by permissions and plan limits
   let documents: any[] = [];
-  if (!isFree) {
-    const docPerms = permissions.legacy_documents;
-    if (docPerms) {
-      if (docPerms.all_documents) {
-        documents = allDocs;
-      } else {
-        const cats = docPerms.by_category || [];
-        const ids = docPerms.specific_documents || [];
-        if (cats.length > 0 || ids.length > 0) {
-          documents = allDocs.filter(
-            (d: any) => cats.includes(d.document_type) || ids.includes(d.id)
-          );
-        }
+  const docPerms = permissions.legacy_documents;
+  if (docPerms) {
+    if (docPerms.all_documents) {
+      documents = allDocs;
+    } else {
+      const cats = docPerms.by_category || [];
+      const ids = docPerms.specific_documents || [];
+      if (cats.length > 0 || ids.length > 0) {
+        documents = allDocs.filter(
+          (d: any) => cats.includes(d.document_type) || ids.includes(d.id)
+        );
       }
     }
   }
+  // Apply plan limit
+  if (tierLimits.maxDocuments !== Infinity) {
+    documents = documents.slice(0, tierLimits.maxDocuments);
+  }
 
-  // Decrypt & filter accounts
+  // Decrypt & filter accounts (limited by plan)
   let accounts: any[] = [];
-  if (!isFree) {
+  if (tierLimits.maxAccounts > 0) {
     const allAccounts = await Promise.all(
       (accountsRes.data || []).map(async (acct: any) => {
         const decrypted = await decryptFields(acct, ENCRYPTED_ACCOUNT_FIELDS, vaultKey);
@@ -158,21 +161,25 @@ export async function createPortalShares(
         }
       }
     }
+    if (tierLimits.maxAccounts !== Infinity) {
+      accounts = accounts.slice(0, tierLimits.maxAccounts);
+    }
   }
 
-  // Decrypt & filter financials
+  // Decrypt & filter financials (limited by plan)
   let financialAssets: any[] = [];
-  if (!isFree) {
-    const allFinancials = await Promise.all(
-      (financialsRes.data || []).map(async (asset: any) => {
-        const decrypted = await decryptFields(asset, ENCRYPTED_FINANCIAL_FIELDS, vaultKey);
-        return { ...asset, ...decrypted };
-      })
-    );
-    financialAssets = allFinancials.filter((a: any) => {
-      if (!a.visible_to || a.visible_to.length === 0) return true;
-      return a.visible_to.includes(contactId);
-    });
+  const allFinancials = await Promise.all(
+    (financialsRes.data || []).map(async (asset: any) => {
+      const decrypted = await decryptFields(asset, ENCRYPTED_FINANCIAL_FIELDS, vaultKey);
+      return { ...asset, ...decrypted };
+    })
+  );
+  financialAssets = allFinancials.filter((a: any) => {
+    if (!a.visible_to || a.visible_to.length === 0) return true;
+    return a.visible_to.includes(contactId);
+  });
+  if (tierLimits.maxFinancialAssets !== Infinity) {
+    financialAssets = financialAssets.slice(0, tierLimits.maxFinancialAssets);
   }
 
   // Helper to resolve attached documents from allDocs

@@ -11,7 +11,7 @@ import { Users, UserPlus, Filter, Shield, RefreshCw } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { EmergencyContact, ContactPermissions, ContactType } from '@/types/access-control';
 import { useContacts } from '@/hooks/useContacts';
-import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
+import { usePlan } from '@/hooks/usePlan';
 import { useAuth } from '@/hooks/useAuth';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { createPortalShares } from '@/lib/portalShares';
@@ -23,7 +23,7 @@ const Contacts = () => {
     contacts, loading, createContact, updateContact, deleteContact,
     updateContactPermissions, updateUseTypeDefaults,
   } = useContacts();
-  const { plan } = usePlan();
+  const { plan, limits, isPaid } = usePlan();
   const { user } = useAuth();
   const { vaultKey } = useEncryption();
   const { toast } = useToast();
@@ -72,7 +72,7 @@ const Contacts = () => {
     });
   }, [contacts, searchQuery, filterCategory]);
 
-  const isAtContactLimit = plan === 'free' && contacts.length >= FREE_PLAN_LIMITS.maxContacts;
+  const isAtContactLimit = limits.maxContacts !== Infinity && contacts.length >= limits.maxContacts;
 
   const handleCreateContact = async () => {
     if (!newContact.name || !newContact.email) return;
@@ -125,7 +125,6 @@ const Contacts = () => {
     }
     setRegeneratingAll(true);
     try {
-      // Get all contacts that have existing shares
       const { data: shares } = await supabase
         .from('contact_shares')
         .select('contact_id')
@@ -136,7 +135,6 @@ const Contacts = () => {
         return;
       }
       let success = 0;
-      // Sequential intentionally — avoids rate-limiting the generate-token edge function
       for (const contactId of contactIdsWithShares) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
@@ -181,8 +179,6 @@ const Contacts = () => {
     );
   }
 
-  // Free users can manage up to 1 contact — no full block
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -193,7 +189,7 @@ const Contacts = () => {
           </div>
           {!isAtContactLimit ? (
             <div className="flex items-center gap-3">
-              {plan === 'paid' && contacts.length > 0 && (
+              {isPaid && contacts.length > 0 && (
                 <Button
                   onClick={handleRegenerateAllPortalLinks}
                   disabled={regeneratingAll || !vaultKey}
@@ -212,7 +208,11 @@ const Contacts = () => {
         </div>
 
         {isAtContactLimit && (
-          <UpgradePrompt message="Free plan is limited to 1 contact. Upgrade to add unlimited contacts across all categories with individual permissions and portal access." featureKey="multipleContacts" />
+          <UpgradePrompt
+            message={`Your plan is limited to ${limits.maxContacts} contact${limits.maxContacts === 1 ? '' : 's'}. Upgrade to add more contacts with individual permissions and portal access.`}
+            featureKey="multipleContacts"
+            requiredPlan={plan === 'essential' ? 'family' : 'essential'}
+          />
         )}
 
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">

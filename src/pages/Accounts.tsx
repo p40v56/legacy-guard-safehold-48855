@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import { useAccounts } from '@/hooks/useAccounts';
-import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
+import { usePlan } from '@/hooks/usePlan';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { decryptFields } from '@/lib/crypto';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,7 +51,7 @@ const Accounts = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
-  const { plan } = usePlan();
+  const { plan, limits, isFree } = usePlan();
   const { vaultKey } = useEncryption();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any | null>(null);
@@ -125,7 +125,8 @@ const Accounts = () => {
 
   const displayAccounts = activeTab === 'all' && searchTerm ? searchResults : filteredAccounts;
 
-  const isFreeBlocked = plan === 'free';
+  const isFreeBlocked = limits.maxAccounts === 0;
+  const isAtAccountLimit = limits.maxAccounts !== Infinity && limits.maxAccounts > 0 && accounts.length >= limits.maxAccounts;
 
   if (!loading && isFreeBlocked) {
     return (
@@ -135,7 +136,7 @@ const Accounts = () => {
             <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground mb-2">Accounts & Financials</h1>
             <p className="text-muted-foreground">Manage your digital accounts and financial legacy</p>
           </div>
-          <UpgradePrompt message="Digital accounts are a paid feature. Upgrade to catalogue your accounts with closure instructions for your contacts." featureKey="accounts" />
+          <UpgradePrompt message="Digital accounts require the Essential plan or higher. Upgrade to catalogue your accounts with closure instructions for your contacts." featureKey="accounts" />
         </div>
       </DashboardLayout>
     );
@@ -215,17 +216,25 @@ const Accounts = () => {
           {['all', ...categoryTabs].map(tab => (
             <TabsContent key={tab} value={tab}>
               <div className="space-y-6">
-                {!isFreeBlocked && (
-                  <div className="flex justify-end">
-                    <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
-                      <Plus className="w-5 h-5 mr-2" />Add Account
-                    </Button>
-                  </div>
-                )}
+                  {!isFreeBlocked && !isAtAccountLimit && (
+                    <div className="flex justify-end">
+                      <Button onClick={() => setShowForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20">
+                        <Plus className="w-5 h-5 mr-2" />Add Account
+                      </Button>
+                    </div>
+                  )}
 
-                {isFreeBlocked && accounts.length === 0 && (
-                  <UpgradePrompt message="Upgrade to store and share digital account information with your contacts." />
-                )}
+                  {isAtAccountLimit && (
+                    <UpgradePrompt
+                      message={`Your plan allows up to ${limits.maxAccounts} accounts. Upgrade to add more.`}
+                      featureKey="accounts"
+                      requiredPlan={plan === 'essential' ? 'family' : 'essential'}
+                    />
+                  )}
+
+                  {isFreeBlocked && accounts.length === 0 && (
+                    <UpgradePrompt message="Upgrade to store and share digital account information with your contacts." featureKey="accounts" />
+                  )}
 
                 {(!isFreeBlocked || accounts.length > 0) && (
                   <>

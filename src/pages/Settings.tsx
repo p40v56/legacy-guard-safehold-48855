@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { useContacts } from '@/hooks/useContacts';
-import { usePlan } from '@/hooks/usePlan';
+import { usePlan, PLAN_LIMITS, PLAN_LABELS, PLAN_PRICES, PlanTier } from '@/hooks/usePlan';
 import { supabase } from '@/integrations/supabase/client';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,7 @@ import SecurityQuestionsManager from '@/components/contacts/SecurityQuestionsMan
 import { ContactTypePermissions as ContactTypePermissionsType } from '@/types/access-control';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import EmailTemplateEditor, { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
+import UpgradePrompt from '@/components/UpgradePrompt';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { decryptFields } from '@/lib/crypto';
@@ -72,7 +73,7 @@ const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { rewrapVaultKey, vaultKey } = useEncryption();
-  const { plan, planExpiresAt, isExpired, rawPlan } = usePlan();
+  const { plan, limits, planExpiresAt, isExpired, rawPlan, isPaid, isFree } = usePlan();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const defaultTab = searchParams.get('tab') || 'profile';
@@ -317,49 +318,59 @@ const Settings = () => {
                   <span className="text-muted-foreground">Current Plan</span>
                   <Badge className={
                     isExpired ? 'bg-destructive/20 text-destructive border-destructive/30' :
-                    plan === 'paid' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-success/20 text-success border-success/30'
+                    plan === 'family' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                    plan === 'essential' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-success/20 text-success border-success/30'
                   }>
-                    {isExpired ? 'Expired' : plan === 'paid' ? 'Paid Plan' : 'Free Plan'}
+                    {isExpired ? 'Expired' : PLAN_LABELS[plan]}
                   </Badge>
                 </div>
                 {isExpired && planExpiresAt && (
                   <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                    <p className="text-sm text-destructive font-medium">Your paid plan expired on {formatDateEUShort(planExpiresAt)}.</p>
+                    <p className="text-sm text-destructive font-medium">Your plan expired on {formatDateEUShort(planExpiresAt)}.</p>
                     <p className="text-sm text-muted-foreground mt-1">Your data is preserved. Contact us to renew.</p>
                   </div>
                 )}
-                {plan === 'paid' && !isExpired && planExpiresAt && (
+                {isPaid && !isExpired && planExpiresAt && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Expires</span>
                     <span className="text-card-foreground font-medium">{formatDateEUShort(planExpiresAt)}</span>
                   </div>
                 )}
-                {plan === 'paid' ? (
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>• Unlimited contacts with portal access</p>
-                    <p>• Unlimited documents & digital accounts</p>
-                    <p>• Multi-channel check-in (email, SMS)</p>
-                    <p>• Custom deadlines & flexible grace periods</p>
-                    <p>• Full email template customization</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>• 1 contact (message only, no portal)</p>
-                      <p>• Switch fully functional</p>
-                      <p>• Web check-in only</p>
-                    </div>
-                    <Separator />
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-                      <h4 className="font-medium text-card-foreground mb-1">Paid Plan — £50/year</h4>
-                      <p className="text-sm text-muted-foreground mb-3">Unlimited contacts, documents, accounts, portal access, multi-channel check-in, and more.</p>
-                      <Button variant="default" className="rounded-full" disabled>
-                        Upgrade to Paid Plan
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2">Contact us at support@legacyvault.app to upgrade your account.</p>
-                    </div>
-                  </>
-                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  {(['free', 'essential', 'family'] as PlanTier[]).map(tier => {
+                    const isCurrent = plan === tier;
+                    const lim = PLAN_LIMITS[tier];
+                    const userEmail = user?.email || '';
+                    return (
+                      <div key={tier} className={`rounded-xl p-4 border ${isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-card-foreground">{PLAN_LABELS[tier]}</h4>
+                            {isCurrent && <Badge variant="secondary" className="text-[10px]">Current plan</Badge>}
+                          </div>
+                          <span className="text-sm font-semibold text-card-foreground">{PLAN_PRICES[tier]}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>👥 {lim.maxContacts === Infinity ? 'Unlimited' : lim.maxContacts} contacts</p>
+                          <p>📄 {lim.maxDocuments === Infinity ? 'Unlimited' : lim.maxDocuments} documents</p>
+                          <p>💰 {lim.maxFinancialAssets === Infinity ? 'Unlimited' : lim.maxFinancialAssets} financial assets</p>
+                          <p>🌐 {lim.maxAccounts === Infinity ? 'Unlimited' : lim.maxAccounts === 0 ? 'No' : lim.maxAccounts} accounts</p>
+                          <p>💾 {lim.maxStorageMb === 0 ? 'No file storage' : lim.maxStorageMb >= 1024 ? `${lim.maxStorageMb / 1024} GB` : `${lim.maxStorageMb} MB`} storage</p>
+                          <p>{lim.portalAccess ? '✓' : '✗'} Contact portals</p>
+                        </div>
+                        {!isCurrent && tier !== 'free' && (
+                          <a
+                            href={`mailto:support@legacyvault.app?subject=${encodeURIComponent(`LegacyVault upgrade request — ${PLAN_LABELS[tier]} plan`)}&body=${encodeURIComponent(`I'd like to upgrade to the ${PLAN_LABELS[tier]} plan (${PLAN_PRICES[tier]}). My account email is: ${userEmail}`)}`}
+                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                          >
+                            Upgrade to {PLAN_LABELS[tier]} →
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
 
@@ -414,10 +425,15 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="email" className="space-y-6 mt-6">
-            <EmailTemplateEditor template={emailTemplate} onChange={setEmailTemplate} onSave={saveEmailTemplate} saving={saving} userName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'} />
+            {limits.customEmail ? (
+              <EmailTemplateEditor template={emailTemplate} onChange={setEmailTemplate} onSave={saveEmailTemplate} saving={saving} userName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Your Name'} />
+            ) : (
+              <UpgradePrompt message="Custom email templates require the Essential plan or higher." featureKey="customEmail" />
+            )}
           </TabsContent>
 
           <TabsContent value="activation" className="space-y-6 mt-6">
+            {limits.activationRules ? (
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center justify-between">
@@ -509,6 +525,9 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+            ) : (
+              <UpgradePrompt message="Activation rules require the Essential plan or higher." featureKey="activationRules" />
+            )}
           </TabsContent>
 
           <TabsContent value="permissions" className="space-y-6 mt-6">

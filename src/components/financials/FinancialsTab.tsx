@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, PoundSterling } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
-import { usePlan, FREE_PLAN_LIMITS } from '@/hooks/usePlan';
+import { usePlan } from '@/hooks/usePlan';
 import { useFinancialAssets } from '@/hooks/useFinancialAssets';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import FinancialSummary from '@/components/financials/FinancialSummary';
@@ -15,18 +15,15 @@ import { ChevronDown } from 'lucide-react';
 import type { FinancialAsset, FinancialCategory, FinancialAssetInsert } from '@/types/financial';
 import { CATEGORY_LABELS } from '@/types/financial';
 
-const FREE_MAX_FINANCIAL_ASSETS = 2;
-
 const FinancialsTab: React.FC = () => {
-  const { plan } = usePlan();
+  const { plan, limits } = usePlan();
   const { assets, loading, createAsset, updateAsset, deleteAsset } = useFinancialAssets();
   const [showForm, setShowForm] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FinancialAsset | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const isFree = plan === 'free';
-  const canAdd = !isFree || assets.length < FREE_MAX_FINANCIAL_ASSETS;
+  const canAdd = limits.maxFinancialAssets === Infinity || assets.length < limits.maxFinancialAssets;
 
   const filteredAssets = useMemo(() => {
     return assets.filter(asset => {
@@ -86,7 +83,6 @@ const FinancialsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground">
           Document your financial assets to help your loved ones know where to find what matters.
@@ -98,17 +94,19 @@ const FinancialsTab: React.FC = () => {
         )}
       </div>
 
-      {isFree && assets.length >= FREE_MAX_FINANCIAL_ASSETS && (
-        <UpgradePrompt message="Free plan allows up to 2 financial assets for personal reference. Upgrade to add unlimited assets and share them with your contacts." />
+      {!canAdd && (
+        <UpgradePrompt
+          message={`Your plan allows up to ${limits.maxFinancialAssets} financial assets. Upgrade to add more.`}
+          requiredPlan={plan === 'essential' ? 'family' : 'essential'}
+        />
       )}
 
-      {isFree && assets.length > 0 && (
+      {plan === 'free' && assets.length > 0 && (
         <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
           Free plan: financial assets are for your personal reference only and won't be shared with contacts.
         </div>
       )}
 
-      {/* Form */}
       {showForm && (
         <FinancialAssetForm
           initialData={editingAsset}
@@ -117,10 +115,8 @@ const FinancialsTab: React.FC = () => {
         />
       )}
 
-      {/* Summary */}
       <FinancialSummary assets={assets} />
 
-      {/* Search */}
       {assets.length > 0 && (
         <SearchInput
           value={searchQuery}
@@ -129,7 +125,6 @@ const FinancialsTab: React.FC = () => {
         />
       )}
 
-      {/* Grouped assets */}
       {filteredAssets.length === 0 && !showForm ? (
         searchQuery.trim() ? (
           <div className="text-center py-8">

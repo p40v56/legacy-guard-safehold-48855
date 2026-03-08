@@ -35,9 +35,8 @@ interface LegacyDocument {
 
 const Documents = () => {
   const { user } = useAuth();
-  const { plan } = usePlan();
+  const { plan, limits } = usePlan();
   const { vaultKey } = useEncryption();
-  const isFreeBlocked = plan === 'free';
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [documents, setDocuments] = useState<LegacyDocument[]>([]);
@@ -77,6 +76,8 @@ const Documents = () => {
       return matchesSearch && matchesFilter;
     });
   }, [documents, searchTerm, filterVisibility]);
+
+  const isDocLimitReached = limits.maxDocuments !== Infinity && documents.length >= limits.maxDocuments;
 
   useEffect(() => {
     if (user) {
@@ -403,7 +404,7 @@ const Documents = () => {
               Securely store and manage important documents for your digital legacy
             </p>
           </div>
-          {!isFreeBlocked && (
+          {!isDocLimitReached && (
             <Button 
               onClick={() => setShowAddForm(true)}
               className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20"
@@ -414,11 +415,15 @@ const Documents = () => {
           )}
         </div>
 
-        {isFreeBlocked && (
-          <UpgradePrompt message="Documents are a paid feature. Upgrade to store and share important documents with your trusted contacts securely." featureKey="documents" />
+        {isDocLimitReached && (
+          <UpgradePrompt
+            message={`Your plan allows up to ${limits.maxDocuments} document${limits.maxDocuments === 1 ? '' : 's'}. Upgrade to add more.`}
+            featureKey="documents"
+            requiredPlan={plan === 'essential' ? 'family' : 'essential'}
+          />
         )}
 
-        {!isFreeBlocked && (<>
+        {<>
         {/* Search and Filter */}
         <div className="bg-muted/30 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -509,13 +514,19 @@ const Documents = () => {
 
               <div className="space-y-2">
                 <Label className="text-card-foreground">Upload File</Label>
-                <FileUpload
-                  onUpload={handleFileUpload}
-                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                  maxSize={10}
-                  disabled={uploading}
-                  className="bg-muted/30 border-border"
-                />
+                {limits.fileUploads ? (
+                  <FileUpload
+                    onUpload={handleFileUpload}
+                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                    maxSize={10}
+                    disabled={uploading}
+                    className="bg-muted/30 border-border"
+                  />
+                ) : (
+                  <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
+                    File uploads require the Essential plan or higher. Free plan supports text documents only.
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -674,7 +685,7 @@ const Documents = () => {
             </div>
           )}
         </div>
-        </>)}
+        </>}
 
         <ConfirmationDialog
           open={!!deleteTargetId}

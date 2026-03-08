@@ -47,6 +47,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   const [reauthLoading, setReauthLoading] = useState(false);
   const [reauthError, setReauthError] = useState('');
   const lastActivityRef = useRef(Date.now());
+  const tabHiddenAtRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
 
   const isUnlocked = vaultKey !== null;

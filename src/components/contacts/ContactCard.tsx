@@ -64,14 +64,29 @@ const ContactCard: React.FC<ContactCardProps> = ({
   useEffect(() => {
     if (!user || isFree) return;
     
-    // Check active share
+    // Check active share and get updated_at
     supabase
       .from('contact_shares')
-      .select('id')
+      .select('id, updated_at')
       .eq('contact_id', contact.id)
       .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
       .limit(1)
-      .then(({ data }) => setHasActiveShare((data?.length ?? 0) > 0));
+      .then(({ data }) => {
+        setHasActiveShare((data?.length ?? 0) > 0);
+        if (data?.[0]) setShareLastUpdated(data[0].updated_at);
+      });
+
+    // Check if user data was modified after portal was generated
+    supabase
+      .from('legacy_documents')
+      .select('updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data?.[0]) setDataLastUpdated(data[0].updated_at);
+      });
 
     // Fetch last portal access from contact_access_tokens
     supabase

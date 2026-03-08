@@ -112,6 +112,9 @@ const Settings = () => {
 
   // Stripe checkout
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [upgradedPlan, setUpgradedPlan] = useState<string | null>(null);
+  const [upgradedExpiry, setUpgradedExpiry] = useState<string | null>(null);
 
   const handleStripeCheckout = async (tier: PlanTier) => {
     if (tier === 'free') return;

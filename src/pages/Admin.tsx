@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import SearchInput from '@/components/ui/search-input';
-import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle, CalendarIcon, Eye, ChevronDown } from 'lucide-react';
+import { Shield, Users, CreditCard, Timer, MoreVertical, Plus, UserPlus, AlertTriangle, CalendarIcon, Eye, ChevronDown, Crown } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { format } from 'date-fns';

@@ -248,16 +248,20 @@ const Switch = () => {
                   Your first check-in will activate the switch and start your countdown.
                 </p>
                 {settings && (
-                  <p className="text-muted-foreground text-xs mt-1">
-                    <button type="button" onClick={() => setConfigOpen(true)} className="text-primary hover:underline font-medium">
-                      Current configuration
-                    </button>
-                    {': '}
-                    {settings.deadline_mode === 'custom'
-                      ? `Custom deadline${settings.custom_deadline ? ` (${new Date(settings.custom_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${new Date(settings.custom_deadline).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })})` : ''}`
-                      : `${settings.check_in_frequency === 'daily' ? 'Daily' : settings.check_in_frequency === 'weekly' ? 'Weekly' : settings.check_in_frequency === 'biweekly' ? 'Biweekly' : 'Monthly'}`}
-                    {' · '}{settings.grace_period_hours}h grace period
-                  </p>
+                  <div className="text-muted-foreground text-xs mt-1 space-y-0.5">
+                    <p>
+                      <button type="button" onClick={() => setConfigOpen(true)} className="text-primary hover:underline font-medium">
+                        Current configuration
+                      </button>
+                      {': '}
+                      {settings.deadline_mode === 'custom'
+                        ? `Custom deadline${settings.custom_deadline ? ` (${new Date(settings.custom_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${new Date(settings.custom_deadline).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })})` : ''}`
+                        : `${settings.check_in_frequency === 'daily' ? 'Daily' : settings.check_in_frequency === 'weekly' ? 'Weekly' : settings.check_in_frequency === 'biweekly' ? 'Biweekly' : 'Monthly'}`}
+                    </p>
+                    <p>
+                      Grace period: {settings.grace_period_hours === 0 ? 'none — triggers immediately' : `${settings.grace_period_hours}h`}
+                    </p>
+                  </div>
                 )}
               </div>
             )}

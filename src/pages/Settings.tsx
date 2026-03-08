@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database, ChevronDown, Info, Check, ShieldCheck, LogOut, Monitor, Smartphone, Laptop, Globe, Trash, PartyPopper, Crown } from 'lucide-react';
+import { User, Bell, Shield, Save, Mail, Phone, AlertTriangle, Clock, Users, FileText, Plus, Trash2, Lock, Download, Database, ChevronDown, Info, Check, ShieldCheck, LogOut, Monitor, Smartphone, Laptop, Globe, Trash, PartyPopper, Crown, Sparkles, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import ContactTypePermissions from '@/components/contacts/ContactTypePermissions';
@@ -719,13 +719,35 @@ const Settings = () => {
                           if (tier === 'free') return null;
                           const actionLabel = isUpgrade ? `Upgrade to ${PLAN_LABELS[tier]}` : `Switch to ${PLAN_LABELS[tier]}`;
                           return (
-                            <button
+                            <Button
                               onClick={() => handleStripeCheckout(tier)}
                               disabled={checkoutLoading === tier}
-                              className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${isDowngrade ? 'text-muted-foreground hover:text-foreground' : 'text-primary hover:text-primary/80'}`}
+                              variant={isUpgrade ? 'default' : 'outline'}
+                              size="sm"
+                              className={`mt-4 w-full group/btn relative overflow-hidden ${
+                                isUpgrade
+                                  ? 'bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300'
+                                  : ''
+                              }`}
                             >
-                              {checkoutLoading === tier ? 'Redirecting...' : `${actionLabel} →`}
-                            </button>
+                              <span className="relative z-10 flex items-center justify-center gap-2">
+                                {checkoutLoading === tier ? (
+                                  <>
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Redirecting...
+                                  </>
+                                ) : (
+                                  <>
+                                    {isUpgrade && <Sparkles className="w-4 h-4 group-hover/btn:animate-wiggle" />}
+                                    {actionLabel}
+                                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-200" />
+                                  </>
+                                )}
+                              </span>
+                            </Button>
                           );
                         })()}
                       </div>

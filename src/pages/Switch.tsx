@@ -264,94 +264,77 @@ const Switch = () => {
         </div>
 
         {/* Section 2: Configuration */}
-        <div className="bg-muted/30 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Settings className="w-6 h-6 text-primary" />
+        <Collapsible defaultOpen>
+          <div className="bg-muted/30 rounded-2xl p-6">
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Settings className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-medium text-card-foreground">Configuration</h3>
+                    <p className="text-sm text-muted-foreground">Customize your switch settings</p>
+                  </div>
+                </div>
+                <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200" />
               </div>
-              <div>
-                <h3 className="text-lg font-medium text-card-foreground">Configuration</h3>
-                <p className="text-sm text-muted-foreground">Customize your switch settings</p>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-6">
+                {settings && (
+                  <SwitchConfiguration
+                    settings={settings}
+                    customDate={customDate}
+                    customTime={customTime}
+                    saving={saving}
+                    onUpdateSettings={updateSettings}
+                    onSwitchToFrequencyMode={switchToFrequencyMode}
+                    onCustomDateTimeUpdate={handleCustomDateTimeUpdate}
+                    onCustomDateChange={setCustomDate}
+                    onCustomTimeChange={setCustomTime}
+                    isFree={plan === 'free'}
+                  />
+                )}
               </div>
-            </div>
-            <Button onClick={handlePreviewEmail} variant="outline" size="sm" className="rounded-xl">
-              <Mail className="w-4 h-4 mr-2" />Preview Email
-            </Button>
+            </CollapsibleContent>
           </div>
-          {settings && (
-            <SwitchConfiguration
-              settings={settings}
-              customDate={customDate}
-              customTime={customTime}
-              saving={saving}
-              onUpdateSettings={updateSettings}
-              onSwitchToFrequencyMode={switchToFrequencyMode}
-              onCustomDateTimeUpdate={handleCustomDateTimeUpdate}
-              onCustomDateChange={setCustomDate}
-              onCustomTimeChange={setCustomTime}
-              isFree={plan === 'free'}
-            />
-          )}
-        </div>
+        </Collapsible>
 
         {/* Section 3: Check-in Methods */}
-        <CheckInMethods
-          smsCheckinEnabled={smsCheckinEnabled}
-          hasPhone={hasPhone}
-          smsNotificationsEnabled={smsNotificationsEnabled}
-          onSmsCheckinChange={(v) => plan !== 'free' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
-          isPaidPlan={plan !== 'free'}
-        />
+        <Collapsible defaultOpen>
+          <div className="bg-muted/30 rounded-2xl p-6">
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Smartphone className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-medium text-card-foreground">Check-in Methods</h3>
+                    <p className="text-sm text-muted-foreground">Configure how you check in</p>
+                  </div>
+                </div>
+                <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200" />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-6">
+                <CheckInMethods
+                  smsCheckinEnabled={smsCheckinEnabled}
+                  hasPhone={hasPhone}
+                  smsNotificationsEnabled={smsNotificationsEnabled}
+                  onSmsCheckinChange={(v) => plan !== 'free' ? handleCheckinMethodChange('sms_checkin_enabled', v) : null}
+                  isPaidPlan={plan !== 'free'}
+                />
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
 
         {/* Section 4: Check-in History */}
         <CheckInHistory />
       </div>
-
-      {/* Email Preview Dialog */}
-      <Dialog open={showEmailPreview} onOpenChange={(open) => { if (!open) handleCloseEmailPreview(); }}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-[640px] max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-card-foreground flex items-center">
-              <Mail className="w-5 h-5 mr-2 text-primary" />
-              Email Preview
-            </DialogTitle>
-          </DialogHeader>
-          <Tabs value={previewTab} onValueChange={handlePreviewTabChange} className="w-full">
-            <TabsList className="w-full rounded-xl">
-              <TabsTrigger value="grace_period" className="flex-1 rounded-lg text-xs">Grace period warning</TabsTrigger>
-              <TabsTrigger value="switch_triggered" className="flex-1 rounded-lg text-xs">Switch triggered</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="flex-1 min-h-0">
-            {loadingPreview ? (
-              <div className="flex items-center justify-center h-[400px]">
-                <div className="text-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-3 animate-pulse">
-                    <Mail className="w-5 h-5 text-primary" />
-                  </div>
-                  <p className="text-muted-foreground text-sm">Loading preview...</p>
-                </div>
-              </div>
-            ) : emailPreviewHtml ? (
-              <iframe
-                ref={iframeRef}
-                src={getIframeSrc()}
-                sandbox="allow-same-origin"
-                className="w-full h-[500px] border border-border rounded-xl bg-white"
-                title="Email preview"
-              />
-            ) : null}
-          </div>
-          <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleCloseEmailPreview}>Close</Button>
-            <Button onClick={handleSendTestEmail} disabled={sendingTest} className="bg-primary hover:bg-primary/90">
-              <Send className="w-4 h-4 mr-2" />
-              {sendingTest ? 'Sending...' : 'Send test email to myself (grace period warning)'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 };

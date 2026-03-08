@@ -223,14 +223,8 @@ const Dashboard = () => {
   const autoLockMinutes = parseInt(localStorage.getItem('vault_auto_lock_minutes') || '15');
   const autoLockLabel = autoLockMinutes >= 60 ? `${autoLockMinutes / 60} hour${autoLockMinutes > 60 ? 's' : ''}` : `${autoLockMinutes} minutes`;
 
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.mfa.listFactors().then(({ data }) => {
-      const verified = data?.totp?.find(f => f.status === 'verified');
-      setMfaEnabled(!!verified);
-    });
-  }, []);
+  const autoLockMinutes = parseInt(localStorage.getItem('vault_auto_lock_minutes') || '15');
+  const autoLockLabel = autoLockMinutes >= 60 ? `${autoLockMinutes / 60} hour${autoLockMinutes > 60 ? 's' : ''}` : `${autoLockMinutes} minutes`;
 
   const securityItems = [
     { label: 'Two-Factor Auth', enabled: mfaEnabled, explanation: mfaEnabled ? 'Your account is protected with an authenticator app in addition to your password.' : 'Enable two-factor authentication in Settings → Security for an extra layer of protection.' },

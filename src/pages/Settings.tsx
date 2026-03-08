@@ -95,6 +95,13 @@ const Settings = () => {
   // Auto-lock timeout
   const [autoLockMinutes, setAutoLockMinutes] = useState(15);
 
+  // Vault integrity check
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{ ok: number; failed: number; total: number } | null>(null);
+
+  // Session management
+  const [signingOutAll, setSigningOutAll] = useState(false);
+
   useEffect(() => {
     const stored = localStorage.getItem('vault_auto_lock_minutes');
     if (stored) setAutoLockMinutes(parseInt(stored));

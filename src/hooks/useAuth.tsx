@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isDeactivated: boolean;
+  mfaPending: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeactivated, setIsDeactivated] = useState(false);
+  const [mfaPending, setMfaPending] = useState(false);
 
   const checkDeactivated = async (userId: string) => {
     try {
@@ -44,6 +46,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const checkMfaStatus = async () => {
+    try {
+      const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (error) {
+        setMfaPending(false);
+        return;
+      }
+      // If user has MFA enrolled (nextLevel is aal2) but current session is only aal1
+      // then MFA verification is still pending
+      setMfaPending(data.currentLevel === 'aal1' && data.nextLevel === 'aal2');
+    } catch {
+      setMfaPending(false);
+    }
+  };
+
   useEffect(() => {
     let initialCheckDone = false;
 
@@ -54,8 +71,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           checkDeactivated(session.user.id);
+          checkMfaStatus();
         } else {
           setIsDeactivated(false);
+          setMfaPending(false);
         }
         initialCheckDone = true;
         setLoading(false);
@@ -69,6 +88,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           checkDeactivated(session.user.id);
+          checkMfaStatus();
         }
         setLoading(false);
       }
@@ -82,6 +102,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null);
     setSession(null);
     setIsDeactivated(false);
+    setMfaPending(false);
   };
 
   const value = {
@@ -89,6 +110,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     session,
     loading,
     isDeactivated,
+    mfaPending,
     signOut,
   };
 

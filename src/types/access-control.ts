@@ -1,7 +1,7 @@
 
 export type ContactType = 'immediate_family' | 'extended_family' | 'close_friends' | 'professional' | 'legal' | 'financial';
 
-export type DigitalAccountCategory = 'banking' | 'social_media' | 'email' | 'shopping' | 'utilities' | 'healthcare' | 'entertainment' | 'other';
+export type DigitalAccountCategory = 'social' | 'email' | 'cloud' | 'subscription' | 'other';
 
 export type DocumentCategory = 'legal' | 'financial' | 'medical' | 'personal' | 'insurance' | 'property' | 'other';
 

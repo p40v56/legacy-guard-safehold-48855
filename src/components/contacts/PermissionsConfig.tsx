@@ -17,13 +17,10 @@ interface PermissionsConfigProps {
 }
 
 const digitalAccountCategories: { value: DigitalAccountCategory; label: string }[] = [
-  { value: 'banking', label: 'Banking & Finance' },
-  { value: 'social_media', label: 'Social Media' },
+  { value: 'social', label: 'Social Media' },
   { value: 'email', label: 'Email Accounts' },
-  { value: 'shopping', label: 'Shopping & E-commerce' },
-  { value: 'utilities', label: 'Utilities & Services' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'entertainment', label: 'Entertainment' },
+  { value: 'cloud', label: 'Cloud Storage' },
+  { value: 'subscription', label: 'Subscriptions' },
   { value: 'other', label: 'Other' },
 ];
 

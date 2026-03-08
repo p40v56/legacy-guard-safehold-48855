@@ -797,6 +797,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          browser: string | null
+          created_at: string
+          device_name: string | null
+          id: string
+          ip_address: string | null
+          is_mobile: boolean | null
+          last_active_at: string
+          os: string | null
+          session_token_hash: string
+          user_id: string
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string
+          device_name?: string | null
+          id?: string
+          ip_address?: string | null
+          is_mobile?: boolean | null
+          last_active_at?: string
+          os?: string | null
+          session_token_hash: string
+          user_id: string
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string
+          device_name?: string | null
+          id?: string
+          ip_address?: string | null
+          is_mobile?: boolean | null
+          last_active_at?: string
+          os?: string | null
+          session_token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           check_in_frequency: string

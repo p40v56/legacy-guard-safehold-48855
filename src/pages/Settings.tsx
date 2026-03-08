@@ -349,8 +349,8 @@ const Settings = () => {
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
-    if (newPassword.length < 6) {
-      toast({ title: "Error", description: "New password must be at least 6 characters", variant: "destructive" });
+    if (newPassword.length < 8) {
+      toast({ title: "Error", description: "New password must be at least 8 characters. Your password is also your encryption key — use something strong.", variant: "destructive" });
       return;
     }
     if (newPassword !== confirmPassword) {

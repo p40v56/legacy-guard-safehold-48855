@@ -6,7 +6,7 @@ import { encryptFields, decryptFields } from '@/lib/crypto';
 import { supabase } from '@/integrations/supabase/client';
 import type { FinancialAsset, FinancialAssetInsert } from '@/types/financial';
 
-const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email'];
+const ENCRYPTED_FINANCIAL_FIELDS = ['name', 'institution', 'reference_number', 'notes', 'contact_name', 'contact_phone', 'contact_email', 'category_specific_fields_json'];
 
 export const useFinancialAssets = () => {
   const { user } = useAuth();
@@ -28,7 +28,11 @@ export const useFinancialAssets = () => {
       const decryptedAssets = await Promise.all((data || []).map(async (asset) => {
         if (vaultKey) {
           const decryptedValues = await decryptFields(asset, ENCRYPTED_FINANCIAL_FIELDS, vaultKey);
-          return { ...asset, ...decryptedValues } as unknown as FinancialAsset;
+          // Parse category_specific_fields from encrypted JSON, with fallback to raw column
+          const csf = decryptedValues.category_specific_fields_json
+            ? (() => { try { return JSON.parse(decryptedValues.category_specific_fields_json as string); } catch { return {}; } })()
+            : ((asset as any).category_specific_fields || {});
+          return { ...asset, ...decryptedValues, category_specific_fields: csf } as unknown as FinancialAsset;
         }
         return asset as unknown as FinancialAsset;
       }));
@@ -60,9 +64,14 @@ export const useFinancialAssets = () => {
           contact_name: assetData.contact_name,
           contact_phone: assetData.contact_phone,
           contact_email: assetData.contact_email,
+          category_specific_fields_json: assetData.category_specific_fields
+            ? JSON.stringify(assetData.category_specific_fields)
+            : null,
         };
         const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
         dataToInsert = { ...dataToInsert, ...encrypted };
+        // Null out the plaintext JSONB column since we store encrypted
+        dataToInsert.category_specific_fields = null;
       }
 
       const { data, error } = await supabase
@@ -104,13 +113,23 @@ export const useFinancialAssets = () => {
       if (vaultKey) {
         const fieldsToEncrypt: Record<string, string | null | undefined> = {};
         for (const field of ENCRYPTED_FINANCIAL_FIELDS) {
-          if (field in assetData) {
+          if (field === 'category_specific_fields_json') {
+            if ('category_specific_fields' in assetData) {
+              fieldsToEncrypt.category_specific_fields_json = assetData.category_specific_fields
+                ? JSON.stringify(assetData.category_specific_fields)
+                : null;
+            }
+          } else if (field in assetData) {
             fieldsToEncrypt[field] = (assetData as any)[field];
           }
         }
         if (Object.keys(fieldsToEncrypt).length > 0) {
           const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
           dataToUpdate = { ...dataToUpdate, ...encrypted };
+          // If we encrypted category_specific_fields, null out the plaintext column
+          if ('category_specific_fields_json' in fieldsToEncrypt) {
+            dataToUpdate.category_specific_fields = null;
+          }
         }
       }
 

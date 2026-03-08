@@ -405,6 +405,8 @@ export type Database = {
           attached_document_ids: string[] | null
           category: string
           category_specific_fields: Json | null
+          category_specific_fields_json: string | null
+          category_specific_fields_json_iv: string | null
           contact_email: string | null
           contact_email_iv: string | null
           contact_name: string | null
@@ -430,6 +432,8 @@ export type Database = {
           attached_document_ids?: string[] | null
           category: string
           category_specific_fields?: Json | null
+          category_specific_fields_json?: string | null
+          category_specific_fields_json_iv?: string | null
           contact_email?: string | null
           contact_email_iv?: string | null
           contact_name?: string | null
@@ -455,6 +459,8 @@ export type Database = {
           attached_document_ids?: string[] | null
           category?: string
           category_specific_fields?: Json | null
+          category_specific_fields_json?: string | null
+          category_specific_fields_json_iv?: string | null
           contact_email?: string | null
           contact_email_iv?: string | null
           contact_name?: string | null

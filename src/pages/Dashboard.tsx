@@ -19,6 +19,7 @@ import { formatDateEU } from '@/utils/dateUtils';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { vaultKey } = useEncryption();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({

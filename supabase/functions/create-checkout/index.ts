@@ -84,7 +84,7 @@ serve(async (req) => {
     const priceId = plan === "family" ? familyPriceId : essentialPriceId;
 
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2025-08-27.basil",
+      apiVersion: "2023-10-16",
     });
 
     // Find or create Stripe customer

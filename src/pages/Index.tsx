@@ -71,6 +71,7 @@ const Index = () => {
 
     return () => {
       obs.disconnect(); cObs.disconnect(); connectorObs.disconnect();
+      clearTimeout(fallback);
       window.removeEventListener('scroll', onScroll);
     };
   }, []);

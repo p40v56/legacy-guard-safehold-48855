@@ -261,7 +261,7 @@ const Dashboard = () => {
 
         {/* System Status Card */}
         <div className="bg-muted/30 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${statusDisplay.bgColor} ${
               (countdown.isOverdue || settings?.grace_period_active) ? 'animate-pulse' : ''
             }`}>

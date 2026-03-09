@@ -21,17 +21,30 @@ const Index = () => {
     })), []);
 
   useEffect(() => {
-    // Scroll reveal with blur-to-sharp
-    const revealEls = document.querySelectorAll('#lv-root .reveal');
-    const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }),
-      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
-    );
-    revealEls.forEach((el) => obs.observe(el));
-    // Fallback: make all reveals visible after 3s in case observer fails
-    const fallback = setTimeout(() => {
-      revealEls.forEach((el) => el.classList.add('visible'));
-    }, 3000);
+    // Use rAF to ensure DOM is fully painted before observing
+    const raf = requestAnimationFrame(() => {
+      const revealEls = document.querySelectorAll('#lv-root .reveal');
+      
+      if ('IntersectionObserver' in window) {
+        const obs = new IntersectionObserver(
+          (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }),
+          { threshold: 0.01, rootMargin: '0px 0px 100px 0px' }
+        );
+        revealEls.forEach((el) => obs.observe(el));
+        observerRef = obs;
+      } else {
+        // No IO support — show everything
+        revealEls.forEach((el) => el.classList.add('visible'));
+      }
+
+      // Fallback: make all reveals visible after 2s in case observer fails
+      fallbackTimer = setTimeout(() => {
+        document.querySelectorAll('#lv-root .reveal:not(.visible)').forEach((el) => el.classList.add('visible'));
+      }, 2000);
+    });
+
+    let observerRef: IntersectionObserver | null = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Counters
     const cObs = new IntersectionObserver((entries) => {

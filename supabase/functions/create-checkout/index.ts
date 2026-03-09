@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const ALLOWED_ORIGINS = [
   "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
@@ -84,7 +84,7 @@ serve(async (req) => {
     const priceId = plan === "family" ? familyPriceId : essentialPriceId;
 
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2025-08-27.basil",
+      apiVersion: "2023-10-16",
     });
 
     // Find or create Stripe customer

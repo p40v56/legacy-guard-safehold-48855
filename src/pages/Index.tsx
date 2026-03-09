@@ -83,8 +83,9 @@ const Index = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
-      obs.disconnect(); cObs.disconnect(); connectorObs.disconnect();
-      clearTimeout(fallback);
+      cancelAnimationFrame(raf);
+      observerRef?.disconnect(); cObs.disconnect(); connectorObs.disconnect();
+      if (fallbackTimer) clearTimeout(fallbackTimer);
       window.removeEventListener('scroll', onScroll);
     };
   }, []);

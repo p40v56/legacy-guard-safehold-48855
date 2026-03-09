@@ -22,11 +22,16 @@ const Index = () => {
 
   useEffect(() => {
     // Scroll reveal with blur-to-sharp
+    const revealEls = document.querySelectorAll('#lv-root .reveal');
     const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-      { threshold: 0.08 }
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }),
+      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
     );
-    document.querySelectorAll('#lv-root .reveal').forEach((el) => obs.observe(el));
+    revealEls.forEach((el) => obs.observe(el));
+    // Fallback: make all reveals visible after 3s in case observer fails
+    const fallback = setTimeout(() => {
+      revealEls.forEach((el) => el.classList.add('visible'));
+    }, 3000);
 
     // Counters
     const cObs = new IntersectionObserver((entries) => {

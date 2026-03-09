@@ -257,7 +257,7 @@ async function startGracePeriod(
         expires_at: tokenExpiry,
         method: 'email_link',
       });
-      checkInUrl = `${supabaseUrl}/functions/v1/check-in-via-token?token=${checkInToken}`;
+      checkInUrl = `${APP_BASE_URL}/functions/v1/check-in-via-token?token=${checkInToken}`;
     } catch (tokenErr) {
       console.error("Failed to generate check-in token:", tokenErr);
     }
@@ -657,7 +657,7 @@ const handler = async (req: Request): Promise<Response> => {
                     expires_at: tokenExpiry,
                     method: 'email_link',
                   });
-                  checkInUrl = `${supabaseUrl}/functions/v1/check-in-via-token?token=${checkInToken}`;
+                  checkInUrl = `${APP_BASE_URL}/functions/v1/check-in-via-token?token=${checkInToken}`;
                 } catch (tokenErr) {
                   console.error("Failed to generate pre-deadline check-in token:", tokenErr);
                 }

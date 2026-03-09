@@ -619,8 +619,6 @@ export type Database = {
           plan_expires_at: string | null
           salt: string | null
           setup_wizard_dismissed: boolean | null
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
           updated_at: string
           user_id: string
           vault_key_iv: string | null
@@ -651,8 +649,6 @@ export type Database = {
           plan_expires_at?: string | null
           salt?: string | null
           setup_wizard_dismissed?: boolean | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           updated_at?: string
           user_id: string
           vault_key_iv?: string | null
@@ -683,8 +679,6 @@ export type Database = {
           plan_expires_at?: string | null
           salt?: string | null
           setup_wizard_dismissed?: boolean | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
           vault_key_iv?: string | null
@@ -952,8 +946,6 @@ export type Database = {
           plan_expires_at: string | null
           salt: string | null
           setup_wizard_dismissed: boolean | null
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
           updated_at: string
           user_id: string
           vault_key_iv: string | null

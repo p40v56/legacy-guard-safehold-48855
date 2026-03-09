@@ -397,7 +397,7 @@ const Dashboard = () => {
         {/* Quick Actions */}
         <div className="space-y-4">
           <h3 className="text-xl font-medium text-card-foreground">Quick Actions</h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {quickActions.map((action) => (
               <Link
                 key={action.name}

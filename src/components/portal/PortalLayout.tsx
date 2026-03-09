@@ -89,10 +89,10 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ portalData, token, children
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 py-8 flex gap-8">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8 flex gap-8">
         {/* Desktop sidebar */}
         {!isMobile && sections.length > 1 && (
-          <nav className="sticky top-8 w-52 shrink-0 space-y-1 hidden lg:block self-start">
+          <nav className="sticky top-8 w-52 shrink-0 space-y-1 hidden md:block self-start">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-2 space-y-0.5">
               {sections.map(s => (
                 <button

@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 @layer utilities {
-  .scrollbar-hide {
+  .scrollbar-hide,
+  .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
+  .scrollbar-hide::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
 }
@@ -1026,17 +1028,36 @@ body:has(#lv-root) {
   #lv-root .lv-numbers-inner { grid-template-columns: repeat(2, 1fr); }
   #lv-root .lv-footer-top { grid-template-columns: 1fr 1fr; }
   #lv-root .lv-num-item { margin-bottom: 24px; }
-}
-@media (max-width: 600px) {
-  #lv-nav { padding: 16px 24px !important; }
   #lv-root .lv-section,
   #lv-root .lv-process,
   #lv-root .lv-features,
-  #lv-root .lv-final-cta { padding: 80px 24px; }
-  #lv-root .lv-numbers { padding: 60px 24px; }
-  #lv-root .lv-steps { grid-template-columns: 1fr; }
+  #lv-root .lv-final-cta { padding: 100px 32px; }
+  #lv-root .lv-numbers { padding: 80px 32px; }
+  #lv-root .lv-enc-flow { padding: 32px 20px; }
+}
+@media (max-width: 600px) {
+  #lv-nav { padding: 14px 16px !important; }
+  #lv-nav.scrolled { padding: 10px 16px !important; }
+  #lv-root .lv-section,
+  #lv-root .lv-process,
+  #lv-root .lv-features,
+  #lv-root .lv-final-cta { padding: 60px 16px; }
+  #lv-root .lv-numbers { padding: 48px 16px; }
+  #lv-root .lv-numbers-inner { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  #lv-root .lv-num-item { padding: 0 8px; }
+  #lv-root .lv-steps { grid-template-columns: 1fr; gap: 20px; }
+  #lv-root .lv-connector { display: none; }
   #lv-root .lv-enc-steps { flex-direction: column; }
   #lv-root .lv-enc-arrow { transform: rotate(90deg); }
+  #lv-root .lv-enc-flow { padding: 24px 16px; }
+  #lv-root .lv-footer-top { grid-template-columns: 1fr; gap: 32px; }
+  #lv-root footer.lv-footer,
+  #lv-root .lv-footer { padding: 48px 16px 32px; }
+  #lv-root .lv-hero { padding: 80px 16px 60px; }
+  #lv-root .lv-trust { gap: 16px; }
+  #lv-root .lv-trust-item { font-size: 11px; }
+  #lv-root .lv-pricing-card { padding: 24px; }
+  #lv-root .lv-step-circle { width: 48px; height: 48px; font-size: 16px; }
 }
 
 /* ── Print styles for portal ── */

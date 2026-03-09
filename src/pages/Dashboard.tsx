@@ -235,14 +235,14 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Welcome Header */}
-        <div className="mb-8 flex items-start justify-between">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-medium text-card-foreground">
                 {getTimeOfDay()}{firstName ? `, ${firstName}` : ''}!
               </h1>
             </div>
-            <p className="text-muted-foreground">Welcome to your dashboard</p>
+            <p className="text-muted-foreground text-sm sm:text-base">Welcome to your dashboard</p>
           </div>
           <SecurityBadge />
         </div>
@@ -261,7 +261,7 @@ const Dashboard = () => {
 
         {/* System Status Card */}
         <div className="bg-muted/30 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${statusDisplay.bgColor} ${
               (countdown.isOverdue || settings?.grace_period_active) ? 'animate-pulse' : ''
             }`}>
@@ -397,7 +397,7 @@ const Dashboard = () => {
         {/* Quick Actions */}
         <div className="space-y-4">
           <h3 className="text-xl font-medium text-card-foreground">Quick Actions</h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {quickActions.map((action) => (
               <Link
                 key={action.name}

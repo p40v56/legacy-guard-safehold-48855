@@ -157,17 +157,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       )}
 
       {/* Main Content */}
-      <main className="pt-20 pb-28 px-4 lg:px-8 min-h-screen">
+      <main className="pt-16 sm:pt-20 pb-24 sm:pb-28 px-2 sm:px-4 lg:px-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          <div className="glass-strong rounded-3xl p-6 lg:p-8">
+          <div className="glass-strong rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8">
             {children}
           </div>
         </div>
       </main>
 
       {/* Bottom Floating Navigation */}
-      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="floating-nav px-2 py-2 flex items-center gap-1">
+      <nav className="fixed bottom-4 sm:bottom-6 left-2 right-2 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50">
+        <div className="floating-nav px-1.5 sm:px-2 py-1.5 sm:py-2 flex items-center justify-around sm:justify-center gap-0.5 sm:gap-1 overflow-x-auto no-scrollbar">
           {navigationItems.slice(0, 6).map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
@@ -175,7 +175,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-200 ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full transition-all duration-200 shrink-0 ${
                   isActive 
                     ? 'bg-primary/10 text-primary' 
                     : 'text-muted-foreground hover:text-card-foreground hover:bg-muted'
@@ -188,7 +188,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           })}
           <Link
             to="/settings"
-            className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-200 ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 rounded-full transition-all duration-200 shrink-0 ${
               location.pathname === '/settings' 
                 ? 'bg-primary/10 text-primary' 
                 : 'text-muted-foreground hover:text-card-foreground hover:bg-muted'

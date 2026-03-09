@@ -488,12 +488,6 @@ const Auth = () => {
                   )}
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
 
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-warning/10 border border-warning/20">
-                    <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Your password is your encryption key. If you forget it, your data cannot be recovered by anyone — including us. Store it somewhere safe.
-                    </p>
-                  </div>
                 </div>
 
                 <div className="space-y-2">

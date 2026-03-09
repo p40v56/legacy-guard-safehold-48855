@@ -235,14 +235,14 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Welcome Header */}
-        <div className="mb-8 flex items-start justify-between">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl lg:text-4xl font-medium text-card-foreground">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-medium text-card-foreground">
                 {getTimeOfDay()}{firstName ? `, ${firstName}` : ''}!
               </h1>
             </div>
-            <p className="text-muted-foreground">Welcome to your dashboard</p>
+            <p className="text-muted-foreground text-sm sm:text-base">Welcome to your dashboard</p>
           </div>
           <SecurityBadge />
         </div>

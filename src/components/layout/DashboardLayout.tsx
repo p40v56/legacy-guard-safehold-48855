@@ -157,9 +157,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       )}
 
       {/* Main Content */}
-      <main className="pt-20 pb-28 px-4 lg:px-8 min-h-screen">
+      <main className="pt-16 sm:pt-20 pb-24 sm:pb-28 px-2 sm:px-4 lg:px-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          <div className="glass-strong rounded-3xl p-6 lg:p-8">
+          <div className="glass-strong rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8">
             {children}
           </div>
         </div>

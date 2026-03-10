@@ -12,6 +12,7 @@ import CheckInMethods from '@/components/switch/CheckInMethods';
 import CheckInHistory from '@/components/switch/CheckInHistory';
 import { CheckInFrequency, UserSettings } from '@/types/common';
 import { SettingsService, ProfileService, NotificationSettingsService } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 
 const Switch = () => {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ const Switch = () => {
   const [smsNotificationsEnabled, setSmsNotificationsEnabled] = useState(false);
   const [emailCheckinEnabled, setEmailCheckinEnabled] = useState(false);
   const [smsCheckinEnabled, setSmsCheckinEnabled] = useState(false);
+  const [activityCheckinEnabled, setActivityCheckinEnabled] = useState(false);
 
 
   useEffect(() => {

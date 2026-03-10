@@ -38,40 +38,56 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Verify the caller's JWT
-    const callerClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authError } = await callerClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const body = await req.json().catch(() => ({} as any));
+
+    // Check if this is an automated call from cron (service role key in Authorization)
+    const isAutomated = body.automated === true && authHeader === `Bearer ${serviceRoleKey}`;
+    let userId: string;
+    let userEmail: string | undefined;
+
+    if (isAutomated && body.userId) {
+      userId = body.userId;
+      const adminClient = createClient(supabaseUrl, serviceRoleKey);
+      const { data } = await adminClient.auth.admin.getUserById(userId);
+      userEmail = data?.user?.email || undefined;
+    } else {
+      // Verify the caller's JWT
+      const callerClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } },
       });
+      const { data: { user }, error: authError } = await callerClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Require password re-verification
+      const password = body.password;
+      if (!password) {
+        return new Response(
+          JSON.stringify({ error: 'Password required to delete account' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const verifyClient = createClient(supabaseUrl, anonKey);
+      const { error: signInError } = await verifyClient.auth.signInWithPassword({
+        email: user.email!,
+        password,
+      });
+      if (signInError) {
+        return new Response(
+          JSON.stringify({ error: 'Incorrect password. Account deletion cancelled.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      userId = user.id;
+      userEmail = user.email;
     }
 
-    // Require password re-verification
-    const { password } = await req.json().catch(() => ({} as any));
-    if (!password) {
-      return new Response(
-        JSON.stringify({ error: 'Password required to delete account' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const verifyClient = createClient(supabaseUrl, anonKey);
-    const { error: signInError } = await verifyClient.auth.signInWithPassword({
-      email: user.email!,
-      password,
-    });
-    if (signInError) {
-      return new Response(
-        JSON.stringify({ error: 'Incorrect password. Account deletion cancelled.' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = user.id;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Delete all user data from all tables (ordered by FK dependencies)
@@ -119,12 +135,12 @@ Deno.serve(async (req) => {
     }
 
     // Delete the auth user
-    const userEmail = user.email;
+    const deletedEmail = userEmail;
     const { error } = await adminClient.auth.admin.deleteUser(userId);
     if (error) throw error;
 
     // Send deletion confirmation email (non-blocking)
-    if (userEmail) {
+    if (deletedEmail) {
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -133,8 +149,8 @@ Deno.serve(async (req) => {
           headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
           body: JSON.stringify({
             notificationType: 'account_deleted',
-            recipientEmail: userEmail,
-            deletedBy: 'self',
+            recipientEmail: deletedEmail,
+            deletedBy: isAutomated ? 'auto_delete' : 'self',
           }),
         });
       } catch { /* non-blocking */ }

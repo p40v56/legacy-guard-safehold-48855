@@ -13,7 +13,7 @@ import { useEncryption } from '@/contexts/EncryptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { decryptFields } from '@/lib/crypto';
 
-type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
+type AccountType = 'email' | 'social' | 'financial' | 'work' | 'device' | 'entertainment' | 'other';
 
 interface AccountFormData {
   account_name: string;
@@ -103,7 +103,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
                 value={formData.account_name}
                 onChange={(e) => setFormData({...formData, account_name: e.target.value})}
                 className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
-                placeholder="My Gmail Account"
+                placeholder={formData.account_type === 'device' ? 'e.g. iPhone, MacBook, Home Safe, Alarm System' : 'My Gmail Account'}
                 required
               />
             </div>
@@ -135,24 +135,36 @@ const AccountForm: React.FC<AccountFormProps> = ({
                   <SelectItem value="financial" className="rounded-lg">Financial</SelectItem>
                   <SelectItem value="email" className="rounded-lg">Email</SelectItem>
                   <SelectItem value="work" className="rounded-lg">Work</SelectItem>
+                  <SelectItem value="device" className="rounded-lg">Device & Physical</SelectItem>
                   <SelectItem value="entertainment" className="rounded-lg">Entertainment</SelectItem>
                   <SelectItem value="other" className="rounded-lg">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label className="text-card-foreground font-medium">Website URL</Label>
-              <div className="relative">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  value={formData.website_url}
-                  onChange={(e) => setFormData({...formData, website_url: e.target.value})}
-                  className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
-                  placeholder="https://example.com"
-                />
+            {formData.account_type !== 'device' && (
+              <div className="space-y-2">
+                <Label className="text-card-foreground font-medium">Website URL</Label>
+                <div className="relative">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    value={formData.website_url}
+                    onChange={(e) => setFormData({...formData, website_url: e.target.value})}
+                    className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
+                    placeholder="https://example.com"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
+
+          {formData.account_type === 'device' && (
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <span className="text-lg">💡</span>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Use this for phone PINs, laptop passwords, safe combinations, alarm codes, car/house key locations, and any physical access codes your family will need immediately.
+              </p>
+            </div>
+          )}
 
           {/* Email & Username */}
           <div className="grid md:grid-cols-2 gap-4">
@@ -170,14 +182,14 @@ const AccountForm: React.FC<AccountFormProps> = ({
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-card-foreground font-medium">Username</Label>
+              <Label className="text-card-foreground font-medium">{formData.account_type === 'device' ? 'Code / PIN' : 'Username'}</Label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   value={formData.username}
                   onChange={(e) => setFormData({...formData, username: e.target.value})}
                   className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
-                  placeholder="username"
+                  placeholder={formData.account_type === 'device' ? 'e.g. PIN, combination, code' : 'username'}
                 />
               </div>
             </div>
@@ -185,7 +197,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
 
           {/* Credentials */}
           <div className="space-y-2">
-            <Label className="text-card-foreground font-medium">Credentials / Password Hint</Label>
+            <Label className="text-card-foreground font-medium">{formData.account_type === 'device' ? 'PIN / Password / Combination' : 'Credentials / Password Hint'}</Label>
             <Textarea
               value={formData.credentials}
               onChange={(e) => setFormData({...formData, credentials: e.target.value})}
@@ -196,24 +208,26 @@ const AccountForm: React.FC<AccountFormProps> = ({
           </div>
 
           {/* Closure Action */}
-          <div className="space-y-2">
-            <Label className="text-card-foreground font-medium">Closure Action</Label>
-            <Select
-              value={formData.closure_action || 'none'}
-              onValueChange={(value) => setFormData({...formData, closure_action: value === 'none' ? '' : value})}
-            >
-              <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all">
-                <SelectValue placeholder="What should contacts do with this account?" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="none" className="rounded-lg">No action specified</SelectItem>
-                <SelectItem value="delete" className="rounded-lg">Delete this account</SelectItem>
-                <SelectItem value="memorialize" className="rounded-lg">Memorialize</SelectItem>
-                <SelectItem value="transfer" className="rounded-lg">Transfer to someone</SelectItem>
-                <SelectItem value="download" className="rounded-lg">Download data then close</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {formData.account_type !== 'device' && (
+            <div className="space-y-2">
+              <Label className="text-card-foreground font-medium">Closure Action</Label>
+              <Select
+                value={formData.closure_action || 'none'}
+                onValueChange={(value) => setFormData({...formData, closure_action: value === 'none' ? '' : value})}
+              >
+                <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all">
+                  <SelectValue placeholder="What should contacts do with this account?" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="none" className="rounded-lg">No action specified</SelectItem>
+                  <SelectItem value="delete" className="rounded-lg">Delete this account</SelectItem>
+                  <SelectItem value="memorialize" className="rounded-lg">Memorialize</SelectItem>
+                  <SelectItem value="transfer" className="rounded-lg">Transfer to someone</SelectItem>
+                  <SelectItem value="download" className="rounded-lg">Download data then close</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">

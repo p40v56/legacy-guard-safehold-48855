@@ -329,6 +329,13 @@ const Settings = () => {
     }
   };
 
+  // Activity check-in state
+  const [activityCheckinEnabled, setActivityCheckinEnabled] = useState(false);
+
+  // Auto-delete state
+  const [autoDeleteEnabled, setAutoDeleteEnabled] = useState(false);
+  const [autoDeleteDays, setAutoDeleteDays] = useState<number | null>(null);
+
   // GDPR state
   const [exporting, setExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -350,6 +357,56 @@ const Settings = () => {
     };
     fetchActivity();
   }, []);
+
+  // Fetch activity check-in and auto-delete settings
+  useEffect(() => {
+    if (!user) return;
+    const fetchSwitchSettings = async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('activity_checkin_enabled, auto_delete_days')
+        .eq('user_id', user.id)
+        .single();
+      if (data) {
+        setActivityCheckinEnabled(data.activity_checkin_enabled ?? false);
+        if (data.auto_delete_days) {
+          setAutoDeleteEnabled(true);
+          setAutoDeleteDays(data.auto_delete_days);
+        }
+      }
+    };
+    fetchSwitchSettings();
+  }, [user]);
+
+  const handleActivityCheckinToggle = async (checked: boolean) => {
+    if (!user) return;
+    setActivityCheckinEnabled(checked);
+    await supabase
+      .from('user_settings')
+      .update({ activity_checkin_enabled: checked } as any)
+      .eq('user_id', user.id);
+    toast({
+      title: checked ? 'Activity check-in enabled' : 'Activity check-in disabled',
+      description: checked
+        ? 'Logging in will now automatically reset your countdown.'
+        : 'You will need to manually check in.',
+    });
+  };
+
+  const handleAutoDeleteChange = async (days: number | null) => {
+    if (!user) return;
+    setAutoDeleteDays(days);
+    await supabase
+      .from('user_settings')
+      .update({ auto_delete_days: days } as any)
+      .eq('user_id', user.id);
+    toast({
+      title: days ? 'Auto-delete scheduled' : 'Auto-delete disabled',
+      description: days
+        ? `Your account will be deleted ${days} days after your switch fires.`
+        : 'Your account will not be automatically deleted.',
+    });
+  };
 
   const passwordChangedAt = typeof window !== 'undefined' ? localStorage.getItem('password_last_changed_at') : null;
 
@@ -1212,6 +1269,58 @@ const Settings = () => {
 
           {/* ─── PRIVACY TAB ─── */}
           <TabsContent value="privacy" className="space-y-6 mt-6">
+            {/* Data Lifecycle */}
+            <Card className="bg-muted/30 border-none rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center"><Clock className="w-5 h-5 mr-2 text-primary" />Data Lifecycle</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Optionally schedule automatic deletion of your vault after your switch has fired. This gives your contacts time to access their portal before all data is permanently removed.
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-foreground font-medium">Auto-delete after switch fires</Label>
+                    <p className="text-xs text-muted-foreground">Your account and all data will be permanently deleted after this period</p>
+                  </div>
+                  <Switch
+                    checked={autoDeleteEnabled}
+                    onCheckedChange={(checked) => {
+                      setAutoDeleteEnabled(checked);
+                      handleAutoDeleteChange(checked ? 180 : null);
+                    }}
+                  />
+                </div>
+
+                {autoDeleteEnabled && (
+                  <div className="space-y-3 pl-0">
+                    <div className="space-y-2">
+                      <Label className="text-foreground">Delete after</Label>
+                      <Select value={(autoDeleteDays || 180).toString()} onValueChange={(v) => handleAutoDeleteChange(parseInt(v))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="30">30 days after switch fires</SelectItem>
+                          <SelectItem value="60">60 days after switch fires</SelectItem>
+                          <SelectItem value="90">90 days after switch fires</SelectItem>
+                          <SelectItem value="180">180 days after switch fires</SelectItem>
+                          <SelectItem value="365">1 year after switch fires</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        This deletion is permanent and cannot be undone. Make sure your contacts have enough time to download what they need.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center"><Download className="w-5 h-5 mr-2 text-primary" />Export Your Data</CardTitle>

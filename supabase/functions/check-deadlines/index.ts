@@ -540,6 +540,64 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Handle already-triggered switches with pending delayed notifications
       if (settings.switch_triggered && settings.switch_triggered_at) {
+        // Auto-delete check
+        try {
+          const { data: switchSettingsRow } = await supabase
+            .from('user_settings')
+            .select('auto_delete_days')
+            .eq('user_id', userId)
+            .single();
+
+          if (switchSettingsRow?.auto_delete_days) {
+            const triggeredAt = new Date(settings.switch_triggered_at);
+            const deleteAfterMs = switchSettingsRow.auto_delete_days * 24 * 60 * 60 * 1000;
+            const shouldDeleteAt = new Date(triggeredAt.getTime() + deleteAfterMs);
+
+            if (now >= new Date(shouldDeleteAt.getTime() - 7 * 24 * 60 * 60 * 1000)) {
+              const { data: alreadyDeleting } = await supabase
+                .from('sent_notifications')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('notification_type', 'auto_delete_scheduled')
+                .limit(1);
+
+              if (!alreadyDeleting || alreadyDeleting.length === 0) {
+                const userEmail = await getUserEmail(supabase, userId);
+                if (userEmail) {
+                  const daysLeft = Math.ceil((shouldDeleteAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                  await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+                    body: JSON.stringify({
+                      notificationType: 'auto_delete_warning',
+                      recipientEmail: userEmail,
+                      daysLeft: daysLeft > 0 ? daysLeft : 0,
+                      deleteDate: shouldDeleteAt.toISOString(),
+                      appUrl: APP_BASE_URL,
+                    }),
+                  });
+                  await supabase.from('sent_notifications').insert({
+                    user_id: userId,
+                    contact_id: userId,
+                    notification_type: 'auto_delete_scheduled',
+                    status: 'sent',
+                  });
+                }
+              }
+
+              if (now >= shouldDeleteAt) {
+                await fetch(`${supabaseUrl}/functions/v1/delete-own-account`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+                  body: JSON.stringify({ userId, automated: true }),
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Auto-delete check error:', err);
+        }
+
         const triggerResult = await triggerSwitch(supabase, supabaseUrl, supabaseServiceKey, settings, profile);
         if (triggerResult.results.length > 0) {
           results.delayedNotificationsSent.push({ userId, ...triggerResult });

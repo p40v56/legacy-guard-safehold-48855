@@ -358,6 +358,27 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       </body></html>`;
       console.log(`Sending account deletion email to ${recipientEmail} (deleted by: ${deletedBy})`);
+    } else if (notificationType === "auto_delete_warning") {
+      const { recipientEmail: adEmail, daysLeft, deleteDate, appUrl } = data as any;
+      const deleteDateFormatted = new Date(deleteDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      recipientEmail = adEmail;
+      recipientName = adEmail;
+      subject = `⚠️ Your LegacyVault account will be deleted in ${daysLeft} days`;
+      emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#374151;max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0;">
+          <h1 style="margin:0;font-size:24px;font-weight:600;">⚠️ Account Deletion Scheduled</h1>
+          <p style="margin:12px 0 0;opacity:.9;font-size:14px;">LegacyVault Auto-Delete</p>
+        </div>
+        <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+          <p style="font-size:15px;margin:0 0 20px;color:#4b5563;">Your LegacyVault account is scheduled for automatic deletion on <strong>${deleteDateFormatted}</strong> (${daysLeft} days from now).</p>
+          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">This was configured as part of your data lifecycle settings. If you wish to cancel this, log in and update your settings.</p>
+          <div style="text-align:center;margin:32px 0;"><a href="${appUrl || ''}/settings?tab=privacy" style="display:inline-block;background-color:#ef4444;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">Review Settings →</a></div>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+          <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · This is an automated message.</p>
+        </div>
+      </body></html>`;
+      console.log(`Sending auto-delete warning to ${recipientEmail}`);
     } else if (notificationType === "plan_upgrade") {
       const { recipientEmail: puEmail, planLabel, expiresAt } = data as any;
       const expiryDate = new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });

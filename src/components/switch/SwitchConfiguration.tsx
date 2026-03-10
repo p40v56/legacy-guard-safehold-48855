@@ -1,8 +1,11 @@
 import { UserSettings, CheckInFrequency } from '@/types/common';
 import FrequencyConfiguration from './FrequencyConfiguration';
 import CustomDeadlineConfiguration from './CustomDeadlineConfiguration';
-import { Clock, Calendar, AlertTriangle } from 'lucide-react';
+import { Clock, Calendar, AlertTriangle, LogIn } from 'lucide-react';
 import { formatDateEU } from '@/utils/dateUtils';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 interface SwitchConfigurationProps {
   settings: UserSettings;
@@ -10,6 +13,8 @@ interface SwitchConfigurationProps {
   customTime: string;
   saving: boolean;
   isFree?: boolean;
+  activityCheckinEnabled?: boolean;
+  onActivityCheckinChange?: (checked: boolean) => void;
   onUpdateSettings: (updates: Partial<UserSettings>) => Promise<void>;
   onSwitchToFrequencyMode: () => void;
   onCustomDateTimeUpdate: () => void;
@@ -30,6 +35,8 @@ const SwitchConfiguration = ({
   customTime,
   saving,
   isFree,
+  activityCheckinEnabled,
+  onActivityCheckinChange,
   onUpdateSettings,
   onSwitchToFrequencyMode,
   onCustomDateTimeUpdate,
@@ -145,6 +152,24 @@ const SwitchConfiguration = ({
         <p className="text-muted-foreground text-sm">Saving changes...</p>
       )}
 
+      {/* Activity-based check-in */}
+      <Separator />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <LogIn className="w-5 h-5 text-primary mt-0.5" />
+          <div>
+            <Label className="text-card-foreground font-medium">Activity-based check-in</Label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Any login to LegacyVault automatically counts as a check-in and resets your countdown. You still receive reminders before the deadline.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={activityCheckinEnabled ?? false}
+          onCheckedChange={(checked) => onActivityCheckinChange?.(checked)}
+        />
+      </div>
+
       {/* Configuration Summary */}
       <div className="p-4 bg-muted/30 border border-border rounded-xl space-y-2">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Current configuration summary</p>
@@ -171,6 +196,12 @@ const SwitchConfiguration = ({
             : `${settings.grace_period_hours} hours`
           }
         </p>
+
+        {activityCheckinEnabled && (
+          <p className="text-sm text-card-foreground">
+            🔄 Activity check-in: <span className="text-success font-medium">enabled</span> — logging in resets your countdown
+          </p>
+        )}
 
         <p className="text-xs text-muted-foreground mt-1">
           {settings.deadline_mode === 'frequency'

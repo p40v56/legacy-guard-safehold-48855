@@ -12,6 +12,7 @@ import CheckInMethods from '@/components/switch/CheckInMethods';
 import CheckInHistory from '@/components/switch/CheckInHistory';
 import { CheckInFrequency, UserSettings } from '@/types/common';
 import { SettingsService, ProfileService, NotificationSettingsService } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 
 const Switch = () => {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ const Switch = () => {
   const [smsNotificationsEnabled, setSmsNotificationsEnabled] = useState(false);
   const [emailCheckinEnabled, setEmailCheckinEnabled] = useState(false);
   const [smsCheckinEnabled, setSmsCheckinEnabled] = useState(false);
+  const [activityCheckinEnabled, setActivityCheckinEnabled] = useState(false);
 
 
   useEffect(() => {
@@ -59,6 +61,13 @@ const Switch = () => {
       setSmsNotificationsEnabled(notifSettings.sms_notifications);
       setEmailCheckinEnabled((userSettings as any)?.email_checkin_enabled ?? false);
       setSmsCheckinEnabled((userSettings as any)?.sms_checkin_enabled ?? false);
+      // Fetch activity check-in
+      const { data: extraSettings } = await supabase
+        .from('user_settings')
+        .select('activity_checkin_enabled')
+        .eq('user_id', user.id)
+        .single();
+      setActivityCheckinEnabled(extraSettings?.activity_checkin_enabled ?? false);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({ title: "Error", description: "Failed to load settings", variant: "destructive" });
@@ -306,6 +315,20 @@ const Switch = () => {
                     customDate={customDate}
                     customTime={customTime}
                     saving={saving}
+                    activityCheckinEnabled={activityCheckinEnabled}
+                    onActivityCheckinChange={async (checked) => {
+                      setActivityCheckinEnabled(checked);
+                      await supabase
+                        .from('user_settings')
+                        .update({ activity_checkin_enabled: checked } as any)
+                        .eq('user_id', user!.id);
+                      toast({
+                        title: checked ? 'Activity check-in enabled' : 'Activity check-in disabled',
+                        description: checked
+                          ? 'Logging in will now automatically reset your countdown.'
+                          : 'You will need to manually check in.',
+                      });
+                    }}
                     onUpdateSettings={updateSettings}
                     onSwitchToFrequencyMode={switchToFrequencyMode}
                     onCustomDateTimeUpdate={handleCustomDateTimeUpdate}

@@ -15,13 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Monitor, Plus, Edit, Trash2, FileText, Mail, Users, Landmark, Briefcase, Play, Globe, AlertTriangle } from 'lucide-react';
+import { Monitor, Plus, Edit, Trash2, FileText, Mail, Users, Landmark, Briefcase, Play, Globe, AlertTriangle, Lock } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Link } from 'react-router-dom';
 
-type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'other';
+type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'device' | 'other';
 type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
 type ClosureAction = 'delete' | 'memorialize' | 'transfer' | 'download';
 
@@ -31,6 +31,7 @@ const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   email: 'Email',
   cloud: 'Cloud Storage',
   subscription: 'Subscription',
+  device: 'Device & Physical',
   other: 'Other',
 };
 
@@ -39,6 +40,7 @@ const ACCOUNT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; bg: string; i
   social: { icon: <Users className="w-5 h-5" />, bg: 'bg-purple-500/15', iconColor: 'text-purple-500' },
   financial: { icon: <Landmark className="w-5 h-5" />, bg: 'bg-emerald-500/15', iconColor: 'text-emerald-500' },
   work: { icon: <Briefcase className="w-5 h-5" />, bg: 'bg-amber-500/15', iconColor: 'text-amber-500' },
+  device: { icon: <Lock className="w-5 h-5" />, bg: 'bg-slate-500/15', iconColor: 'text-slate-500' },
   entertainment: { icon: <Play className="w-5 h-5" />, bg: 'bg-pink-500/15', iconColor: 'text-pink-500' },
   cloud: { icon: <Globe className="w-5 h-5" />, bg: 'bg-cyan-500/15', iconColor: 'text-cyan-500' },
   subscription: { icon: <Monitor className="w-5 h-5" />, bg: 'bg-orange-500/15', iconColor: 'text-orange-500' },
@@ -281,8 +283,8 @@ const Accounts = () => {
                         <form onSubmit={handleSubmit} className="space-y-6">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                              <Label className="text-card-foreground">Platform/Service *</Label>
-                              <Input value={formData.platform} onChange={(e) => setFormData({...formData, platform: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="e.g., Gmail, Facebook" required />
+                              <Label className="text-card-foreground">{formData.account_type === 'device' ? 'Device / Item Name *' : 'Platform/Service *'}</Label>
+                              <Input value={formData.platform} onChange={(e) => setFormData({...formData, platform: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder={formData.account_type === 'device' ? 'e.g. iPhone, MacBook, Home Safe, Alarm System' : 'e.g., Gmail, Facebook'} required />
                             </div>
                             <div className="space-y-2">
                               <Label className="text-card-foreground">Account Type</Label>
@@ -300,9 +302,19 @@ const Accounts = () => {
                               <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="account@example.com" />
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-card-foreground">Username</Label>
-                              <Input value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="username" />
+                              <Label className="text-card-foreground">{formData.account_type === 'device' ? 'Code / PIN' : 'Username'}</Label>
+                              <Input value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder={formData.account_type === 'device' ? 'e.g. PIN, combination, code' : 'username'} />
                             </div>
+                            {formData.account_type === 'device' && (
+                              <div className="col-span-1 lg:col-span-2">
+                                <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                                  <span className="text-lg">💡</span>
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Use this for phone PINs, laptop passwords, safe combinations, alarm codes, car/house key locations, and any physical access codes your family will need immediately.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                             <div className="space-y-2">
                               <Label className="text-card-foreground">Importance</Label>
                               <Select value={formData.importance} onValueChange={(value) => setFormData({...formData, importance: value as ImportanceLevel})}>
@@ -315,26 +327,28 @@ const Accounts = () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="space-y-2">
-                              <Label className="text-card-foreground">Closure Action</Label>
-                              <Select value={formData.closure_action} onValueChange={(value) => setFormData({...formData, closure_action: value as ClosureAction})}>
-                                <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl"><SelectValue /></SelectTrigger>
-                                <SelectContent className="bg-card border-border">
-                                  <SelectItem value="memorialize">Memorialize</SelectItem>
-                                  <SelectItem value="delete">Delete</SelectItem>
-                                  <SelectItem value="transfer">Transfer</SelectItem>
-                                  <SelectItem value="download">Download</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            {formData.account_type !== 'device' && (
+                              <div className="space-y-2">
+                                <Label className="text-card-foreground">Closure Action</Label>
+                                <Select value={formData.closure_action} onValueChange={(value) => setFormData({...formData, closure_action: value as ClosureAction})}>
+                                  <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl"><SelectValue /></SelectTrigger>
+                                  <SelectContent className="bg-card border-border">
+                                    <SelectItem value="memorialize">Memorialize</SelectItem>
+                                    <SelectItem value="delete">Delete</SelectItem>
+                                    <SelectItem value="transfer">Transfer</SelectItem>
+                                    <SelectItem value="download">Download</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-card-foreground">Notes</Label>
                             <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={4} placeholder="Additional notes..." />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-card-foreground">Credentials / Password Hint</Label>
-                            <Textarea value={formData.credentials} onChange={(e) => setFormData({...formData, credentials: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={3} placeholder="Password hints, recovery codes... (encrypted)" />
+                            <Label className="text-card-foreground">{formData.account_type === 'device' ? 'PIN / Password / Combination' : 'Credentials / Password Hint'}</Label>
+                            <Textarea value={formData.credentials} onChange={(e) => setFormData({...formData, credentials: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={3} placeholder={formData.account_type === 'device' ? 'PIN, password, combination, or location details... (encrypted)' : 'Password hints, recovery codes... (encrypted)'} />
                             <p className="text-xs text-muted-foreground">End-to-end encrypted. Only visible to authorized contacts.</p>
                           </div>
 

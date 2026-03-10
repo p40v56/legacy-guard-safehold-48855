@@ -67,6 +67,11 @@ const PrivacyPolicy = () => (
           For privacy-related questions or to exercise your data rights, contact us at{' '}
           <a href="mailto:support@legacyvault.app" style={{ color: '#1A9BD7', textDecoration: 'underline' }}>support@legacyvault.app</a>.
         </Section>
+
+        <Section title="8. Encryption Verification">
+          Our client-side encryption implementation is publicly documented at{' '}
+          <a href="/crypto-verification.txt" target="_blank" rel="noopener noreferrer" style={{ color: '#1A9BD7', textDecoration: 'underline' }}>/crypto-verification.txt</a>.
+        </Section>
       </div>
     </main>
   </div>

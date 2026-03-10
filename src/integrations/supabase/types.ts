@@ -844,6 +844,8 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          activity_checkin_enabled: boolean | null
+          auto_delete_days: number | null
           check_in_frequency: string
           created_at: string
           custom_deadline: string | null
@@ -863,6 +865,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          activity_checkin_enabled?: boolean | null
+          auto_delete_days?: number | null
           check_in_frequency?: string
           created_at?: string
           custom_deadline?: string | null
@@ -882,6 +886,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          activity_checkin_enabled?: boolean | null
+          auto_delete_days?: number | null
           check_in_frequency?: string
           created_at?: string
           custom_deadline?: string | null

@@ -31,6 +31,7 @@ const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   email: 'Email',
   cloud: 'Cloud Storage',
   subscription: 'Subscription',
+  device: 'Device & Physical',
   other: 'Other',
 };
 

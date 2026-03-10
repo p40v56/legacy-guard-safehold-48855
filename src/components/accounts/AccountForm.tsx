@@ -182,14 +182,14 @@ const AccountForm: React.FC<AccountFormProps> = ({
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-card-foreground font-medium">Username</Label>
+              <Label className="text-card-foreground font-medium">{formData.account_type === 'device' ? 'Code / PIN' : 'Username'}</Label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   value={formData.username}
                   onChange={(e) => setFormData({...formData, username: e.target.value})}
                   className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
-                  placeholder="username"
+                  placeholder={formData.account_type === 'device' ? 'e.g. PIN, combination, code' : 'username'}
                 />
               </div>
             </div>

@@ -103,7 +103,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
                 value={formData.account_name}
                 onChange={(e) => setFormData({...formData, account_name: e.target.value})}
                 className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
-                placeholder="My Gmail Account"
+                placeholder={formData.account_type === 'device' ? 'e.g. iPhone, MacBook, Home Safe, Alarm System' : 'My Gmail Account'}
                 required
               />
             </div>

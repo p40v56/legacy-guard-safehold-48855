@@ -164,7 +164,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
                 Use this for phone PINs, laptop passwords, safe combinations, alarm codes, car/house key locations, and any physical access codes your family will need immediately.
               </p>
             </div>
-          )
+          )}
 
           {/* Email & Username */}
           <div className="grid md:grid-cols-2 gap-4">

@@ -283,8 +283,8 @@ const Accounts = () => {
                         <form onSubmit={handleSubmit} className="space-y-6">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                              <Label className="text-card-foreground">Platform/Service *</Label>
-                              <Input value={formData.platform} onChange={(e) => setFormData({...formData, platform: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="e.g., Gmail, Facebook" required />
+                              <Label className="text-card-foreground">{formData.account_type === 'device' ? 'Device / Item Name *' : 'Platform/Service *'}</Label>
+                              <Input value={formData.platform} onChange={(e) => setFormData({...formData, platform: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder={formData.account_type === 'device' ? 'e.g. iPhone, MacBook, Home Safe, Alarm System' : 'e.g., Gmail, Facebook'} required />
                             </div>
                             <div className="space-y-2">
                               <Label className="text-card-foreground">Account Type</Label>

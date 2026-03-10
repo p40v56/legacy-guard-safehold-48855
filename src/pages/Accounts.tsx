@@ -327,18 +327,20 @@ const Accounts = () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="space-y-2">
-                              <Label className="text-card-foreground">Closure Action</Label>
-                              <Select value={formData.closure_action} onValueChange={(value) => setFormData({...formData, closure_action: value as ClosureAction})}>
-                                <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl"><SelectValue /></SelectTrigger>
-                                <SelectContent className="bg-card border-border">
-                                  <SelectItem value="memorialize">Memorialize</SelectItem>
-                                  <SelectItem value="delete">Delete</SelectItem>
-                                  <SelectItem value="transfer">Transfer</SelectItem>
-                                  <SelectItem value="download">Download</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            {formData.account_type !== 'device' && (
+                              <div className="space-y-2">
+                                <Label className="text-card-foreground">Closure Action</Label>
+                                <Select value={formData.closure_action} onValueChange={(value) => setFormData({...formData, closure_action: value as ClosureAction})}>
+                                  <SelectTrigger className="h-12 bg-muted/50 border-border rounded-xl"><SelectValue /></SelectTrigger>
+                                  <SelectContent className="bg-card border-border">
+                                    <SelectItem value="memorialize">Memorialize</SelectItem>
+                                    <SelectItem value="delete">Delete</SelectItem>
+                                    <SelectItem value="transfer">Transfer</SelectItem>
+                                    <SelectItem value="download">Download</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-card-foreground">Notes</Label>

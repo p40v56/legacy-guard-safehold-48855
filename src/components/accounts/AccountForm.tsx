@@ -141,19 +141,30 @@ const AccountForm: React.FC<AccountFormProps> = ({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label className="text-card-foreground font-medium">Website URL</Label>
-              <div className="relative">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  value={formData.website_url}
-                  onChange={(e) => setFormData({...formData, website_url: e.target.value})}
-                  className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
-                  placeholder="https://example.com"
-                />
+            {formData.account_type !== 'device' && (
+              <div className="space-y-2">
+                <Label className="text-card-foreground font-medium">Website URL</Label>
+                <div className="relative">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    value={formData.website_url}
+                    onChange={(e) => setFormData({...formData, website_url: e.target.value})}
+                    className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
+                    placeholder="https://example.com"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
+
+          {formData.account_type === 'device' && (
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <span className="text-lg">💡</span>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Use this for phone PINs, laptop passwords, safe combinations, alarm codes, car/house key locations, and any physical access codes your family will need immediately.
+              </p>
+            </div>
+          )
 
           {/* Email & Username */}
           <div className="grid md:grid-cols-2 gap-4">

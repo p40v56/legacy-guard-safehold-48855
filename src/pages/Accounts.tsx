@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Monitor, Plus, Edit, Trash2, FileText, Mail, Users, Landmark, Briefcase, Play, Globe, AlertTriangle } from 'lucide-react';
+import { Monitor, Plus, Edit, Trash2, FileText, Mail, Users, Landmark, Briefcase, Play, Globe, AlertTriangle, Lock } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';

@@ -329,6 +329,13 @@ const Settings = () => {
     }
   };
 
+  // Activity check-in state
+  const [activityCheckinEnabled, setActivityCheckinEnabled] = useState(false);
+
+  // Auto-delete state
+  const [autoDeleteEnabled, setAutoDeleteEnabled] = useState(false);
+  const [autoDeleteDays, setAutoDeleteDays] = useState<number | null>(null);
+
   // GDPR state
   const [exporting, setExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

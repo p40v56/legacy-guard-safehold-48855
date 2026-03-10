@@ -135,6 +135,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
                   <SelectItem value="financial" className="rounded-lg">Financial</SelectItem>
                   <SelectItem value="email" className="rounded-lg">Email</SelectItem>
                   <SelectItem value="work" className="rounded-lg">Work</SelectItem>
+                  <SelectItem value="device" className="rounded-lg">Device & Physical</SelectItem>
                   <SelectItem value="entertainment" className="rounded-lg">Entertainment</SelectItem>
                   <SelectItem value="other" className="rounded-lg">Other</SelectItem>
                 </SelectContent>

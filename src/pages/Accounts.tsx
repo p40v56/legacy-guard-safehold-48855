@@ -40,6 +40,7 @@ const ACCOUNT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; bg: string; i
   social: { icon: <Users className="w-5 h-5" />, bg: 'bg-purple-500/15', iconColor: 'text-purple-500' },
   financial: { icon: <Landmark className="w-5 h-5" />, bg: 'bg-emerald-500/15', iconColor: 'text-emerald-500' },
   work: { icon: <Briefcase className="w-5 h-5" />, bg: 'bg-amber-500/15', iconColor: 'text-amber-500' },
+  device: { icon: <Lock className="w-5 h-5" />, bg: 'bg-slate-500/15', iconColor: 'text-slate-500' },
   entertainment: { icon: <Play className="w-5 h-5" />, bg: 'bg-pink-500/15', iconColor: 'text-pink-500' },
   cloud: { icon: <Globe className="w-5 h-5" />, bg: 'bg-cyan-500/15', iconColor: 'text-cyan-500' },
   subscription: { icon: <Monitor className="w-5 h-5" />, bg: 'bg-orange-500/15', iconColor: 'text-orange-500' },

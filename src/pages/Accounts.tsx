@@ -21,7 +21,7 @@ import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Link } from 'react-router-dom';
 
-type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'other';
+type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'device' | 'other';
 type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
 type ClosureAction = 'delete' | 'memorialize' | 'transfer' | 'download';
 

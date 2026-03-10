@@ -1269,6 +1269,58 @@ const Settings = () => {
 
           {/* ─── PRIVACY TAB ─── */}
           <TabsContent value="privacy" className="space-y-6 mt-6">
+            {/* Data Lifecycle */}
+            <Card className="bg-muted/30 border-none rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center"><Clock className="w-5 h-5 mr-2 text-primary" />Data Lifecycle</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Optionally schedule automatic deletion of your vault after your switch has fired. This gives your contacts time to access their portal before all data is permanently removed.
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-foreground font-medium">Auto-delete after switch fires</Label>
+                    <p className="text-xs text-muted-foreground">Your account and all data will be permanently deleted after this period</p>
+                  </div>
+                  <Switch
+                    checked={autoDeleteEnabled}
+                    onCheckedChange={(checked) => {
+                      setAutoDeleteEnabled(checked);
+                      handleAutoDeleteChange(checked ? 180 : null);
+                    }}
+                  />
+                </div>
+
+                {autoDeleteEnabled && (
+                  <div className="space-y-3 pl-0">
+                    <div className="space-y-2">
+                      <Label className="text-foreground">Delete after</Label>
+                      <Select value={(autoDeleteDays || 180).toString()} onValueChange={(v) => handleAutoDeleteChange(parseInt(v))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="30">30 days after switch fires</SelectItem>
+                          <SelectItem value="60">60 days after switch fires</SelectItem>
+                          <SelectItem value="90">90 days after switch fires</SelectItem>
+                          <SelectItem value="180">180 days after switch fires</SelectItem>
+                          <SelectItem value="365">1 year after switch fires</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        This deletion is permanent and cannot be undone. Make sure your contacts have enough time to download what they need.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="bg-muted/30 border-none rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center"><Download className="w-5 h-5 mr-2 text-primary" />Export Your Data</CardTitle>

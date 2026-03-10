@@ -197,7 +197,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
 
           {/* Credentials */}
           <div className="space-y-2">
-            <Label className="text-card-foreground font-medium">Credentials / Password Hint</Label>
+            <Label className="text-card-foreground font-medium">{formData.account_type === 'device' ? 'PIN / Password / Combination' : 'Credentials / Password Hint'}</Label>
             <Textarea
               value={formData.credentials}
               onChange={(e) => setFormData({...formData, credentials: e.target.value})}

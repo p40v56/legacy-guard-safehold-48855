@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
     if (error) throw error;
 
     // Send deletion confirmation email (non-blocking)
-    if (userEmail) {
+    if (deletedEmail) {
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -149,8 +149,8 @@ Deno.serve(async (req) => {
           headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
           body: JSON.stringify({
             notificationType: 'account_deleted',
-            recipientEmail: userEmail,
-            deletedBy: 'self',
+            recipientEmail: deletedEmail,
+            deletedBy: isAutomated ? 'auto_delete' : 'self',
           }),
         });
       } catch { /* non-blocking */ }

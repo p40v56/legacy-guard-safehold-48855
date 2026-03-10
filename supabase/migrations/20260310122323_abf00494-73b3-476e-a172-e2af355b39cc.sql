@@ -1,0 +1,2 @@
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS activity_checkin_enabled boolean DEFAULT false;
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS auto_delete_days integer DEFAULT NULL;

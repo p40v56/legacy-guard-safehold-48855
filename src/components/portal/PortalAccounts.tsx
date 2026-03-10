@@ -31,6 +31,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   social: 'Social Media',
   email: 'Email',
   work: 'Work & Professional',
+  device: 'Device & Physical',
   entertainment: 'Entertainment',
   financial: 'Financial',
   other: 'Other',

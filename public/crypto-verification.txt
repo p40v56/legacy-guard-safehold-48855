@@ -1,0 +1,13 @@
+LegacyVault Encryption Implementation
+======================================
+The client-side encryption code is available for public review.
+
+File: src/lib/crypto.ts
+Algorithm: AES-256-GCM
+Key derivation: PBKDF2 with SHA-256, 310,000 iterations
+Portal keys: PBKDF2 with SHA-256, 100,000 iterations
+Vault key: Randomly generated AES-256-GCM key, encrypted with master key before storage
+Zero-knowledge: Encryption keys never transmitted to or stored by LegacyVault servers
+
+This file confirms our encryption architecture. The full implementation
+can be reviewed at: https://github.com/[your-repo]/blob/main/src/lib/crypto.ts

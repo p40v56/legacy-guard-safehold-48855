@@ -347,8 +347,8 @@ const Accounts = () => {
                             <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={4} placeholder="Additional notes..." />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-card-foreground">Credentials / Password Hint</Label>
-                            <Textarea value={formData.credentials} onChange={(e) => setFormData({...formData, credentials: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={3} placeholder="Password hints, recovery codes... (encrypted)" />
+                            <Label className="text-card-foreground">{formData.account_type === 'device' ? 'PIN / Password / Combination' : 'Credentials / Password Hint'}</Label>
+                            <Textarea value={formData.credentials} onChange={(e) => setFormData({...formData, credentials: e.target.value})} className="bg-muted/50 border-border rounded-xl" rows={3} placeholder={formData.account_type === 'device' ? 'PIN, password, combination, or location details... (encrypted)' : 'Password hints, recovery codes... (encrypted)'} />
                             <p className="text-xs text-muted-foreground">End-to-end encrypted. Only visible to authorized contacts.</p>
                           </div>
 

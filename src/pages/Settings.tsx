@@ -358,6 +358,56 @@ const Settings = () => {
     fetchActivity();
   }, []);
 
+  // Fetch activity check-in and auto-delete settings
+  useEffect(() => {
+    if (!user) return;
+    const fetchSwitchSettings = async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('activity_checkin_enabled, auto_delete_days')
+        .eq('user_id', user.id)
+        .single();
+      if (data) {
+        setActivityCheckinEnabled(data.activity_checkin_enabled ?? false);
+        if (data.auto_delete_days) {
+          setAutoDeleteEnabled(true);
+          setAutoDeleteDays(data.auto_delete_days);
+        }
+      }
+    };
+    fetchSwitchSettings();
+  }, [user]);
+
+  const handleActivityCheckinToggle = async (checked: boolean) => {
+    if (!user) return;
+    setActivityCheckinEnabled(checked);
+    await supabase
+      .from('user_settings')
+      .update({ activity_checkin_enabled: checked } as any)
+      .eq('user_id', user.id);
+    toast({
+      title: checked ? 'Activity check-in enabled' : 'Activity check-in disabled',
+      description: checked
+        ? 'Logging in will now automatically reset your countdown.'
+        : 'You will need to manually check in.',
+    });
+  };
+
+  const handleAutoDeleteChange = async (days: number | null) => {
+    if (!user) return;
+    setAutoDeleteDays(days);
+    await supabase
+      .from('user_settings')
+      .update({ auto_delete_days: days } as any)
+      .eq('user_id', user.id);
+    toast({
+      title: days ? 'Auto-delete scheduled' : 'Auto-delete disabled',
+      description: days
+        ? `Your account will be deleted ${days} days after your switch fires.`
+        : 'Your account will not be automatically deleted.',
+    });
+  };
+
   const passwordChangedAt = typeof window !== 'undefined' ? localStorage.getItem('password_last_changed_at') : null;
 
   const handleExportData = async () => {

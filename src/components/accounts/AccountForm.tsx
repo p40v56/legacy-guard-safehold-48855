@@ -208,24 +208,26 @@ const AccountForm: React.FC<AccountFormProps> = ({
           </div>
 
           {/* Closure Action */}
-          <div className="space-y-2">
-            <Label className="text-card-foreground font-medium">Closure Action</Label>
-            <Select
-              value={formData.closure_action || 'none'}
-              onValueChange={(value) => setFormData({...formData, closure_action: value === 'none' ? '' : value})}
-            >
-              <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all">
-                <SelectValue placeholder="What should contacts do with this account?" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="none" className="rounded-lg">No action specified</SelectItem>
-                <SelectItem value="delete" className="rounded-lg">Delete this account</SelectItem>
-                <SelectItem value="memorialize" className="rounded-lg">Memorialize</SelectItem>
-                <SelectItem value="transfer" className="rounded-lg">Transfer to someone</SelectItem>
-                <SelectItem value="download" className="rounded-lg">Download data then close</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {formData.account_type !== 'device' && (
+            <div className="space-y-2">
+              <Label className="text-card-foreground font-medium">Closure Action</Label>
+              <Select
+                value={formData.closure_action || 'none'}
+                onValueChange={(value) => setFormData({...formData, closure_action: value === 'none' ? '' : value})}
+              >
+                <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all">
+                  <SelectValue placeholder="What should contacts do with this account?" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="none" className="rounded-lg">No action specified</SelectItem>
+                  <SelectItem value="delete" className="rounded-lg">Delete this account</SelectItem>
+                  <SelectItem value="memorialize" className="rounded-lg">Memorialize</SelectItem>
+                  <SelectItem value="transfer" className="rounded-lg">Transfer to someone</SelectItem>
+                  <SelectItem value="download" className="rounded-lg">Download data then close</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">

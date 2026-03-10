@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { decryptFields } from '@/lib/crypto';
 
-type AccountType = 'email' | 'social' | 'financial' | 'work' | 'entertainment' | 'other';
+type AccountType = 'email' | 'social' | 'financial' | 'work' | 'device' | 'entertainment' | 'other';
 
 interface DigitalAccount {
   id: string;

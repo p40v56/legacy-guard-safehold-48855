@@ -305,6 +305,16 @@ const Accounts = () => {
                               <Label className="text-card-foreground">{formData.account_type === 'device' ? 'Code / PIN' : 'Username'}</Label>
                               <Input value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder={formData.account_type === 'device' ? 'e.g. PIN, combination, code' : 'username'} />
                             </div>
+                            {formData.account_type === 'device' && (
+                              <div className="col-span-1 lg:col-span-2">
+                                <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                                  <span className="text-lg">💡</span>
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Use this for phone PINs, laptop passwords, safe combinations, alarm codes, car/house key locations, and any physical access codes your family will need immediately.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                             <div className="space-y-2">
                               <Label className="text-card-foreground">Importance</Label>
                               <Select value={formData.importance} onValueChange={(value) => setFormData({...formData, importance: value as ImportanceLevel})}>

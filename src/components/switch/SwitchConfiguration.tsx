@@ -13,6 +13,8 @@ interface SwitchConfigurationProps {
   customTime: string;
   saving: boolean;
   isFree?: boolean;
+  activityCheckinEnabled?: boolean;
+  onActivityCheckinChange?: (checked: boolean) => void;
   onUpdateSettings: (updates: Partial<UserSettings>) => Promise<void>;
   onSwitchToFrequencyMode: () => void;
   onCustomDateTimeUpdate: () => void;

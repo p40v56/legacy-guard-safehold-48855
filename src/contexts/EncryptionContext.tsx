@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, ShieldCheck } from 'lucide-react';
+import { SettingsService } from '@/services/supabaseService';
 
 const getAutoLockMs = () => {
   const stored = localStorage.getItem('vault_auto_lock_minutes');

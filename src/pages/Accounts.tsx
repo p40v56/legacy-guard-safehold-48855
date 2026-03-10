@@ -302,8 +302,8 @@ const Accounts = () => {
                               <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="account@example.com" />
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-card-foreground">Username</Label>
-                              <Input value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder="username" />
+                              <Label className="text-card-foreground">{formData.account_type === 'device' ? 'Code / PIN' : 'Username'}</Label>
+                              <Input value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="h-12 bg-muted/50 border-border rounded-xl" placeholder={formData.account_type === 'device' ? 'e.g. PIN, combination, code' : 'username'} />
                             </div>
                             <div className="space-y-2">
                               <Label className="text-card-foreground">Importance</Label>

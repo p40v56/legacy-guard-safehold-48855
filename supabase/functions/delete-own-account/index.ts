@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
     }
 
     // Delete the auth user
-    const userEmail = user.email;
+    const deletedEmail = userEmail;
     const { error } = await adminClient.auth.admin.deleteUser(userId);
     if (error) throw error;
 

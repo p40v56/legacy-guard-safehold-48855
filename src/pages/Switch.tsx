@@ -332,6 +332,20 @@ const Switch = () => {
         <CheckInMethods
           emailCheckinEnabled={emailCheckinEnabled}
           onEmailCheckinChange={(v) => handleCheckinMethodChange('email_checkin_enabled', v)}
+          activityCheckinEnabled={activityCheckinEnabled}
+          onActivityCheckinChange={async (checked) => {
+            setActivityCheckinEnabled(checked);
+            await supabase
+              .from('user_settings')
+              .update({ activity_checkin_enabled: checked } as any)
+              .eq('user_id', user!.id);
+            toast({
+              title: checked ? 'Activity check-in enabled' : 'Activity check-in disabled',
+              description: checked
+                ? 'Logging in will now automatically reset your countdown.'
+                : 'You will need to manually check in.',
+            });
+          }}
           isPaidPlan={plan !== 'free'}
         />
 

@@ -1,7 +1,7 @@
 import { UserSettings, CheckInFrequency } from '@/types/common';
 import FrequencyConfiguration from './FrequencyConfiguration';
 import CustomDeadlineConfiguration from './CustomDeadlineConfiguration';
-import { Clock, Calendar, AlertTriangle, LogIn } from 'lucide-react';
+import { Clock, Calendar, AlertTriangle } from 'lucide-react';
 import { formatDateEU } from '@/utils/dateUtils';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';

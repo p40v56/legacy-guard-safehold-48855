@@ -361,11 +361,10 @@ const Settings = () => {
     const fetchSwitchSettings = async () => {
       const { data } = await supabase
         .from('user_settings')
-        .select('activity_checkin_enabled, auto_delete_days')
+        .select('auto_delete_days')
         .eq('user_id', user.id)
         .single();
       if (data) {
-        setActivityCheckinEnabled(data.activity_checkin_enabled ?? false);
         if (data.auto_delete_days) {
           setAutoDeleteEnabled(true);
           setAutoDeleteDays(data.auto_delete_days);

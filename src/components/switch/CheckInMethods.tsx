@@ -72,25 +72,6 @@ const CheckInMethods = ({
               />
             </div>
 
-            {/* Activity-based check-in */}
-            <div className="flex items-center justify-between p-4 bg-background/50 rounded-xl border border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <LogIn className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <Label className="text-foreground font-medium">Activity-based check-in</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Any login to LegacyVault automatically counts as a check-in and resets your countdown. You still receive reminders before the deadline.
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={activityCheckinEnabled}
-                onCheckedChange={(checked) => onActivityCheckinChange?.(checked)}
-              />
-            </div>
-
             <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border">
               SMS and voice check-in methods are planned for a future release.
             </p>

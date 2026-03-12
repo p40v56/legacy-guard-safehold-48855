@@ -3,7 +3,7 @@ import FrequencyConfiguration from './FrequencyConfiguration';
 import CustomDeadlineConfiguration from './CustomDeadlineConfiguration';
 import { Clock, Calendar, AlertTriangle } from 'lucide-react';
 import { formatDateEU } from '@/utils/dateUtils';
-import { Label } from '@/components/ui/label';
+
 
 interface SwitchConfigurationProps {
   settings: UserSettings;

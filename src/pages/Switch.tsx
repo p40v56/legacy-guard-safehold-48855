@@ -61,13 +61,6 @@ const Switch = () => {
       setSmsNotificationsEnabled(notifSettings.sms_notifications);
       setEmailCheckinEnabled((userSettings as any)?.email_checkin_enabled ?? false);
       setSmsCheckinEnabled((userSettings as any)?.sms_checkin_enabled ?? false);
-      // Fetch activity check-in
-      const { data: extraSettings } = await supabase
-        .from('user_settings')
-        .select('activity_checkin_enabled')
-        .eq('user_id', user.id)
-        .single();
-      setActivityCheckinEnabled(extraSettings?.activity_checkin_enabled ?? false);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({ title: "Error", description: "Failed to load settings", variant: "destructive" });

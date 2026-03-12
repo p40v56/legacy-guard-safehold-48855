@@ -1329,11 +1329,17 @@ const Settings = () => {
                 <p className="text-sm text-muted-foreground">
                   Download a complete copy of all your data including contacts, documents, accounts, and financial assets. Data is decrypted locally before export.
                 </p>
+                {!vaultKey && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-warning/10 border border-warning/20">
+                    <Lock className="w-4 h-4 text-warning shrink-0" />
+                    <p className="text-xs text-muted-foreground">Your vault is locked. Unlock it first to export your data.</p>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={handleExportData} disabled={exporting} variant="default">
+                  <Button onClick={handleExportData} disabled={exporting || !vaultKey} variant="default">
                     {exporting ? (<><LoadingSpinner size="sm" className="mr-2" />Exporting...</>) : (<><Download className="w-4 h-4 mr-2" />Download as JSON</>)}
                   </Button>
-                  <Button onClick={handleExportReadable} disabled={exporting} variant="outline">
+                  <Button onClick={handleExportReadable} disabled={exporting || !vaultKey} variant="outline">
                     <FileText className="w-4 h-4 mr-2" />Download as readable text
                   </Button>
                 </div>

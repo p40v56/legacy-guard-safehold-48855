@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Mail, Globe, ChevronDown, Link2 } from 'lucide-react';
+import { Mail, Globe, ChevronDown, Link2, LogIn } from 'lucide-react';
 
 interface CheckInMethodsProps {
   emailCheckinEnabled: boolean;

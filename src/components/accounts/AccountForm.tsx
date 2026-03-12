@@ -131,11 +131,10 @@ const AccountForm: React.FC<AccountFormProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
+                  <SelectItem value="device" className="rounded-lg">Device & Physical</SelectItem>
                   <SelectItem value="social" className="rounded-lg">Social Media</SelectItem>
-                  <SelectItem value="financial" className="rounded-lg">Financial</SelectItem>
                   <SelectItem value="email" className="rounded-lg">Email</SelectItem>
                   <SelectItem value="work" className="rounded-lg">Work</SelectItem>
-                  <SelectItem value="device" className="rounded-lg">Device & Physical</SelectItem>
                   <SelectItem value="entertainment" className="rounded-lg">Entertainment</SelectItem>
                   <SelectItem value="other" className="rounded-lg">Other</SelectItem>
                 </SelectContent>

@@ -16,6 +16,8 @@ interface CheckInMethodsProps {
 const CheckInMethods = ({
   emailCheckinEnabled,
   onEmailCheckinChange,
+  activityCheckinEnabled = false,
+  onActivityCheckinChange,
   isPaidPlan = true,
 }: CheckInMethodsProps) => {
   const [isOpen, setIsOpen] = useState(false);

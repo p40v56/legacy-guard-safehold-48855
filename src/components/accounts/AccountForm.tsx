@@ -13,7 +13,7 @@ import { useEncryption } from '@/contexts/EncryptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { decryptFields } from '@/lib/crypto';
 
-type AccountType = 'email' | 'social' | 'financial' | 'work' | 'device' | 'entertainment' | 'other';
+type AccountType = 'device' | 'email' | 'social' | 'work' | 'entertainment' | 'other';
 
 interface AccountFormData {
   account_name: string;

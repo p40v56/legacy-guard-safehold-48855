@@ -148,6 +148,20 @@ const Dashboard = () => {
     }
   };
 
+  const handleCheckIn = async () => {
+    if (!user || !settings) return;
+    setCheckingIn(true);
+    try {
+      await SettingsService.checkIn(user.id);
+      toast({ title: 'Checked in ✓', description: 'Your countdown has been reset.' });
+      await fetchStats();
+    } catch {
+      toast({ title: 'Error', description: 'Check-in failed. Please try again.', variant: 'destructive' });
+    } finally {
+      setCheckingIn(false);
+    }
+  };
+
   const getTimeOfDay = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';

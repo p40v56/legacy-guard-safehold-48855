@@ -31,8 +31,6 @@ const SwitchConfiguration = ({
   customTime,
   saving,
   isFree,
-  activityCheckinEnabled,
-  onActivityCheckinChange,
   onUpdateSettings,
   onSwitchToFrequencyMode,
   onCustomDateTimeUpdate,

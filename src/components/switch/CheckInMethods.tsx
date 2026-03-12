@@ -8,6 +8,8 @@ import { Mail, Globe, ChevronDown, Link2 } from 'lucide-react';
 interface CheckInMethodsProps {
   emailCheckinEnabled: boolean;
   onEmailCheckinChange: (enabled: boolean) => void;
+  activityCheckinEnabled?: boolean;
+  onActivityCheckinChange?: (enabled: boolean) => void;
   isPaidPlan?: boolean;
 }
 

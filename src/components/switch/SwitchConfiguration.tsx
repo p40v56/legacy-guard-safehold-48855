@@ -174,11 +174,6 @@ const SwitchConfiguration = ({
           }
         </p>
 
-        {activityCheckinEnabled && (
-          <p className="text-sm text-card-foreground">
-            🔄 Activity check-in: <span className="text-success font-medium">enabled</span> — logging in resets your countdown
-          </p>
-        )}
 
         <p className="text-xs text-muted-foreground mt-1">
           {settings.deadline_mode === 'frequency'

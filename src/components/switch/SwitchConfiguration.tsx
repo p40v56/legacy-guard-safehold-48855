@@ -146,23 +146,6 @@ const SwitchConfiguration = ({
         <p className="text-muted-foreground text-sm">Saving changes...</p>
       )}
 
-      {/* Activity-based check-in */}
-      <Separator />
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <LogIn className="w-5 h-5 text-primary mt-0.5" />
-          <div>
-            <Label className="text-card-foreground font-medium">Activity-based check-in</Label>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Any login to LegacyVault automatically counts as a check-in and resets your countdown. You still receive reminders before the deadline.
-            </p>
-          </div>
-        </div>
-        <Switch
-          checked={activityCheckinEnabled ?? false}
-          onCheckedChange={(checked) => onActivityCheckinChange?.(checked)}
-        />
-      </div>
 
       {/* Configuration Summary */}
       <div className="p-4 bg-muted/30 border border-border rounded-xl space-y-2">

@@ -8,17 +8,11 @@ import { Mail, Globe, ChevronDown, Link2, LogIn } from 'lucide-react';
 interface CheckInMethodsProps {
   emailCheckinEnabled: boolean;
   onEmailCheckinChange: (enabled: boolean) => void;
-  activityCheckinEnabled?: boolean;
-  onActivityCheckinChange?: (enabled: boolean) => void;
-  isPaidPlan?: boolean;
 }
 
 const CheckInMethods = ({
   emailCheckinEnabled,
   onEmailCheckinChange,
-  activityCheckinEnabled = false,
-  onActivityCheckinChange,
-  isPaidPlan = true,
 }: CheckInMethodsProps) => {
   const [isOpen, setIsOpen] = useState(false);
 

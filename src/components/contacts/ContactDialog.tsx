@@ -127,33 +127,21 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
           </div>
 
           {/* Priority & Messages */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-card-foreground font-medium">Notification Priority</Label>
-              <div className="relative">
-                <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min={1}
-                  max={99}
-                  step={1}
-                  value={contactData.priority_order || 1}
-                  onChange={(e) => setContactData({ ...contactData, priority_order: parseInt(e.target.value) || 1 })}
-                  className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Contacts with lower numbers are notified first</p>
-            </div>
-            <div className="flex items-center space-x-3 mt-8 p-4 bg-muted/20 rounded-2xl">
-              <Switch
-                checked={contactData.can_receive_messages || true}
-                onCheckedChange={(checked) => handleSwitchChange(checked, 'can_receive_messages')}
-                id="can_receive_messages"
+          <div className="space-y-2">
+            <Label className="text-card-foreground font-medium">Notification Priority</Label>
+            <div className="relative">
+              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="number"
+                min={1}
+                max={99}
+                step={1}
+                value={contactData.priority_order || 1}
+                onChange={(e) => setContactData({ ...contactData, priority_order: parseInt(e.target.value) || 1 })}
+                className="pl-12 h-14 rounded-2xl bg-muted/30 border-border focus:border-primary focus:ring-primary/20 transition-all"
               />
-              <Label htmlFor="can_receive_messages" className="text-card-foreground font-medium cursor-pointer">
-                Can Receive Messages
-              </Label>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">Contacts with lower numbers are notified first</p>
           </div>
 
           {/* Custom Message */}

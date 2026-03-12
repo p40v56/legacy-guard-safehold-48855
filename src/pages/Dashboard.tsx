@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [hasPortalLinks, setHasPortalLinks] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
 
   const settings = stats.userSettings;
   const currentDeadline = settings?.deadline_mode === 'custom' && settings?.custom_deadline
@@ -144,6 +145,20 @@ const Dashboard = () => {
       });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to deactivate', variant: 'destructive' });
+    }
+  };
+
+  const handleCheckIn = async () => {
+    if (!user || !settings) return;
+    setCheckingIn(true);
+    try {
+      await SettingsService.checkIn(user.id);
+      toast({ title: 'Checked in ✓', description: 'Your countdown has been reset.' });
+      await fetchStats();
+    } catch {
+      toast({ title: 'Error', description: 'Check-in failed. Please try again.', variant: 'destructive' });
+    } finally {
+      setCheckingIn(false);
     }
   };
 
@@ -257,6 +272,43 @@ const Dashboard = () => {
             hasPortalLinks={hasPortalLinks}
             onDismiss={handleDismissWizard}
           />
+        )}
+
+        {/* Urgency Banner — check-in due within 48h */}
+        {!!settings?.is_active &&
+          !settings?.switch_triggered &&
+          !settings?.grace_period_active &&
+          !countdown.isOverdue &&
+          countdown.totalMilliseconds > 0 &&
+          countdown.totalMilliseconds < 48 * 60 * 60 * 1000 && (
+          <div className="rounded-2xl p-4 border bg-warning/10 border-warning/40 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-warning/20 flex items-center justify-center shrink-0">
+                <Timer className="w-4 h-4 text-warning" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-card-foreground">
+                  Check-in due{' '}
+                  {countdown.hours === 0 && countdown.days === 0
+                    ? `in ${countdown.minutes}m`
+                    : countdown.days > 0
+                    ? `in ${countdown.days}d ${countdown.hours}h`
+                    : `in ${countdown.hours}h ${countdown.minutes}m`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Your deadline is approaching. Check in now to reset your countdown.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleCheckIn}
+              disabled={checkingIn}
+              className="rounded-xl shrink-0 bg-warning hover:bg-warning/90 text-warning-foreground font-semibold"
+            >
+              {checkingIn ? 'Checking in…' : 'Check in now'}
+            </Button>
+          </div>
         )}
 
         {/* System Status Card */}

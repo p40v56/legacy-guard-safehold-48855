@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, ShieldCheck } from 'lucide-react';
-import { SettingsService } from '@/services/supabaseService';
+
 
 const getAutoLockMs = () => {
   const stored = localStorage.getItem('vault_auto_lock_minutes');
@@ -95,20 +95,6 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       setShowReauth(false);
       setReauthPassword('');
       setReauthError('');
-
-      // Activity-based check-in: if enabled, auto check-in on vault unlock
-      try {
-        const { data: settingsData } = await supabase
-          .from('user_settings')
-          .select('activity_checkin_enabled, is_active')
-          .eq('user_id', userId)
-          .single();
-        
-        if (settingsData?.activity_checkin_enabled && settingsData?.is_active) {
-          await SettingsService.checkIn(userId);
-          console.info('Activity check-in performed on vault unlock');
-        }
-      } catch { /* non-blocking */ }
 
       // Auto-migrate plaintext data on first unlock (skip if already done)
       try {

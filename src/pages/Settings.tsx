@@ -329,9 +329,6 @@ const Settings = () => {
     }
   };
 
-  // Activity check-in state
-  const [activityCheckinEnabled, setActivityCheckinEnabled] = useState(false);
-
   // Auto-delete state
   const [autoDeleteEnabled, setAutoDeleteEnabled] = useState(false);
   const [autoDeleteDays, setAutoDeleteDays] = useState<number | null>(null);
@@ -364,11 +361,10 @@ const Settings = () => {
     const fetchSwitchSettings = async () => {
       const { data } = await supabase
         .from('user_settings')
-        .select('activity_checkin_enabled, auto_delete_days')
+        .select('auto_delete_days')
         .eq('user_id', user.id)
         .single();
       if (data) {
-        setActivityCheckinEnabled(data.activity_checkin_enabled ?? false);
         if (data.auto_delete_days) {
           setAutoDeleteEnabled(true);
           setAutoDeleteDays(data.auto_delete_days);
@@ -377,21 +373,6 @@ const Settings = () => {
     };
     fetchSwitchSettings();
   }, [user]);
-
-  const handleActivityCheckinToggle = async (checked: boolean) => {
-    if (!user) return;
-    setActivityCheckinEnabled(checked);
-    await supabase
-      .from('user_settings')
-      .update({ activity_checkin_enabled: checked } as any)
-      .eq('user_id', user.id);
-    toast({
-      title: checked ? 'Activity check-in enabled' : 'Activity check-in disabled',
-      description: checked
-        ? 'Logging in will now automatically reset your countdown.'
-        : 'You will need to manually check in.',
-    });
-  };
 
   const handleAutoDeleteChange = async (days: number | null) => {
     if (!user) return;

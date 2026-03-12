@@ -21,17 +21,16 @@ import SearchInput from '@/components/ui/search-input';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Link } from 'react-router-dom';
 
-type AccountType = 'social' | 'financial' | 'email' | 'cloud' | 'subscription' | 'device' | 'other';
+type AccountType = 'device' | 'social' | 'email' | 'work' | 'entertainment' | 'other';
 type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';
 type ClosureAction = 'delete' | 'memorialize' | 'transfer' | 'download';
 
 const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  social: 'Social',
-  financial: 'Financial',
-  email: 'Email',
-  cloud: 'Cloud Storage',
-  subscription: 'Subscription',
   device: 'Device & Physical',
+  social: 'Social',
+  email: 'Email',
+  work: 'Work',
+  entertainment: 'Entertainment',
   other: 'Other',
 };
 

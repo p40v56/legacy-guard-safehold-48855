@@ -578,7 +578,7 @@ const handler = async (req: Request): Promise<Response> => {
                   });
                   await supabase.from('sent_notifications').insert({
                     user_id: userId,
-                    contact_id: userId,
+                    contact_id: null,
                     notification_type: 'auto_delete_scheduled',
                     status: 'sent',
                   });
@@ -672,7 +672,7 @@ const handler = async (req: Request): Promise<Response> => {
 
                 await supabase.from('sent_notifications').insert({
                   user_id: userId,
-                  contact_id: userId,
+                  contact_id: null,
                   notification_type: reminderKey,
                   status: 'sent',
                 });
@@ -684,25 +684,38 @@ const handler = async (req: Request): Promise<Response> => {
         console.error('Plan expiry check error:', err);
       }
 
-      // Pre-deadline reminder: warn at 48h and 24h before deadline
+      // Pre-deadline reminders: 48h, 24h, 12h, 6h — one email each, exactly once
       if (deadline && !settings.grace_period_active && !settings.switch_triggered) {
         const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-        if (hoursUntilDeadline > 0 && hoursUntilDeadline <= 48) {
-          const reminderKey = hoursUntilDeadline <= 24 ? 'reminder_24h' : 'reminder_48h';
-          const { data: existingReminder } = await supabase
-            .from('sent_notifications')
-            .select('id')
-            .eq('user_id', userId)
-            .eq('notification_type', reminderKey)
-            .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
-            .limit(1);
+        // Determine which reminder tier we're in (send only the most urgent one not yet sent)
+        const reminderTiers = [
+          { key: 'reminder_6h', threshold: 6, label: '6 hours' },
+          { key: 'reminder_12h', threshold: 12, label: '12 hours' },
+          { key: 'reminder_24h', threshold: 24, label: '24 hours' },
+          { key: 'reminder_48h', threshold: 48, label: '48 hours' },
+        ];
 
-          if (!existingReminder || existingReminder.length === 0) {
+        if (hoursUntilDeadline > 0 && hoursUntilDeadline <= 48) {
+          // Find all tiers that apply (hours remaining is <= threshold)
+          const applicableTiers = reminderTiers.filter(t => hoursUntilDeadline <= t.threshold);
+
+          // Check which reminders have already been sent for this deadline cycle
+          const { data: existingReminders } = await supabase
+            .from('sent_notifications')
+            .select('notification_type')
+            .eq('user_id', userId)
+            .in('notification_type', applicableTiers.map(t => t.key))
+            .gte('created_at', new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString());
+
+          const alreadySentTypes = new Set((existingReminders || []).map((r: any) => r.notification_type));
+
+          // Find the most urgent tier not yet sent
+          const tierToSend = applicableTiers.find(t => !alreadySentTypes.has(t.key));
+
+          if (tierToSend) {
             const userEmail = await getUserEmail(supabase, userId);
             if (userEmail) {
-              const hoursLabel = hoursUntilDeadline <= 24 ? '24 hours' : '48 hours';
-              
               // Only generate email check-in link if email check-in is enabled
               let checkInUrl: string | null = null;
               if (settings.email_checkin_enabled) {
@@ -728,7 +741,7 @@ const handler = async (req: Request): Promise<Response> => {
                   notificationType: 'grace_period_warning',
                   recipientEmail: userEmail,
                   recipientName: 'Vault Owner',
-                  gracePeriodHours: hoursLabel,
+                  gracePeriodHours: tierToSend.label,
                   graceEndDate: deadline.toISOString(),
                   userName: userEmail,
                   isPreDeadlineReminder: true,
@@ -736,11 +749,11 @@ const handler = async (req: Request): Promise<Response> => {
                 }),
               });
 
-              // Use a dummy contact_id for system notifications to the user themselves
+              // Use null contact_id for system notifications to the user themselves
               await supabase.from('sent_notifications').insert({
                 user_id: userId,
-                contact_id: userId,
-                notification_type: reminderKey,
+                contact_id: null,
+                notification_type: tierToSend.key,
                 status: 'sent',
               });
 

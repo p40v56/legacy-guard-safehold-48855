@@ -578,7 +578,7 @@ const handler = async (req: Request): Promise<Response> => {
                   });
                   await supabase.from('sent_notifications').insert({
                     user_id: userId,
-                    contact_id: userId,
+                    contact_id: null,
                     notification_type: 'auto_delete_scheduled',
                     status: 'sent',
                   });

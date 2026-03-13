@@ -741,7 +741,7 @@ export type Database = {
       sent_notifications: {
         Row: {
           acknowledged_at: string | null
-          contact_id: string
+          contact_id: string | null
           created_at: string
           error_message: string | null
           id: string
@@ -752,7 +752,7 @@ export type Database = {
         }
         Insert: {
           acknowledged_at?: string | null
-          contact_id: string
+          contact_id?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
@@ -763,7 +763,7 @@ export type Database = {
         }
         Update: {
           acknowledged_at?: string | null
-          contact_id?: string
+          contact_id?: string | null
           created_at?: string
           error_message?: string | null
           id?: string

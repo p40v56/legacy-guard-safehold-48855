@@ -175,7 +175,8 @@ export async function createPortalShares(
     })
   );
   financialAssets = allFinancials.filter((a: any) => {
-    if (!a.visible_to || a.visible_to.length === 0) return true;
+    // Opt-in default: no visible_to (null or empty) means NOT shared (H3).
+    if (!a.visible_to || a.visible_to.length === 0) return false;
     return a.visible_to.includes(contactId);
   });
   if (tierLimits.maxFinancialAssets !== Infinity) {

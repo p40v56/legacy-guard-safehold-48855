@@ -146,7 +146,8 @@ Deno.serve(async (req) => {
         const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
         await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+          headers: { 'Content-Type': 'application/json',
+                'X-Internal-Secret': Deno.env.get('NOTIFICATION_INTERNAL_SECRET') ?? '', 'apikey': supabaseKey },
           body: JSON.stringify({
             notificationType: 'account_deleted',
             recipientEmail: deletedEmail,

@@ -149,15 +149,21 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
       wasUnlockedRef.current = true;
       lastActivityRef.current = Date.now();
 
-      // Send welcome email (non-blocking)
+      // Send welcome email (non-blocking) — authenticated with the user's JWT
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
+        if (user?.email && accessToken) {
           fetch(`${supabaseUrl}/functions/v1/send-notification`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${accessToken}`,
+            },
             body: JSON.stringify({
               notificationType: 'welcome',
               recipientEmail: user.email,
@@ -166,6 +172,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
           });
         }
       } catch { /* non-blocking */ }
+
 
       return true;
     } catch {

@@ -141,15 +141,17 @@ const Settings = () => {
     const checkoutPlan = searchParams.get('checkout');
 
     if (paymentStatus === 'success' && paymentPlan) {
+      const sessionId = searchParams.get('session_id');
       const verifyPayment = async () => {
         try {
-          const { data, error } = await supabase.functions.invoke('verify-payment');
+          const { data, error } = await supabase.functions.invoke('verify-payment', {
+            body: { session_id: sessionId },
+          });
           if (error) throw error;
           if (data?.paid) {
             setUpgradedPlan(PLAN_LABELS[data.plan as PlanTier] || data.plan);
             setUpgradedExpiry(data.expires_at);
             setShowPaymentSuccess(true);
-            // Clean URL without full reload
             navigate('/settings?tab=account', { replace: true });
           }
         } catch (error: any) {

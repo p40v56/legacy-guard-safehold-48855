@@ -268,6 +268,7 @@ async function startGracePeriod(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+                "X-Internal-Secret": Deno.env.get("NOTIFICATION_INTERNAL_SECRET") ?? "",
         Authorization: `Bearer ${supabaseServiceKey}`,
       },
       body: JSON.stringify({
@@ -445,6 +446,7 @@ async function triggerSwitch(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+                "X-Internal-Secret": Deno.env.get("NOTIFICATION_INTERNAL_SECRET") ?? "",
           Authorization: `Bearer ${supabaseServiceKey}`,
         },
         body: JSON.stringify(notificationPayload),
@@ -488,17 +490,26 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Secret-based auth check for cron calls
+  // Secret-based auth check for cron calls — FAIL CLOSED.
+  // If CRON_SECRET is missing OR the provided value does not match, reject.
   const cronSecret = Deno.env.get("CRON_SECRET");
-  if (cronSecret) {
-    const authHeader = req.headers.get("Authorization");
-    const providedSecret = authHeader?.replace("Bearer ", "");
-    if (providedSecret !== cronSecret) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
+  const authHeader = req.headers.get("Authorization");
+  const providedSecret = authHeader?.replace("Bearer ", "") || "";
+  const ok =
+    !!cronSecret &&
+    providedSecret.length === cronSecret.length &&
+    (() => {
+      let diff = 0;
+      for (let i = 0; i < cronSecret.length; i++) {
+        diff |= cronSecret.charCodeAt(i) ^ providedSecret.charCodeAt(i);
+      }
+      return diff === 0;
+    })();
+  if (!ok) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 
   try {
@@ -567,7 +578,8 @@ const handler = async (req: Request): Promise<Response> => {
                   const daysLeft = Math.ceil((shouldDeleteAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                   await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+                    headers: { 'Content-Type': 'application/json',
+                'X-Internal-Secret': Deno.env.get('NOTIFICATION_INTERNAL_SECRET') ?? '', 'Authorization': `Bearer ${supabaseServiceKey}` },
                     body: JSON.stringify({
                       notificationType: 'auto_delete_warning',
                       recipientEmail: userEmail,
@@ -659,7 +671,8 @@ const handler = async (req: Request): Promise<Response> => {
               if (userEmail) {
                 await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+                  headers: { 'Content-Type': 'application/json',
+                'X-Internal-Secret': Deno.env.get('NOTIFICATION_INTERNAL_SECRET') ?? '', 'Authorization': `Bearer ${supabaseServiceKey}` },
                   body: JSON.stringify({
                     notificationType: 'plan_expiry_warning',
                     recipientEmail: userEmail,
@@ -736,7 +749,8 @@ const handler = async (req: Request): Promise<Response> => {
 
               await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+                headers: { 'Content-Type': 'application/json',
+                'X-Internal-Secret': Deno.env.get('NOTIFICATION_INTERNAL_SECRET') ?? '', 'Authorization': `Bearer ${supabaseServiceKey}` },
                 body: JSON.stringify({
                   notificationType: 'grace_period_warning',
                   recipientEmail: userEmail,

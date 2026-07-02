@@ -1,27 +1,40 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
+import { getCorsHeaders, escapeHtml, safeExternalUrl, timingSafeEqual } from "../_shared/cors.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const INTERNAL_SECRET = Deno.env.get("NOTIFICATION_INTERNAL_SECRET");
 
-const APP_URL = Deno.env.get("APP_BASE_URL");
-const ALLOWED_ORIGINS = [
-  "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
-  "https://6cf11843-b093-41a4-b4d5-f63b642b4451.lovableproject.com",
-  "https://legacy-guard-safehold-48855.lovable.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  ...(APP_URL ? [APP_URL] : []),
-];
+const e = escapeHtml;
+const u = (raw: unknown): string => safeExternalUrl(raw) || "#";
 
-function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get("Origin") || "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  };
+/**
+ * Auth: accept either
+ *  - a valid Supabase user JWT (Authorization: Bearer <jwt>), OR
+ *  - the internal shared secret (X-Internal-Secret: <NOTIFICATION_INTERNAL_SECRET>)
+ * Anything else is rejected. This closes the open-relay hole (C3).
+ */
+async function authenticate(req: Request): Promise<{ ok: boolean; userId?: string }> {
+  const internal = req.headers.get("X-Internal-Secret") || "";
+  if (INTERNAL_SECRET && internal && timingSafeEqual(internal, INTERNAL_SECRET)) {
+    return { ok: true };
+  }
+  const authHeader = req.headers.get("Authorization") || "";
+  if (!authHeader.startsWith("Bearer ")) return { ok: false };
+  const token = authHeader.slice("Bearer ".length);
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) return { ok: false };
+    return { ok: true, userId: data.user.id };
+  } catch {
+    return { ok: false };
+  }
 }
+
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -112,7 +125,7 @@ function generateGracePeriodWarningHtml(data: GracePeriodWarningRequest): string
   );
   const checkInButtonHtml = checkInUrl ? `
         <div style="text-align: center; margin: 32px 0;">
-          <a href="${checkInUrl}" style="display: inline-block; background-color: #059669; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">✓ I'm alive — check in now</a>
+          <a href="${u(checkInUrl)}" style="display: inline-block; background-color: #059669; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">✓ I'm alive — check in now</a>
           <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 12px;">Clicking this counts as your check-in. This link expires in 7 days.</p>
         </div>` : '';
   return `
@@ -123,11 +136,11 @@ function generateGracePeriodWarningHtml(data: GracePeriodWarningRequest): string
         <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Dead Man's Switch Warning</p>
       </div>
       <div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-        <p style="font-size: 16px; margin: 0 0 20px 0;">Hello <strong>${recipientName}</strong>,</p>
+        <p style="font-size: 16px; margin: 0 0 20px 0;">Hello <strong>${e(recipientName)}</strong>,</p>
         <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
           <p style="color: #92400e; margin: 0; font-size: 15px; font-weight: 600;">You missed your scheduled check-in!</p>
         </div>
-        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${graceIntro} A <strong>${gracePeriodHours}-hour grace period</strong> has now started.</p>
+        <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${e(graceIntro)} A <strong>${gracePeriodHours}-hour grace period</strong> has now started.</p>
         <div style="background-color: #fee2e2; border: 2px solid #ef4444; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
           <p style="color: #991b1b; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">⏰ GRACE PERIOD ENDS:</p>
           <p style="color: #dc2626; margin: 0; font-size: 18px; font-weight: 700;">${formatDateTime(graceEndDate)}</p>
@@ -163,7 +176,7 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   let sectionsHtml = "";
 
   if (customMessage) {
-    sectionsHtml += `<div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 4px;"><h3 style="color: #1e40af; margin: 0 0 12px 0; font-size: 16px;">💬 Personal Message from ${userName}</h3><div style="color: #1e3a5f; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${customMessage}</div></div>`;
+    sectionsHtml += `<div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 4px;"><h3 style="color: #1e40af; margin: 0 0 12px 0; font-size: 16px;">💬 Personal Message from ${e(userName)}</h3><div style="color: #1e3a5f; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${customMessage}</div></div>`;
   }
 
   if (emergencyInstructions && permissions.emergency_instructions) {
@@ -179,7 +192,7 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   for (const [docType, docs] of Object.entries(documentsByType)) {
     sectionsHtml += `<div style="margin: 24px 0;"><h3 style="color: #374151; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px;">📄 ${formatDocumentType(docType)}</h3>`;
     for (const doc of docs) {
-      sectionsHtml += `<div style="background-color: #f9fafb; padding: 16px; margin: 12px 0; border-radius: 8px; border: 1px solid #e5e7eb;"><h4 style="color: #111827; margin: 0 0 8px 0; font-size: 15px;">${doc.title}</h4>${doc.description ? `<p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0;">${doc.description}</p>` : ""}${doc.content ? `<div style="color: #374151; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${doc.content}</div>` : ""}</div>`;
+      sectionsHtml += `<div style="background-color: #f9fafb; padding: 16px; margin: 12px 0; border-radius: 8px; border: 1px solid #e5e7eb;"><h4 style="color: #111827; margin: 0 0 8px 0; font-size: 15px;">${e(doc.title)}</h4>${doc.description ? `<p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0;">${e(doc.description)}</p>` : ""}${doc.content ? `<div style="color: #374151; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${doc.content}</div>` : ""}</div>`;
     }
     sectionsHtml += `</div>`;
   }
@@ -188,16 +201,16 @@ function generateSwitchTriggeredHtml(data: SwitchTriggeredRequest | LegacyNotifi
   if (portalToken) {
     const portalUrl = `${portalBaseUrl || ""}/portal/${portalToken}`;
     const ackUrl = `${portalBaseUrl || ""}/portal/${portalToken}/acknowledge`;
-    portalHtml = `<div style="background-color: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;"><h3 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px;">🔐 Access Your Document Portal</h3><p style="color: #047857; margin: 0 0 16px 0; font-size: 14px;">You can also view your authorized documents online at any time using the secure link below:</p><a href="${portalUrl}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Open Document Portal →</a><p style="color: #6b7280; margin: 12px 0 0 0; font-size: 12px;">This link is private and unique to you. Do not share it with others.</p></div><div style="text-align: center; margin: 16px 0;"><a href="${ackUrl}" style="display: inline-block; background-color: #059669; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">✓ Confirm I have received this message</a><p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 11px;">Clicking this lets the system know you have seen this notification.</p></div>`;
+    portalHtml = `<div style="background-color: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;"><h3 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px;">🔐 Access Your Document Portal</h3><p style="color: #047857; margin: 0 0 16px 0; font-size: 14px;">You can also view your authorized documents online at any time using the secure link below:</p><a href="${u(portalUrl)}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Open Document Portal →</a><p style="color: #6b7280; margin: 12px 0 0 0; font-size: 12px;">This link is private and unique to you. Do not share it with others.</p></div><div style="text-align: center; margin: 16px 0;"><a href="${u(ackUrl)}" style="display: inline-block; background-color: #059669; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">✓ Confirm I have received this message</a><p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 11px;">Clicking this lets the system know you have seen this notification.</p></div>`;
   } else {
     portalHtml += `<div style="background-color: #fef3c7; border: 1px solid #f59e0b; padding: 16px; border-radius: 8px; margin: 24px 0; text-align: center;"><p style="color: #92400e; margin: 0; font-size: 13px;">Your portal link was not included in this notification. Please contact the sender.</p></div>`;
   }
 
   if (!sectionsHtml) {
-    sectionsHtml = `<div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 24px; text-align: center; border-radius: 8px; margin: 20px 0;"><p style="color: #15803d; margin: 0; font-weight: 600;">All your personalised content and documents are available securely in your portal.</p><p style="color: #6b7280; margin: 8px 0 0 0; font-size: 13px;">Use the secure access link below to view everything ${userName} has prepared for you.</p></div>`;
+    sectionsHtml = `<div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 24px; text-align: center; border-radius: 8px; margin: 20px 0;"><p style="color: #15803d; margin: 0; font-weight: 600;">All your personalised content and documents are available securely in your portal.</p><p style="color: #6b7280; margin: 8px 0 0 0; font-size: 13px;">Use the secure access link below to view everything ${e(userName)} has prepared for you.</p></div>`;
   }
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin: 0; font-size: 24px; font-weight: 600;">${headerTitle}</h1><p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">${headerSubtitle}</p></div><div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p style="font-size: 16px; margin: 0 0 20px 0;">Dear <strong>${contactName}</strong>,</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${introMessage}</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${userName} has designated you as a trusted contact and has authorized the following information to be shared with you:</p>${sectionsHtml}${portalHtml}<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;"><p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">${footerMessage}</p></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin: 0; font-size: 24px; font-weight: 600;">${e(headerTitle)}</h1><p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">${e(headerSubtitle)}</p></div><div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p style="font-size: 16px; margin: 0 0 20px 0;">Dear <strong>${e(contactName)}</strong>,</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${e(introMessage)}</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">${e(userName)} has designated you as a trusted contact and has authorized the following information to be shared with you:</p>${sectionsHtml}${portalHtml}<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;"><p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">${e(footerMessage)}</p></div></body></html>`;
 }
 
 function buildWelcomeHtml(userEmail: string, appUrl: string): string {
@@ -208,7 +221,7 @@ function buildWelcomeHtml(userEmail: string, appUrl: string): string {
       <p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Your digital legacy is now protected</p>
     </div>
     <div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-      <p style="font-size: 16px; margin: 0 0 20px 0;">Hi <strong>${userEmail}</strong>,</p>
+      <p style="font-size: 16px; margin: 0 0 20px 0;">Hi <strong>${e(userEmail)}</strong>,</p>
       <p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">Your LegacyVault account is ready. Here's how to get started:</p>
       <ol style="padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 2;">
         <li><strong>Add a trusted contact</strong> — someone who will receive your information</li>
@@ -218,13 +231,13 @@ function buildWelcomeHtml(userEmail: string, appUrl: string): string {
         <li><strong>Send yourself a test email</strong> — verify everything works</li>
       </ol>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${appUrl}/dashboard" style="display: inline-block; background-color: #1A9BD7; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Go to your vault →</a>
+        <a href="${u(appUrl)}/dashboard" style="display: inline-block; background-color: #1A9BD7; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Go to your vault →</a>
       </div>
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
       <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin: 20px 0;">
         <p style="color: #92400e; margin: 0; font-size: 13px;">⚠️ Remember: your password is your encryption key. If you lose it, your data cannot be recovered. Store it in a password manager or write it down somewhere safe.</p>
       </div>
-      <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 24px 0 0 0;">LegacyVault · <a href="${appUrl}/terms" style="color: #9ca3af;">Terms</a> · <a href="${appUrl}/privacy" style="color: #9ca3af;">Privacy</a></p>
+      <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 24px 0 0 0;">LegacyVault · <a href="${u(appUrl)}/terms" style="color: #9ca3af;">Terms</a> · <a href="${u(appUrl)}/privacy" style="color: #9ca3af;">Privacy</a></p>
     </div>
   </body></html>`;
 }
@@ -236,8 +249,8 @@ function buildPortalAccessedHtml(contactName: string, accessedAt: string): strin
     <p style="margin:8px 0 0;opacity:.9;font-size:14px">LegacyVault Notification</p>
   </div>
   <div style="background:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px">
-    <p style="color:#374151"><strong>${contactName}</strong> has accessed their portal.</p>
-    <p style="color:#6b7280;font-size:14px">Access time: ${accessedAt} UTC</p>
+    <p style="color:#374151"><strong>${e(contactName)}</strong> has accessed their portal.</p>
+    <p style="color:#6b7280;font-size:14px">Access time: ${e(accessedAt)} UTC</p>
     <p style="color:#6b7280;font-size:13px">If you are still alive and did not expect this, your switch may have been triggered accidentally. Log in to your vault to check your system status and reset if needed.</p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
     <p style="font-size:12px;color:#9ca3af;text-align:center">This is an automated notification from LegacyVault.</p>
@@ -250,6 +263,16 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Auth (C3): reject if no valid JWT and no internal secret.
+  const auth = await authenticate(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
+
 
   try {
     const data: NotificationRequest = await req.json();
@@ -291,30 +314,30 @@ const handler = async (req: Request): Promise<Response> => {
       if (isPreDeadline) {
         const checkInUrl = warningData.checkInUrl || '#';
         const hoursLabel = warningData.gracePeriodHours || '48 hours';
-        subject = `⏰ Reminder: Your LegacyVault check-in is due in ${hoursLabel}`;
-        emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin: 0; font-size: 24px; font-weight: 600;">⏰ Check-in Reminder</h1><p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Your deadline is approaching</p></div><div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p style="font-size: 16px; margin: 0 0 20px 0;">Hello,</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">This is a reminder that your Dead Man's Switch check-in deadline is approaching. Please check in within <strong>${hoursLabel}</strong> to prevent your switch from activating.</p><div style="text-align: center; margin: 32px 0;"><a href="${checkInUrl}" style="display: inline-block; background-color: #1A9BD7; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Check In Now →</a></div><p style="font-size: 13px; color: #9ca3af; margin: 24px 0 0 0; text-align: center;">If you do not check in before the deadline, a grace period will start, followed by automatic notification of your contacts.</p></div></body></html>`;
+        subject = `⏰ Reminder: Your LegacyVault check-in is due in ${e(hoursLabel)}`;
+        emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #1A9BD7 0%, #0D6EA8 100%); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0;"><h1 style="margin: 0; font-size: 24px; font-weight: 600;">⏰ Check-in Reminder</h1><p style="margin: 12px 0 0 0; opacity: 0.9; font-size: 14px;">Your deadline is approaching</p></div><div style="background-color: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;"><p style="font-size: 16px; margin: 0 0 20px 0;">Hello,</p><p style="font-size: 15px; margin: 0 0 24px 0; color: #4b5563;">This is a reminder that your Dead Man's Switch check-in deadline is approaching. Please check in within <strong>${e(hoursLabel)}</strong> to prevent your switch from activating.</p><div style="text-align: center; margin: 32px 0;"><a href="${u(checkInUrl)}" style="display: inline-block; background-color: #1A9BD7; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Check In Now →</a></div><p style="font-size: 13px; color: #9ca3af; margin: 24px 0 0 0; text-align: center;">If you do not check in before the deadline, a grace period will start, followed by automatic notification of your contacts.</p></div></body></html>`;
       } else {
         emailHtml = generateGracePeriodWarningHtml(warningData as GracePeriodWarningRequest);
         subject = warningData.emailTemplate?.email_grace_subject || "⚠️ Grace Period Started - Check In Required";
       }
       recipientEmail = warningData.recipientEmail;
       recipientName = warningData.recipientName;
-      console.log(`Sending ${isPreDeadline ? 'pre-deadline reminder' : 'grace period warning'} to ${recipientName} (${recipientEmail})`);
+      console.log(`Sending ${isPreDeadline ? 'pre-deadline reminder' : 'grace period warning'} to ${e(recipientName)} (${recipientEmail})`);
     } else if (notificationType === "plan_expiry_warning") {
       const { recipientEmail: peEmail, planLabel, daysLabel, expiresAt, appUrl } = data as any;
       const expiryDate = new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
       emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
       <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#374151;max-width:600px;margin:0 auto;padding:20px;">
         <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0;">
-          <h1 style="margin:0;font-size:24px;font-weight:600;">Your LegacyVault plan expires ${daysLabel}</h1>
+          <h1 style="margin:0;font-size:24px;font-weight:600;">Your LegacyVault plan expires ${e(daysLabel)}</h1>
           <p style="margin:12px 0 0;opacity:.9;font-size:14px;">Plan Expiry Notice</p>
         </div>
         <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
-          <p style="font-size:15px;margin:0 0 20px;color:#4b5563;">Your <strong>${planLabel || 'paid'}</strong> plan expires on <strong>${expiryDate}</strong>.</p>
+          <p style="font-size:15px;margin:0 0 20px;color:#4b5563;">Your <strong>${planLabel || 'paid'}</strong> plan expires on <strong>${e(expiryDate)}</strong>.</p>
           <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">After expiry, your account will revert to the Free plan. Your data will remain intact but some features will be restricted.</p>
-          <div style="text-align:center;margin:32px 0;"><a href="${appUrl || ''}/settings?tab=account" style="display:inline-block;background-color:#f59e0b;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">Renew your plan →</a></div>
+          <div style="text-align:center;margin:32px 0;"><a href="${u(appUrl || '')}/settings?tab=account" style="display:inline-block;background-color:#f59e0b;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">Renew your plan →</a></div>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
-          <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · <a href="${appUrl || ''}/privacy" style="color:#9ca3af;">Privacy</a></p>
+          <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · <a href="${u(appUrl || '')}/privacy" style="color:#9ca3af;">Privacy</a></p>
         </div>
       </body></html>`;
       recipientEmail = peEmail;
@@ -342,7 +365,7 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
         <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
           <p style="font-size:16px;margin:0 0 20px;">Hello,</p>
-          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">Your LegacyVault account (<strong>${dEmail}</strong>) has been permanently deleted${isAdmin ? ' by an administrator' : ''}.</p>
+          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">Your LegacyVault account (<strong>${e(dEmail)}</strong>) has been permanently deleted${isAdmin ? ' by an administrator' : ''}.</p>
           <div style="background-color:#fef2f2;border-left:4px solid #ef4444;padding:16px;margin:20px 0;border-radius:4px;">
             <p style="color:#991b1b;margin:0;font-size:14px;font-weight:600;">What this means:</p>
             <ul style="color:#991b1b;margin:8px 0 0;padding-left:20px;font-size:14px;">
@@ -363,7 +386,7 @@ const handler = async (req: Request): Promise<Response> => {
       const deleteDateFormatted = new Date(deleteDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
       recipientEmail = adEmail;
       recipientName = adEmail;
-      subject = `⚠️ Your LegacyVault account will be deleted in ${daysLeft} days`;
+      subject = `⚠️ Your LegacyVault account will be deleted in ${e(daysLeft)} days`;
       emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
       <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#374151;max-width:600px;margin:0 auto;padding:20px;">
         <div style="background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0;">
@@ -371,9 +394,9 @@ const handler = async (req: Request): Promise<Response> => {
           <p style="margin:12px 0 0;opacity:.9;font-size:14px;">LegacyVault Auto-Delete</p>
         </div>
         <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
-          <p style="font-size:15px;margin:0 0 20px;color:#4b5563;">Your LegacyVault account is scheduled for automatic deletion on <strong>${deleteDateFormatted}</strong> (${daysLeft} days from now).</p>
+          <p style="font-size:15px;margin:0 0 20px;color:#4b5563;">Your LegacyVault account is scheduled for automatic deletion on <strong>${e(deleteDateFormatted)}</strong> (${e(daysLeft)} days from now).</p>
           <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">This was configured as part of your data lifecycle settings. If you wish to cancel this, log in and update your settings.</p>
-          <div style="text-align:center;margin:32px 0;"><a href="${appUrl || ''}/settings?tab=privacy" style="display:inline-block;background-color:#ef4444;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">Review Settings →</a></div>
+          <div style="text-align:center;margin:32px 0;"><a href="${u(appUrl || '')}/settings?tab=privacy" style="display:inline-block;background-color:#ef4444;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">Review Settings →</a></div>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
           <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · This is an automated message.</p>
         </div>
@@ -384,16 +407,16 @@ const handler = async (req: Request): Promise<Response> => {
       const expiryDate = new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
       recipientEmail = puEmail;
       recipientName = puEmail;
-      subject = `🎉 Welcome to LegacyVault ${planLabel}!`;
+      subject = `🎉 Welcome to LegacyVault ${e(planLabel)}!`;
       emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
       <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#374151;max-width:600px;margin:0 auto;padding:20px;">
         <div style="background:linear-gradient(135deg,#1A9BD7 0%,#0D6EA8 100%);color:white;padding:32px;text-align:center;border-radius:12px 12px 0 0;">
-          <h1 style="margin:0;font-size:24px;font-weight:600;">🎉 Welcome to ${planLabel}!</h1>
+          <h1 style="margin:0;font-size:24px;font-weight:600;">🎉 Welcome to ${e(planLabel)}!</h1>
           <p style="margin:12px 0 0;opacity:.9;font-size:14px;">Your plan has been upgraded</p>
         </div>
         <div style="background-color:white;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
           <p style="font-size:16px;margin:0 0 20px;">Hello,</p>
-          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">Thank you for upgrading to <strong>LegacyVault ${planLabel}</strong>! Your payment has been processed successfully.</p>
+          <p style="font-size:15px;margin:0 0 24px;color:#4b5563;">Thank you for upgrading to <strong>LegacyVault ${e(planLabel)}</strong>! Your payment has been processed successfully.</p>
           <div style="background-color:#ecfdf5;border-left:4px solid #10b981;padding:16px;margin:20px 0;border-radius:4px;">
             <p style="color:#065f46;margin:0;font-size:14px;font-weight:600;">What's included:</p>
             <ul style="color:#065f46;margin:8px 0 0;padding-left:20px;font-size:14px;">
@@ -404,7 +427,7 @@ const handler = async (req: Request): Promise<Response> => {
             </ul>
           </div>
           <div style="background-color:#f0f9ff;border:1px solid #bae6fd;padding:16px;border-radius:8px;margin:20px 0;text-align:center;">
-            <p style="color:#0c4a6e;margin:0;font-size:14px;">Your plan is valid until <strong>${expiryDate}</strong></p>
+            <p style="color:#0c4a6e;margin:0;font-size:14px;">Your plan is valid until <strong>${e(expiryDate)}</strong></p>
           </div>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
           <p style="font-size:12px;color:#9ca3af;text-align:center;">LegacyVault · Thank you for your trust.</p>
@@ -421,7 +444,7 @@ const handler = async (req: Request): Promise<Response> => {
         emailTemplate.email_subject || `🚨 Important: Message from {userName}'s Dead Man's Switch`,
         { userName: triggerData.userName }
       );
-      console.log(`Sending switch triggered notification to ${recipientName} (${recipientEmail}), customMessage: ${triggerData.customMessage || "none"}`);
+      console.log(`Sending switch triggered notification to ${e(recipientName)} (${recipientEmail}), customMessage: ${triggerData.customMessage || "none"}`);
     }
 
     if (!RESEND_API_KEY) {
@@ -459,7 +482,7 @@ const handler = async (req: Request): Promise<Response> => {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in send-notification:", errorMessage);
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ success: false, error: "Failed to send notification" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

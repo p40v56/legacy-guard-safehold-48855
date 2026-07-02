@@ -1,13 +1,50 @@
 LegacyVault Encryption Implementation
 ======================================
-The client-side encryption code is available for public review.
+This document describes what is encrypted, where, and by whom.
+The full implementation is publicly reviewable at src/lib/crypto.ts.
 
-File: src/lib/crypto.ts
-Algorithm: AES-256-GCM
-Key derivation: PBKDF2 with SHA-256, 310,000 iterations
-Portal keys: PBKDF2 with SHA-256, 100,000 iterations
-Vault key: Randomly generated AES-256-GCM key, encrypted with master key before storage
-Zero-knowledge: Encryption keys never transmitted to or stored by LegacyVault servers
+1. Vault key hierarchy
+   - Master key: PBKDF2-SHA-256, 310,000 iterations, per-user random 128-bit salt.
+     Derived on the user's device from their password. Never sent to the server.
+   - Vault key: random 256-bit AES-GCM key generated in the browser at signup.
+     Encrypted with the master key (AES-256-GCM) before being sent to the server.
+     Held only in memory after unlock; cleared on lock or logout.
+   - All vault data (documents, accounts, contacts, financial assets, profile
+     names, emergency instructions) is encrypted client-side with the vault key
+     using AES-256-GCM. Only ciphertext is stored server-side.
 
-This file confirms our encryption architecture. The full implementation
-can be reviewed at: https://github.com/[your-repo]/blob/main/src/lib/crypto.ts
+2. Contact portal shares
+   IMPORTANT — read carefully. This is where zero-knowledge for shared data
+   depends on the contact keeping their security-question answer secret.
+
+   - Portal access requires a random access token in the URL AND the correct
+     answer to a security question the vault owner sets for that contact.
+   - The server only stores a SHA-256 hash of the answer (used to verify the
+     answer without learning it) and a SHA-256 hash of the token (used to look
+     up the share row).
+   - The server refuses to serve any share payload until user_settings.
+     switch_triggered is true. Documents and encrypted bundles are gated on
+     the same flag; while the vault owner is checking in, the portal is closed.
+   - The share bundle is stored server-side as AES-256-GCM ciphertext.
+   - Roadmap: the share bundle's encryption key is being migrated to be derived
+     from the security-question answer (PBKDF2-SHA-256, 310,000 iterations,
+     per-share random 128-bit salt). Under that model the server cannot
+     decrypt shared data even if compromised, because it never sees the
+     answer in plaintext.
+   - Existing shares created under the older token-derived model are flagged
+     "needs regeneration"; owners must regenerate portal links to pick up the
+     new derivation.
+
+3. Never leaves the device
+   - The user's password.
+   - The master key.
+   - The vault key (after it is unwrapped on unlock).
+   - The security-question answer (only its SHA-256 hash reaches the server).
+
+4. Account recovery vs data recovery
+   Password reset via email restores account access but does NOT recover
+   vault data. Without the original password (or a still-unlocked session),
+   the vault key cannot be reconstructed, so encrypted data cannot be read
+   — by the user or by us.
+
+Contact: hello@legacyvault.example for security disclosures.

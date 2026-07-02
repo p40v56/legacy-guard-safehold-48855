@@ -179,7 +179,8 @@ export type Database = {
           expires_at: string
           id: string
           method: string
-          token: string
+          token: string | null
+          token_hash: string | null
           used_at: string | null
           user_id: string
         }
@@ -188,7 +189,8 @@ export type Database = {
           expires_at: string
           id?: string
           method?: string
-          token: string
+          token?: string | null
+          token_hash?: string | null
           used_at?: string | null
           user_id: string
         }
@@ -197,7 +199,8 @@ export type Database = {
           expires_at?: string
           id?: string
           method?: string
-          token?: string
+          token?: string | null
+          token_hash?: string | null
           used_at?: string | null
           user_id?: string
         }
@@ -254,6 +257,10 @@ export type Database = {
           encrypted_content: string | null
           encrypted_share_key: string | null
           id: string
+          kdf_iterations: number | null
+          kdf_salt: string | null
+          needs_regeneration: boolean
+          security_question_id: string | null
           share_key_iv: string | null
           shared_document_ids: string[] | null
           updated_at: string
@@ -268,6 +275,10 @@ export type Database = {
           encrypted_content?: string | null
           encrypted_share_key?: string | null
           id?: string
+          kdf_iterations?: number | null
+          kdf_salt?: string | null
+          needs_regeneration?: boolean
+          security_question_id?: string | null
           share_key_iv?: string | null
           shared_document_ids?: string[] | null
           updated_at?: string
@@ -282,6 +293,10 @@ export type Database = {
           encrypted_content?: string | null
           encrypted_share_key?: string | null
           id?: string
+          kdf_iterations?: number | null
+          kdf_salt?: string | null
+          needs_regeneration?: boolean
+          security_question_id?: string | null
           share_key_iv?: string | null
           shared_document_ids?: string[] | null
           updated_at?: string
@@ -300,6 +315,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "legacy_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_shares_security_question_id_fkey"
+            columns: ["security_question_id"]
+            isOneToOne: false
+            referencedRelation: "security_questions"
             referencedColumns: ["id"]
           },
         ]
@@ -589,6 +611,33 @@ export type Database = {
           id?: string
           success?: boolean | null
           token_hash?: string
+        }
+        Relationships: []
+      }
+      processed_stripe_sessions: {
+        Row: {
+          keep_expiry: string | null
+          plan: string
+          processed_at: string
+          prorated: boolean
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          keep_expiry?: string | null
+          plan: string
+          processed_at?: string
+          prorated?: boolean
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          keep_expiry?: string | null
+          plan?: string
+          processed_at?: string
+          prorated?: boolean
+          session_id?: string
+          user_id?: string
         }
         Relationships: []
       }

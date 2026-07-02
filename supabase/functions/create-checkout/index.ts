@@ -1,10 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const PRICE_IDS: Record<string, string> = {
   essential: "price_1T8pfk4l2Z69KbrEXeZwfhtT",
@@ -24,6 +20,8 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,7 +33,12 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseAdmin.auth.getUser(token);
     const user = data.user;
@@ -62,7 +65,7 @@ Deno.serve(async (req) => {
       .from("profiles")
       .select("plan, plan_expires_at")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     const currentPlan = profile?.plan || "free";
     const currentExpiry = profile?.plan_expires_at;
@@ -72,25 +75,23 @@ Deno.serve(async (req) => {
     const isProrated = currentPlan !== "free" && currentExpiry && targetPrice > currentPrice;
 
     let lineItems: any[];
-    let metadata: Record<string, string> = {
+    const metadata: Record<string, string> = {
       user_id: user.id,
       plan: plan,
     };
 
     if (isProrated) {
-      // Calculate remaining fraction of the current plan
       const now = new Date();
       const expiryDate = new Date(currentExpiry);
       const msRemaining = expiryDate.getTime() - now.getTime();
 
       if (msRemaining <= 0) {
-        // Plan already expired, charge full price
         lineItems = [{ price: PRICE_IDS[plan], quantity: 1 }];
       } else {
         const msInYear = 365.25 * 24 * 60 * 60 * 1000;
         const fractionRemaining = Math.min(msRemaining / msInYear, 1);
         const priceDifference = targetPrice - currentPrice;
-        const proratedAmount = Math.max(Math.round(priceDifference * fractionRemaining), 100); // minimum £1
+        const proratedAmount = Math.max(Math.round(priceDifference * fractionRemaining), 100);
 
         const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
 
@@ -108,19 +109,21 @@ Deno.serve(async (req) => {
 
         metadata.prorated = "true";
         metadata.previous_plan = currentPlan;
-        metadata.keep_expiry = currentExpiry; // keep the same expiry date
+        metadata.keep_expiry = currentExpiry;
       }
     } else {
       lineItems = [{ price: PRICE_IDS[plan], quantity: 1 }];
     }
 
+    // Success URL now carries the checkout session ID so verify-payment can look
+    // up that specific session instead of scanning recent history (H2).
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       client_reference_id: user.id,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${origin}/settings?tab=account&payment=success&plan=${plan}`,
+      success_url: `${origin}/settings?tab=account&payment=success&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/settings?tab=account&payment=cancelled`,
       metadata,
     });
@@ -130,7 +133,8 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("create-checkout error:", error);
+    return new Response(JSON.stringify({ error: "Failed to create checkout session" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

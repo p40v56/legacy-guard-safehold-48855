@@ -1,42 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
-
-const APP_URL = Deno.env.get("APP_BASE_URL");
-const ALLOWED_ORIGINS = [
-  "https://id-preview--6cf11843-b093-41a4-b4d5-f63b642b4451.lovable.app",
-  "https://6cf11843-b093-41a4-b4d5-f63b642b4451.lovableproject.com",
-  "https://legacy-guard-safehold-48855.lovable.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  ...(APP_URL ? [APP_URL] : []),
-];
-
-function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get("Origin") || "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  };
-}
-
-async function hashTokenForStorage(token: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(token));
-  const arr = new Uint8Array(digest);
-  let binary = "";
-  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
-  return btoa(binary);
-}
+import { getCorsHeaders, timingSafeEqual, sha256Base64 } from "../_shared/cors.ts";
 
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
-
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -44,109 +12,97 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { token, documentId, filePath } = await req.json();
-
     if (!token || !documentId || !filePath) {
-      return new Response(
-        JSON.stringify({ error: "Missing token, documentId, or filePath" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "Missing parameters" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Verify the token is valid and active
-    const tokenHash = await hashTokenForStorage(token);
-
-    // Try hash lookup first, then legacy raw lookup
-    let tokenData: any = null;
-    const { data: hashResult } = await supabase
+    const tokenHash = await sha256Base64(token);
+    const { data: tokenData } = await supabase
       .from("contact_access_tokens")
       .select("*")
       .eq("token", tokenHash)
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
-    if (hashResult) {
-      tokenData = hashResult;
-    } else {
-      // Legacy fallback
-      const { data: rawResult } = await supabase
-        .from("contact_access_tokens")
-        .select("*")
-        .eq("token", token)
-        .eq("is_active", true)
-        .single();
-      tokenData = rawResult;
+    if (!tokenData || !timingSafeEqual(tokenData.token, tokenHash)) {
+      return new Response(JSON.stringify({ error: "Invalid or expired access link" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    if (!tokenData) {
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired access link" }),
-        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
+      return new Response(JSON.stringify({ error: "Invalid or expired access link" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Verify the document belongs to this user
+    // Trigger gate: only serve documents after the owner's switch has fired.
+    const { data: settings } = await supabase
+      .from("user_settings")
+      .select("switch_triggered")
+      .eq("user_id", tokenData.user_id)
+      .maybeSingle();
+
+    if (!settings?.switch_triggered) {
+      return new Response(JSON.stringify({ error: "This vault has not been released yet." }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const { data: doc } = await supabase
       .from("legacy_documents")
       .select("id, file_path, user_id")
       .eq("id", documentId)
       .eq("user_id", tokenData.user_id)
-      .single();
+      .maybeSingle();
 
     if (!doc || doc.file_path !== filePath) {
-      return new Response(
-        JSON.stringify({ error: "Document not found or access denied" }),
-        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "Document not found or access denied" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Verify this specific document was shared with this contact via contact_shares
     const { data: share } = await supabase
       .from("contact_shares")
       .select("shared_document_ids")
       .eq("contact_id", tokenData.contact_id)
       .eq("user_id", tokenData.user_id)
-      .single();
+      .maybeSingle();
 
     if (!share) {
-      return new Response(
-        JSON.stringify({ error: "No portal share found for this contact" }),
-        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "No portal share found for this contact" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Check if this document ID is in the shared list
     const sharedIds: string[] = share.shared_document_ids || [];
     if (sharedIds.length > 0 && !sharedIds.includes(documentId)) {
-      return new Response(
-        JSON.stringify({ error: "This document was not shared with you" }),
-        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "This document was not shared with you" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Generate a signed URL valid for 60 seconds
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+    const { data: signed, error: signedErr } = await supabase.storage
       .from("documents")
       .createSignedUrl(filePath, 60);
 
-    if (signedUrlError || !signedUrlData) {
-      console.error("Error creating signed URL:", signedUrlError);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate download link" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    if (signedErr || !signed) {
+      console.error("Signed URL error:", signedErr);
+      return new Response(JSON.stringify({ error: "Failed to generate download link" }), {
+        status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    return new Response(
-      JSON.stringify({ signedUrl: signedUrlData.signedUrl }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in get-document-url:", errorMessage);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { "Content-Type": "application/json", ...getCorsHeaders(req) } }
-    );
+    return new Response(JSON.stringify({ signedUrl: signed.signedUrl }), {
+      status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error) {
+    console.error("get-document-url error:", error);
+    return new Response(JSON.stringify({ error: "Internal error" }), {
+      status: 500, headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },
+    });
   }
 };
 

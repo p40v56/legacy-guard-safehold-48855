@@ -77,6 +77,12 @@ function resolvePermissions(contact: any, typePermissions: any[]): ContactPermis
 
 /**
  * Create encrypted portal shares for a contact after generating a portal token.
+ *
+ * Zero-knowledge model: the share content is encrypted with a key derived
+ * (client-side, via PBKDF2) from the plaintext security-question answer plus
+ * a per-share random salt. The salt and iteration count are stored server-side
+ * so the contact's browser can re-derive the same key when they enter the
+ * correct answer. The server never sees the answer or the derived key.
  */
 export async function createPortalShares(
   userId: string,
@@ -84,8 +90,6 @@ export async function createPortalShares(
   tokenHex: string,
   vaultKey: CryptoKey
 ): Promise<void> {
-  // tokenHex is the raw token string — pass directly to deriveKeyFromToken
-  const shareKey = await deriveKeyFromToken(tokenHex);
   const tokenHash = await hashTokenString(tokenHex);
 
   // Fetch contact and permissions
@@ -97,7 +101,35 @@ export async function createPortalShares(
   const contact = contactRes.data;
   if (!contact) return;
 
+  // Fetch the applicable security question and decrypt its stored answer
+  // with the vault key so we can derive the share key from it.
+  const { data: questions } = await supabase
+    .from('security_questions')
+    .select('*')
+    .eq('user_id', userId);
+
+  const applicableQuestion = findApplicableQuestion(questions || [], contact);
+  if (!applicableQuestion) {
+    throw new Error('No security question is configured for this contact. Add one in Contacts → Portal Security Questions before generating a portal link.');
+  }
+  const q: any = applicableQuestion;
+  if (!q.answer_ciphertext || !q.answer_iv) {
+    throw new Error(`The security question "${q.question}" was created before zero-knowledge sharing and cannot be used to encrypt this portal. Please edit it and re-enter the answer.`);
+  }
+  let plaintextAnswer: string;
+  try {
+    plaintextAnswer = await decryptText(q.answer_ciphertext, q.answer_iv, vaultKey);
+  } catch {
+    throw new Error('Could not decrypt the security-question answer. Please edit the question and re-enter the answer.');
+  }
+
+  // Fresh random salt for THIS share; derive the AES-GCM share key.
+  const kdfSalt = generateSalt();
+  const kdfIterations = SHARE_KDF_ITERATIONS;
+  const shareKey = await deriveShareKeyFromAnswer(plaintextAnswer, kdfSalt, kdfIterations);
+
   const permissions = resolvePermissions(contact, typePermRes.data || []);
+
 
   // Fetch all user data in parallel
   const [profileRes, docsRes, accountsRes, financialsRes, settingsRes, rulesRes, profContactsRes] = await Promise.all([

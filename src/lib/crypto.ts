@@ -81,7 +81,9 @@ export async function deriveMasterKey(
 
 /**
  * Derives an AES-GCM key from a raw token string (hex or base64).
- * MUST be byte-for-byte identical on both owner (share creation) and contact (portal) sides.
+ * LEGACY: retained only for pre-ZK portal shares. New shares use
+ * `deriveShareKeyFromAnswer` so the server never sees the material used
+ * to derive the share key.
  */
 export async function deriveKeyFromToken(
   rawToken: string
@@ -108,6 +110,49 @@ export async function deriveKeyFromToken(
     ['encrypt', 'decrypt']
   );
 }
+
+/**
+ * Zero-knowledge share key derivation.
+ *
+ * Both the owner (at share creation) and the contact (at portal access) derive
+ * the same AES-GCM key from the plaintext security-question answer plus a
+ * per-share random salt. The server stores only the salt/iterations and the
+ * ciphertext — it never sees the answer, so it cannot decrypt the share.
+ *
+ * The answer is normalized (trim + lowercase) to match the answer-hash
+ * verification path.
+ */
+export async function deriveShareKeyFromAnswer(
+  answer: string,
+  saltBase64: string,
+  iterations: number
+): Promise<CryptoKey> {
+  const encoder = new TextEncoder();
+  const normalized = answer.trim().toLowerCase();
+  const salt = new Uint8Array(base64ToBuffer(saltBase64));
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    toArrayBuffer(encoder.encode(normalized)),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: toArrayBuffer(salt),
+      iterations,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
 
 // ── Vault Key Generation ─────────────────────────────────
 

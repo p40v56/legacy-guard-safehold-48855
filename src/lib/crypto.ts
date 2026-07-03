@@ -9,8 +9,13 @@ const PBKDF2_ITERATIONS = 310_000;
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ab = (x: any): ArrayBuffer => x;
+/** Normalize a Uint8Array or ArrayBuffer to a fresh ArrayBuffer for Web Crypto APIs. */
+function toArrayBuffer(view: Uint8Array | ArrayBuffer): ArrayBuffer {
+  if (view instanceof ArrayBuffer) return view;
+  const copy = new Uint8Array(view.byteLength);
+  copy.set(view);
+  return copy.buffer;
+}
 
 // ── Helpers ──────────────────────────────────────────────
 

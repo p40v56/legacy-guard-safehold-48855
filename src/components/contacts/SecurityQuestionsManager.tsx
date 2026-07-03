@@ -154,18 +154,26 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
 
   const handleSaveEdit = async () => {
     if (!editingId || !editQuestion.trim() || !editAnswer.trim()) return;
+    if (!vaultKey) {
+      toast({ title: 'Vault locked', description: 'Unlock your vault before editing security questions.', variant: 'destructive' });
+      return;
+    }
     setEditSaving(true);
 
     try {
       const answerHash = await hashAnswer(editAnswer);
+      const { ciphertext, iv } = await encryptText(editAnswer.trim().toLowerCase(), vaultKey);
       const payload: any = {
         question: editQuestion.trim(),
         answer_hash: answerHash,
+        answer_ciphertext: ciphertext,
+        answer_iv: iv,
         hint: editHint.trim() || null,
         target_type: editTargetType,
         target_contact_type: editTargetType === 'category' ? editTargetContactType : null,
         target_contact_id: editTargetType === 'contact' ? editTargetContactId : null,
       };
+
 
       const { error } = await supabase
         .from('security_questions')

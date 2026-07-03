@@ -111,14 +111,26 @@ async function encryptProfileTable(
   return migrated;
 }
 
+async function countRemainingPlaintext(
+  table: string,
+  userId: string,
+  fields: string[]
+): Promise<number> {
+  const { data, error } = await (supabase.from(table as any).select('*') as any).eq('user_id', userId);
+  if (error || !data) return 0;
+  return (data as any[]).filter((r) => needsEncryption(r, fields)).length;
+}
+
 /**
  * Encrypt all existing plaintext data for a user.
- * Only touches records that don't yet have _iv values.
+ * Idempotent per row: only touches records that don't yet have _iv values.
+ * After the pass, re-counts rows with lingering plaintext so callers can decide
+ * whether to persist a `migration_complete` flag.
  */
 export async function migrateUserData(
   userId: string,
   vaultKey: CryptoKey
-): Promise<MigrationResult> {
+): Promise<MigrationResult & { remainingPlaintext: number; complete: boolean; remainingByTable: Record<string, number> }> {
   const [accounts, contacts, documents, financialAssets, activationRules, profiles] = await Promise.all([
     encryptTable('accounts', userId, ACCOUNT_FIELDS, vaultKey),
     encryptTable('contacts', userId, CONTACT_FIELDS, vaultKey),
@@ -128,6 +140,25 @@ export async function migrateUserData(
     encryptProfileTable(userId, PROFILE_FIELDS, vaultKey),
   ]);
 
+  const [rAcc, rCon, rDoc, rFin, rAct, rProf] = await Promise.all([
+    countRemainingPlaintext('accounts', userId, ACCOUNT_FIELDS),
+    countRemainingPlaintext('contacts', userId, CONTACT_FIELDS),
+    countRemainingPlaintext('legacy_documents', userId, DOCUMENT_FIELDS),
+    countRemainingPlaintext('financial_assets', userId, FINANCIAL_FIELDS),
+    countRemainingPlaintext('activation_rules', userId, ACTIVATION_RULE_FIELDS),
+    countRemainingPlaintext('profiles', userId, PROFILE_FIELDS),
+  ]);
+
+  const remainingByTable = {
+    accounts: rAcc,
+    contacts: rCon,
+    legacy_documents: rDoc,
+    financial_assets: rFin,
+    activation_rules: rAct,
+    profiles: rProf,
+  };
+  const remainingPlaintext = rAcc + rCon + rDoc + rFin + rAct + rProf;
+
   return {
     accounts,
     contacts,
@@ -136,5 +167,9 @@ export async function migrateUserData(
     activationRules,
     profiles,
     total: accounts + contacts + documents + financialAssets + activationRules + profiles,
+    remainingPlaintext,
+    complete: remainingPlaintext === 0,
+    remainingByTable,
   };
 }
+

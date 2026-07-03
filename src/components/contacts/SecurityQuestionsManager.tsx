@@ -8,8 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { KeyRound, Plus, Trash2, Shield, Pencil, Eye, EyeOff, X, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { encryptText } from '@/lib/crypto';
 import { useToast } from '@/hooks/use-toast';
 import { ContactType, EmergencyContact } from '@/types/access-control';
+
 
 async function hashAnswer(answer: string): Promise<string> {
   const encoder = new TextEncoder();

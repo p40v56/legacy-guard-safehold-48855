@@ -14,26 +14,27 @@ The full implementation is publicly reviewable at src/lib/crypto.ts.
      using AES-256-GCM. Only ciphertext is stored server-side.
 
 2. Contact portal shares
-   IMPORTANT — read carefully. This is where zero-knowledge for shared data
-   depends on the contact keeping their security-question answer secret.
-
+2. Contact portal shares (zero-knowledge)
    - Portal access requires a random access token in the URL AND the correct
      answer to a security question the vault owner sets for that contact.
-   - The server only stores a SHA-256 hash of the answer (used to verify the
-     answer without learning it) and a SHA-256 hash of the token (used to look
-     up the share row).
-   - The server refuses to serve any share payload until user_settings.
-     switch_triggered is true. Documents and encrypted bundles are gated on
-     the same flag; while the vault owner is checking in, the portal is closed.
+   - The server stores a SHA-256 hash of the token (for row lookup) and a
+     SHA-256 hash of the answer (used only to rate-limit and gate access).
    - The share bundle is stored server-side as AES-256-GCM ciphertext.
-   - Roadmap: the share bundle's encryption key is being migrated to be derived
-     from the security-question answer (PBKDF2-SHA-256, 310,000 iterations,
-     per-share random 128-bit salt). Under that model the server cannot
-     decrypt shared data even if compromised, because it never sees the
-     answer in plaintext.
-   - Existing shares created under the older token-derived model are flagged
-     "needs regeneration"; owners must regenerate portal links to pick up the
-     new derivation.
+     The AES key is derived, IN THE BROWSER, from the plaintext
+     security-question answer using PBKDF2-SHA-256 with 310,000 iterations
+     and a per-share random 128-bit salt. The salt and iteration count are
+     stored server-side; the answer and the derived key are NOT.
+   - Because the answer never leaves the contact's browser (and, on the
+     owner side, is only decrypted from its vault-key-wrapped copy in the
+     owner's browser at share-creation time), the server cannot decrypt
+     shared data even if fully compromised.
+   - The server refuses to return any share payload until
+     user_settings.switch_triggered is true. Documents and encrypted
+     bundles are gated on the same flag; while the vault owner is checking
+     in, the portal is closed.
+   - Shares created before this model are flagged "needs regeneration";
+     owners must regenerate portal links to migrate them.
+
 
 3. Never leaves the device
    - The user's password.

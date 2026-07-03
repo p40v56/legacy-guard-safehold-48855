@@ -13,8 +13,8 @@ The full implementation is publicly reviewable at src/lib/crypto.ts.
      names, emergency instructions) is encrypted client-side with the vault key
      using AES-256-GCM. Only ciphertext is stored server-side.
 
-2. Contact portal shares
 2. Contact portal shares (zero-knowledge)
+
    - Portal access requires a random access token in the URL AND the correct
      answer to a security question the vault owner sets for that contact.
    - The server stores a SHA-256 hash of the token (for row lookup) and a

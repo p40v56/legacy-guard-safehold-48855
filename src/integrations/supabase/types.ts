@@ -742,7 +742,9 @@ export type Database = {
       }
       security_questions: {
         Row: {
+          answer_ciphertext: string | null
           answer_hash: string
+          answer_iv: string | null
           created_at: string
           hint: string | null
           id: string
@@ -754,7 +756,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          answer_ciphertext?: string | null
           answer_hash: string
+          answer_iv?: string | null
           created_at?: string
           hint?: string | null
           id?: string
@@ -766,7 +770,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          answer_ciphertext?: string | null
           answer_hash?: string
+          answer_iv?: string | null
           created_at?: string
           hint?: string | null
           id?: string

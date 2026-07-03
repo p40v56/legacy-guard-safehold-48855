@@ -376,5 +376,10 @@ export async function createPortalShares(
       content_iv: iv,
       access_token_hash: tokenHash,
       shared_document_ids: sharedDocumentIds,
+      kdf_salt: kdfSalt,
+      kdf_iterations: kdfIterations,
+      security_question_id: q.id,
+      needs_regeneration: false,
+
     } as any);
 }

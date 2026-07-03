@@ -12,13 +12,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import {
-  deriveKeyFromToken,
+  deriveShareKeyFromAnswer,
   encryptText,
   decryptText,
   decryptFields,
   decryptFile,
+  generateSalt,
 } from '@/lib/crypto';
 import { PLAN_LIMITS, PlanTier } from '@/hooks/usePlan';
+
+const SHARE_KDF_ITERATIONS = 310_000;
 
 /** Hash the raw token string (not bytes) for DB lookup — must match portal side */
 async function hashTokenString(rawToken: string): Promise<string> {
@@ -29,6 +32,16 @@ async function hashTokenString(rawToken: string): Promise<string> {
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
+
+function findApplicableQuestion(questions: any[], contact: any): any | null {
+  if (!questions || questions.length === 0) return null;
+  const specific = questions.find((q: any) => q.target_type === 'contact' && q.target_contact_id === contact.id);
+  if (specific) return specific;
+  const category = questions.find((q: any) => q.target_type === 'category' && q.target_contact_type === contact.contact_type);
+  if (category) return category;
+  return questions.find((q: any) => q.target_type === 'all') || null;
+}
+
 
 const ENCRYPTED_DOC_FIELDS = ['title', 'description', 'content'];
 const ENCRYPTED_ACCOUNT_FIELDS = ['account_name', 'username', 'credentials', 'website_url', 'notes', 'email', 'platform'];

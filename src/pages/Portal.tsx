@@ -9,7 +9,7 @@ import PortalOverview from '@/components/portal/PortalOverview';
 import PortalFinancials from '@/components/portal/PortalFinancials';
 import PortalDocuments from '@/components/portal/PortalDocuments';
 import PortalAccounts from '@/components/portal/PortalAccounts';
-import { deriveKeyFromToken, decryptText } from '@/lib/crypto';
+import { deriveKeyFromToken, deriveShareKeyFromAnswer, decryptText } from '@/lib/crypto';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PortalData {
@@ -34,11 +34,27 @@ interface SecurityChallenge {
   userName: string;
 }
 
-async function decryptPortalResponse(result: any, rawToken: string): Promise<PortalData> {
-  const shareKey = await deriveKeyFromToken(rawToken);
+/**
+ * Decrypt the encrypted portal payload returned by the edge function.
+ *
+ * New zero-knowledge shares: the server returns kdfSalt + kdfIterations; the
+ * share key is derived client-side from the security-question answer. The
+ * server never sees the answer or the key.
+ *
+ * Legacy shares (no kdfSalt): fall back to the old token-derived key so
+ * portals created before the ZK migration keep working until regenerated.
+ */
+async function decryptPortalResponse(result: any, rawToken: string, answer?: string): Promise<PortalData> {
+  let shareKey: CryptoKey;
+  if (result.kdfSalt && result.kdfIterations && answer) {
+    shareKey = await deriveShareKeyFromAnswer(answer, result.kdfSalt, result.kdfIterations);
+  } else {
+    shareKey = await deriveKeyFromToken(rawToken);
+  }
   const plaintext = await decryptText(result.encryptedContent, result.contentIv, shareKey);
   return JSON.parse(plaintext);
 }
+
 
 const Portal = () => {
   const { token } = useParams<{ token: string }>();
@@ -125,10 +141,11 @@ const Portal = () => {
       if (result.encrypted && token) {
         setDecrypting(true);
         try {
-          const data = await decryptPortalResponse(result, token);
+          const data = await decryptPortalResponse(result, token, answer.trim());
           setPortalData(data);
         } catch {
-          setAnswerError('This access link is invalid or has expired.');
+          setAnswerError('Incorrect answer. Please try again.');
+
         } finally {
           setDecrypting(false);
         }

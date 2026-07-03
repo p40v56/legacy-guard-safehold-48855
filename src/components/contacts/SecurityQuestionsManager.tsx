@@ -8,8 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { KeyRound, Plus, Trash2, Shield, Pencil, Eye, EyeOff, X, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useEncryption } from '@/contexts/EncryptionContext';
+import { encryptText } from '@/lib/crypto';
 import { useToast } from '@/hooks/use-toast';
 import { ContactType, EmergencyContact } from '@/types/access-control';
+
 
 async function hashAnswer(answer: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -37,8 +40,10 @@ interface SecurityQuestionsManagerProps {
 
 const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuestionsManagerProps) => {
   const { user } = useAuth();
+  const { vaultKey } = useEncryption();
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<string | null>(null);
   const { toast } = useToast();
+
   const [questions, setQuestions] = useState<SecurityQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [newQuestion, setNewQuestion] = useState('');
@@ -84,19 +89,27 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
 
   const handleAdd = async () => {
     if (!user || !newQuestion.trim() || !newAnswer.trim()) return;
+    if (!vaultKey) {
+      toast({ title: 'Vault locked', description: 'Unlock your vault before adding security questions.', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
 
     try {
       const answerHash = await hashAnswer(newAnswer);
+      const { ciphertext, iv } = await encryptText(newAnswer.trim().toLowerCase(), vaultKey);
       const payload: any = {
         user_id: user.id,
         question: newQuestion.trim(),
         answer_hash: answerHash,
+        answer_ciphertext: ciphertext,
+        answer_iv: iv,
         hint: newHint.trim() || null,
         target_type: newTargetType,
         target_contact_type: newTargetType === 'category' ? newTargetContactType : null,
         target_contact_id: newTargetType === 'contact' ? newTargetContactId : null,
       };
+
 
       const { data, error } = await supabase
         .from('security_questions')
@@ -141,18 +154,26 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
 
   const handleSaveEdit = async () => {
     if (!editingId || !editQuestion.trim() || !editAnswer.trim()) return;
+    if (!vaultKey) {
+      toast({ title: 'Vault locked', description: 'Unlock your vault before editing security questions.', variant: 'destructive' });
+      return;
+    }
     setEditSaving(true);
 
     try {
       const answerHash = await hashAnswer(editAnswer);
+      const { ciphertext, iv } = await encryptText(editAnswer.trim().toLowerCase(), vaultKey);
       const payload: any = {
         question: editQuestion.trim(),
         answer_hash: answerHash,
+        answer_ciphertext: ciphertext,
+        answer_iv: iv,
         hint: editHint.trim() || null,
         target_type: editTargetType,
         target_contact_type: editTargetType === 'category' ? editTargetContactType : null,
         target_contact_id: editTargetType === 'contact' ? editTargetContactId : null,
       };
+
 
       const { error } = await supabase
         .from('security_questions')

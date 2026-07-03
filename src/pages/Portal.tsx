@@ -141,10 +141,11 @@ const Portal = () => {
       if (result.encrypted && token) {
         setDecrypting(true);
         try {
-          const data = await decryptPortalResponse(result, token);
+          const data = await decryptPortalResponse(result, token, answer.trim());
           setPortalData(data);
         } catch {
-          setAnswerError('This access link is invalid or has expired.');
+          setAnswerError('Incorrect answer. Please try again.');
+
         } finally {
           setDecrypting(false);
         }

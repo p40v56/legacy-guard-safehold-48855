@@ -9,11 +9,12 @@ const PBKDF2_ITERATIONS = 310_000;
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 
-/** Normalize a Uint8Array or ArrayBuffer to a fresh ArrayBuffer for Web Crypto APIs. */
-function toArrayBuffer(view: Uint8Array | ArrayBuffer): ArrayBuffer {
+/** Normalize any binary buffer to a fresh ArrayBuffer for Web Crypto APIs. */
+function toArrayBuffer(view: Uint8Array | ArrayBufferLike): ArrayBuffer {
   if (view instanceof ArrayBuffer) return view;
-  const copy = new Uint8Array(view.byteLength);
-  copy.set(view);
+  const bytes = view instanceof Uint8Array ? view : new Uint8Array(view as ArrayBufferLike);
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
   return copy.buffer;
 }
 

@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { EncryptionProvider } from "@/contexts/EncryptionContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 // Landing / auth kept eager for fast first paint
 import Index from "./pages/Index";

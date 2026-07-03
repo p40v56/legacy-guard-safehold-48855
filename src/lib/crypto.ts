@@ -9,8 +9,14 @@ const PBKDF2_ITERATIONS = 310_000;
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ab = (x: any): ArrayBuffer => x;
+/** Normalize any binary buffer to a fresh ArrayBuffer for Web Crypto APIs. */
+function toArrayBuffer(view: Uint8Array | ArrayBufferLike): ArrayBuffer {
+  if (view instanceof ArrayBuffer) return view;
+  const bytes = view instanceof Uint8Array ? view : new Uint8Array(view as ArrayBufferLike);
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -29,7 +35,7 @@ function base64ToBuffer(b64: string): ArrayBuffer {
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return ab(bytes.buffer);
+  return toArrayBuffer(bytes.buffer);
 }
 
 function generateIV(): Uint8Array {
@@ -38,7 +44,7 @@ function generateIV(): Uint8Array {
 
 export function generateSalt(): string {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
-  return bufferToBase64(ab(salt.buffer));
+  return bufferToBase64(toArrayBuffer(salt.buffer));
 }
 
 // ── Key Derivation ───────────────────────────────────────
@@ -53,7 +59,7 @@ export async function deriveMasterKey(
 
   const baseKey = await crypto.subtle.importKey(
     'raw',
-    ab(passwordBuffer),
+    toArrayBuffer(passwordBuffer),
     'PBKDF2',
     false,
     ['deriveKey']
@@ -62,7 +68,7 @@ export async function deriveMasterKey(
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: ab(salt),
+      salt: toArrayBuffer(salt),
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256',
     },
@@ -147,14 +153,14 @@ export async function encryptVaultKey(
   const iv = generateIV();
 
   const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: ab(iv) },
+    { name: 'AES-GCM', iv: toArrayBuffer(iv) },
     masterKey,
     exported
   );
 
   return {
     encryptedVaultKey: bufferToBase64(ciphertext),
-    vaultKeyIv: bufferToBase64(ab(iv.buffer)),
+    vaultKeyIv: bufferToBase64(toArrayBuffer(iv.buffer)),
   };
 }
 
@@ -192,14 +198,14 @@ export async function encryptText(
   const iv = generateIV();
 
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: ab(iv) },
+    { name: 'AES-GCM', iv: toArrayBuffer(iv) },
     key,
-    ab(data)
+    toArrayBuffer(data)
   );
 
   return {
     ciphertext: bufferToBase64(encrypted),
-    iv: bufferToBase64(ab(iv.buffer)),
+    iv: bufferToBase64(toArrayBuffer(iv.buffer)),
   };
 }
 
@@ -229,14 +235,14 @@ export async function encryptFile(
   const iv = generateIV();
 
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: ab(iv) },
+    { name: 'AES-GCM', iv: toArrayBuffer(iv) },
     key,
     buffer
   );
 
   return {
     ciphertext: encrypted,
-    iv: bufferToBase64(ab(iv.buffer)),
+    iv: bufferToBase64(toArrayBuffer(iv.buffer)),
   };
 }
 
@@ -257,7 +263,7 @@ export async function decryptFile(
 // ── Token Hashing ────────────────────────────────────────
 
 export async function hashToken(tokenBytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', ab(tokenBytes));
+  const digest = await crypto.subtle.digest('SHA-256', toArrayBuffer(tokenBytes));
   return bufferToBase64(digest);
 }
 
@@ -266,7 +272,7 @@ export function generateAccessToken(): Uint8Array {
 }
 
 export function accessTokenToBase64(token: Uint8Array): string {
-  return bufferToBase64(ab(token.buffer));
+  return bufferToBase64(toArrayBuffer(token.buffer));
 }
 
 export function base64ToAccessToken(b64: string): Uint8Array {

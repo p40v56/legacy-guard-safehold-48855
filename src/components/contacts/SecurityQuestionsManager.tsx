@@ -40,8 +40,10 @@ interface SecurityQuestionsManagerProps {
 
 const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuestionsManagerProps) => {
   const { user } = useAuth();
+  const { vaultKey } = useEncryption();
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<string | null>(null);
   const { toast } = useToast();
+
   const [questions, setQuestions] = useState<SecurityQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [newQuestion, setNewQuestion] = useState('');

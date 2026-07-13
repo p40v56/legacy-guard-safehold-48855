@@ -466,16 +466,34 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Compare hashes (constant-time). Legacy plaintext fallback removed (M3).
-      const submittedHash = await hashAnswer(answer);
-      const storedAnswer = applicableQuestion.answer_hash || "";
+      // Verify: PBKDF2 (kdf_salt/kdf_iterations set) or legacy SHA-256 (upgrade on success).
+      const storedAnswer: string = applicableQuestion.answer_hash || "";
+      const storedSalt: string | null = applicableQuestion.kdf_salt || null;
+      const storedIter: number | null = applicableQuestion.kdf_iterations || null;
       let isCorrect = false;
-      if (submittedHash.length === storedAnswer.length && storedAnswer.length > 0) {
-        let diff = 0;
-        for (let i = 0; i < submittedHash.length; i++) {
-          diff |= submittedHash.charCodeAt(i) ^ storedAnswer.charCodeAt(i);
+      let usedLegacy = false;
+      if (storedAnswer.length > 0) {
+        if (storedSalt && storedIter && storedIter > 0) {
+          const submittedHash = await pbkdf2HashAnswer(answer, storedSalt, storedIter);
+          if (submittedHash.length === storedAnswer.length) {
+            let diff = 0;
+            for (let i = 0; i < submittedHash.length; i++) {
+              diff |= submittedHash.charCodeAt(i) ^ storedAnswer.charCodeAt(i);
+            }
+            isCorrect = diff === 0;
+          }
+        } else {
+          // Legacy row: verify with unsalted SHA-256 once, then upgrade.
+          const legacyHash = await legacyHashAnswer(answer);
+          if (legacyHash.length === storedAnswer.length) {
+            let diff = 0;
+            for (let i = 0; i < legacyHash.length; i++) {
+              diff |= legacyHash.charCodeAt(i) ^ storedAnswer.charCodeAt(i);
+            }
+            isCorrect = diff === 0;
+            usedLegacy = true;
+          }
         }
-        isCorrect = diff === 0;
       }
 
       if (!isCorrect) {

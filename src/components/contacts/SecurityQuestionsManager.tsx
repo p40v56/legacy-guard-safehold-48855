@@ -40,8 +40,11 @@ async function pbkdf2HashAnswer(answer: string, saltB64: string, iterations: num
     false,
     ['deriveBits']
   );
+  const saltBytes = b64ToBytes(saltB64);
+  const saltBuf = new ArrayBuffer(saltBytes.byteLength);
+  new Uint8Array(saltBuf).set(saltBytes);
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: b64ToBytes(saltB64), iterations, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: saltBuf, iterations, hash: 'SHA-256' },
     material,
     256
   );

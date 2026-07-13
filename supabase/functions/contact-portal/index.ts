@@ -37,7 +37,9 @@ async function hashTokenForStorage(token: string): Promise<string> {
 // Must match client-side hashTokenString in portalShares.ts
 const hashTokenString = hashTokenForStorage;
 
-async function hashAnswer(answer: string): Promise<string> {
+// Legacy unsalted SHA-256, kept only to verify pre-PBKDF2 rows once,
+// then transparently upgrade the row to PBKDF2.
+async function legacyHashAnswer(answer: string): Promise<string> {
   const encoder = new TextEncoder();
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -47,6 +49,45 @@ async function hashAnswer(answer: string): Promise<string> {
   let binary = "";
   for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
   return btoa(binary);
+}
+
+const PBKDF2_ITERATIONS = 310_000;
+
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function bytesToB64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function randomSaltB64(): string {
+  return bytesToB64(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+async function pbkdf2HashAnswer(
+  answer: string,
+  saltB64: string,
+  iterations: number
+): Promise<string> {
+  const encoder = new TextEncoder();
+  const normalized = answer.trim().toLowerCase();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(normalized),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: b64ToBytes(saltB64), iterations, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  return bytesToB64(new Uint8Array(bits));
 }
 
 // ── Permission helpers ───────────────────────────────────────

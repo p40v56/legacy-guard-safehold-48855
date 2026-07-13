@@ -123,15 +123,18 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
     setSaving(true);
 
     try {
-      const answerHash = await hashAnswer(newAnswer);
+      const kdfSalt = randomSaltB64();
+      const answerHash = await pbkdf2HashAnswer(newAnswer, kdfSalt, PBKDF2_ITERATIONS);
       // answer_ciphertext/answer_iv are read by src/lib/portalShares.ts to
       // derive the per-share AES-GCM key at portal-generation time (ZK model).
-      // answer_hash is what supabase/functions/contact-portal verifies against.
+      // answer_hash + kdf_salt + kdf_iterations are what contact-portal verifies.
       const { ciphertext, iv } = await encryptText(newAnswer.trim().toLowerCase(), vaultKey);
       const payload: any = {
         user_id: user.id,
         question: newQuestion.trim(),
         answer_hash: answerHash,
+        kdf_salt: kdfSalt,
+        kdf_iterations: PBKDF2_ITERATIONS,
         answer_ciphertext: ciphertext,
         answer_iv: iv,
         hint: newHint.trim() || null,

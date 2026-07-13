@@ -65,19 +65,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    const requestedPlan = plan || 'free';
+    const ALLOWED_PLANS = ['free', 'essential', 'family'];
+    if (!ALLOWED_PLANS.includes(requestedPlan)) {
+      return new Response(JSON.stringify({ error: 'Invalid plan. Allowed: free, essential, family.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email, password, email_confirm: true,
     });
 
     if (createError) throw createError;
 
-    if (plan === 'paid' && newUser.user) {
+    if (requestedPlan !== 'free' && newUser.user) {
       const expiresAt = new Date();
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-      await adminClient.rpc('admin_update_profile', {
-        _profile_user_id: newUser.user.id,
-        _updates: { plan: 'paid', plan_expires_at: expiresAt.toISOString() },
-      });
+      // Direct service-role update — the profiles trigger allows service_role,
+      // and admin_update_profile RPC uses auth.uid() which is NULL here.
+      const { error: updateError } = await adminClient
+        .from('profiles')
+        .update({ plan: requestedPlan, plan_expires_at: expiresAt.toISOString() })
+        .eq('user_id', newUser.user.id);
+      if (updateError) throw updateError;
     }
 
     return new Response(JSON.stringify({ success: true, userId: newUser.user?.id }), {

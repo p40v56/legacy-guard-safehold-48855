@@ -24,6 +24,16 @@ function getCorsHeaders(req: Request): Record<string, string> {
   };
 }
 
+function escapeHtml(input: unknown): string {
+  if (input == null) return "";
+  return String(input)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function resolveTemplate(text: string, vars: Record<string, string>): string {
   let result = text;
   for (const [key, value] of Object.entries(vars)) {

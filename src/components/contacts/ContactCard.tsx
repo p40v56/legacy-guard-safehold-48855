@@ -68,14 +68,17 @@ const ContactCard: React.FC<ContactCardProps> = ({
     // Check active share and get updated_at
     supabase
       .from('contact_shares')
-      .select('id, updated_at')
+      .select('id, updated_at, needs_regeneration')
       .eq('contact_id', contact.id)
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(1)
       .then(({ data }) => {
         setHasActiveShare((data?.length ?? 0) > 0);
-        if (data?.[0]) setShareLastUpdated(data[0].updated_at);
+        if (data?.[0]) {
+          setShareLastUpdated(data[0].updated_at);
+          setNeedsRegeneration(Boolean((data[0] as any).needs_regeneration));
+        }
       });
 
     // Check if user data was modified after portal was generated

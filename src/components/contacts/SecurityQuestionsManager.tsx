@@ -14,13 +14,38 @@ import { useToast } from '@/hooks/use-toast';
 import { ContactType, EmergencyContact } from '@/types/access-control';
 
 
-async function hashAnswer(answer: string): Promise<string> {
+const PBKDF2_ITERATIONS = 310_000;
+
+function bytesToB64(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function randomSaltB64(): string {
+  return bytesToB64(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+async function pbkdf2HashAnswer(answer: string, saltB64: string, iterations: number): Promise<string> {
   const encoder = new TextEncoder();
-  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(answer.trim().toLowerCase()));
-  const arr = new Uint8Array(digest);
-  let binary = '';
-  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
-  return btoa(binary);
+  const material = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(answer.trim().toLowerCase()),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: b64ToBytes(saltB64), iterations, hash: 'SHA-256' },
+    material,
+    256
+  );
+  return bytesToB64(new Uint8Array(bits));
 }
 
 interface SecurityQuestion {
@@ -31,6 +56,8 @@ interface SecurityQuestion {
   target_type: 'all' | 'category' | 'contact';
   target_contact_type: string | null;
   target_contact_id: string | null;
+  kdf_salt?: string | null;
+  kdf_iterations?: number | null;
 }
 
 interface SecurityQuestionsManagerProps {

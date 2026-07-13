@@ -253,7 +253,7 @@ async function startGracePeriod(
       const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       await supabase.from('check_in_tokens').insert({
         user_id: userId,
-        token: checkInToken,
+        token_hash: await hashTokenForStorage(checkInToken),
         expires_at: tokenExpiry,
         method: 'email_link',
       });

@@ -368,6 +368,30 @@ const ContactCard: React.FC<ContactCardProps> = ({
                 </div>
               </TabsContent>
               <TabsContent value="portal" className="space-y-4 mt-4">
+                {hasActiveShare && needsRegeneration && (
+                  <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm mb-3">
+                    <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground flex items-center gap-2">
+                        Regeneration required
+                        <Badge variant="destructive" className="text-[10px]">Stale</Badge>
+                      </p>
+                      <p className="text-muted-foreground">
+                        This portal link was created before a security upgrade and no longer works.
+                        Regenerate the access link to issue a fresh, working token.
+                      </p>
+                      <Button
+                        onClick={handleGeneratePortalLink}
+                        disabled={generatingLink || !vaultKey}
+                        size="sm"
+                        className="mt-2 rounded-xl"
+                      >
+                        <Link2 className="w-4 h-4 mr-2" />
+                        {generatingLink ? 'Regenerating...' : 'Regenerate access link'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {hasActiveShare && shareLastUpdated && dataLastUpdated && new Date(dataLastUpdated) > new Date(shareLastUpdated) && (
                   <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/30 rounded-xl text-sm mb-3">
                     <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />

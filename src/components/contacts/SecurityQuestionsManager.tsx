@@ -194,11 +194,14 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
     setEditSaving(true);
 
     try {
-      const answerHash = await hashAnswer(editAnswer);
+      const kdfSalt = randomSaltB64();
+      const answerHash = await pbkdf2HashAnswer(editAnswer, kdfSalt, PBKDF2_ITERATIONS);
       const { ciphertext, iv } = await encryptText(editAnswer.trim().toLowerCase(), vaultKey);
       const payload: any = {
         question: editQuestion.trim(),
         answer_hash: answerHash,
+        kdf_salt: kdfSalt,
+        kdf_iterations: PBKDF2_ITERATIONS,
         answer_ciphertext: ciphertext,
         answer_iv: iv,
         hint: editHint.trim() || null,

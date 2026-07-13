@@ -748,6 +748,8 @@ export type Database = {
           created_at: string
           hint: string | null
           id: string
+          kdf_iterations: number | null
+          kdf_salt: string | null
           question: string
           target_contact_id: string | null
           target_contact_type: string | null
@@ -762,6 +764,8 @@ export type Database = {
           created_at?: string
           hint?: string | null
           id?: string
+          kdf_iterations?: number | null
+          kdf_salt?: string | null
           question: string
           target_contact_id?: string | null
           target_contact_type?: string | null
@@ -776,6 +780,8 @@ export type Database = {
           created_at?: string
           hint?: string | null
           id?: string
+          kdf_iterations?: number | null
+          kdf_salt?: string | null
           question?: string
           target_contact_id?: string | null
           target_contact_type?: string | null

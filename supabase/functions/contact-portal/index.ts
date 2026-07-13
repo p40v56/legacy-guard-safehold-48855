@@ -37,7 +37,9 @@ async function hashTokenForStorage(token: string): Promise<string> {
 // Must match client-side hashTokenString in portalShares.ts
 const hashTokenString = hashTokenForStorage;
 
-async function hashAnswer(answer: string): Promise<string> {
+// Legacy unsalted SHA-256, kept only to verify pre-PBKDF2 rows once,
+// then transparently upgrade the row to PBKDF2.
+async function legacyHashAnswer(answer: string): Promise<string> {
   const encoder = new TextEncoder();
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -47,6 +49,45 @@ async function hashAnswer(answer: string): Promise<string> {
   let binary = "";
   for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
   return btoa(binary);
+}
+
+const PBKDF2_ITERATIONS = 310_000;
+
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function bytesToB64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function randomSaltB64(): string {
+  return bytesToB64(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+async function pbkdf2HashAnswer(
+  answer: string,
+  saltB64: string,
+  iterations: number
+): Promise<string> {
+  const encoder = new TextEncoder();
+  const normalized = answer.trim().toLowerCase();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(normalized),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: b64ToBytes(saltB64), iterations, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  return bytesToB64(new Uint8Array(bits));
 }
 
 // ── Permission helpers ───────────────────────────────────────
@@ -148,7 +189,6 @@ async function lookupToken(
       .from("contact_access_tokens")
       .update({ token: tokenHash })
       .eq("id", legacyData.id);
-    console.log(`Migrated token ${rawToken.substring(0, 8)}... to hash storage`);
     return { data: legacyData, error: null };
   }
 
@@ -425,16 +465,34 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Compare hashes (constant-time). Legacy plaintext fallback removed (M3).
-      const submittedHash = await hashAnswer(answer);
-      const storedAnswer = applicableQuestion.answer_hash || "";
+      // Verify: PBKDF2 (kdf_salt/kdf_iterations set) or legacy SHA-256 (upgrade on success).
+      const storedAnswer: string = applicableQuestion.answer_hash || "";
+      const storedSalt: string | null = applicableQuestion.kdf_salt || null;
+      const storedIter: number | null = applicableQuestion.kdf_iterations || null;
       let isCorrect = false;
-      if (submittedHash.length === storedAnswer.length && storedAnswer.length > 0) {
-        let diff = 0;
-        for (let i = 0; i < submittedHash.length; i++) {
-          diff |= submittedHash.charCodeAt(i) ^ storedAnswer.charCodeAt(i);
+      let usedLegacy = false;
+      if (storedAnswer.length > 0) {
+        if (storedSalt && storedIter && storedIter > 0) {
+          const submittedHash = await pbkdf2HashAnswer(answer, storedSalt, storedIter);
+          if (submittedHash.length === storedAnswer.length) {
+            let diff = 0;
+            for (let i = 0; i < submittedHash.length; i++) {
+              diff |= submittedHash.charCodeAt(i) ^ storedAnswer.charCodeAt(i);
+            }
+            isCorrect = diff === 0;
+          }
+        } else {
+          // Legacy row: verify with unsalted SHA-256 once, then upgrade.
+          const legacyHash = await legacyHashAnswer(answer);
+          if (legacyHash.length === storedAnswer.length) {
+            let diff = 0;
+            for (let i = 0; i < legacyHash.length; i++) {
+              diff |= legacyHash.charCodeAt(i) ^ storedAnswer.charCodeAt(i);
+            }
+            isCorrect = diff === 0;
+            usedLegacy = true;
+          }
         }
-        isCorrect = diff === 0;
       }
 
       if (!isCorrect) {
@@ -453,6 +511,20 @@ const handler = async (req: Request): Promise<Response> => {
       await supabase
         .from("portal_access_attempts")
         .insert({ token_hash: tokenHashForLimit, success: true });
+
+      // Transparent legacy → PBKDF2 upgrade on first successful verify
+      if (usedLegacy) {
+        try {
+          const newSalt = randomSaltB64();
+          const newHash = await pbkdf2HashAnswer(answer, newSalt, PBKDF2_ITERATIONS);
+          await supabase
+            .from("security_questions")
+            .update({ answer_hash: newHash, kdf_salt: newSalt, kdf_iterations: PBKDF2_ITERATIONS })
+            .eq("id", applicableQuestion.id);
+        } catch (e) {
+          console.error("Failed to upgrade legacy security answer hash:", e);
+        }
+      }
 
       // Update last_accessed_at on the token
       await supabase
@@ -513,7 +585,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // ── acknowledge ──────────────────────────────────────
     if (action === "acknowledge" && token) {
-      console.log(`Portal acknowledge request for token: ${token.substring(0, 8)}...`);
       const { data: tokenData, error: tokenError } = await lookupToken(supabase, token);
       if (tokenError || !tokenData) {
         return new Response(`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:500px;margin:40px auto;text-align:center"><h2 style="color:#dc2626">Invalid or expired link</h2><p>This acknowledgment link is no longer valid.</p></body></html>`, { status: 403, headers: { "Content-Type": "text/html", ...corsHeaders } });
@@ -535,7 +606,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // ── verify token ───────────────────────────────────────
     if (action === "verify" && token) {
-      console.log(`Portal verify request for token: ${token.substring(0, 8)}...`);
 
       const { data: tokenData, error: tokenError } = await lookupToken(supabase, token);
 

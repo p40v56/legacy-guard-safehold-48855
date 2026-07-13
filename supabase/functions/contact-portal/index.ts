@@ -513,6 +513,20 @@ const handler = async (req: Request): Promise<Response> => {
         .from("portal_access_attempts")
         .insert({ token_hash: tokenHashForLimit, success: true });
 
+      // Transparent legacy → PBKDF2 upgrade on first successful verify
+      if (usedLegacy) {
+        try {
+          const newSalt = randomSaltB64();
+          const newHash = await pbkdf2HashAnswer(answer, newSalt, PBKDF2_ITERATIONS);
+          await supabase
+            .from("security_questions")
+            .update({ answer_hash: newHash, kdf_salt: newSalt, kdf_iterations: PBKDF2_ITERATIONS })
+            .eq("id", applicableQuestion.id);
+        } catch (e) {
+          console.error("Failed to upgrade legacy security answer hash:", e);
+        }
+      }
+
       // Update last_accessed_at on the token
       await supabase
         .from("contact_access_tokens")

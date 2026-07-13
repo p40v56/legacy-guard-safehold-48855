@@ -59,6 +59,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [portalAccessCount, setPortalAccessCount] = useState(0);
   const [shareLastUpdated, setShareLastUpdated] = useState<string | null>(null);
   const [dataLastUpdated, setDataLastUpdated] = useState<string | null>(null);
+  const [needsRegeneration, setNeedsRegeneration] = useState(false);
 
   // Check if an active share exists and fetch portal access info
   useEffect(() => {

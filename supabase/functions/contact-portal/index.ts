@@ -132,7 +132,9 @@ async function lookupToken(
 
   if (data) return { data, error: null };
 
-  // Fallback: raw token lookup (migration path for pre-hash tokens)
+  // Fallback: raw token lookup (migration path for pre-hash tokens).
+  // @deprecated Remove after 2026-10-01 once no legacy plaintext tokens remain.
+  console.warn("contact-portal: legacy raw-token lookup path hit — token predates hash migration.");
   const { data: legacyData, error: legacyError } = await supabase
     .from("contact_access_tokens")
     .select("*")

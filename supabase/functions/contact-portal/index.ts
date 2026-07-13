@@ -189,7 +189,6 @@ async function lookupToken(
       .from("contact_access_tokens")
       .update({ token: tokenHash })
       .eq("id", legacyData.id);
-    console.log(`Migrated token ${rawToken.substring(0, 8)}... to hash storage`);
     return { data: legacyData, error: null };
   }
 
@@ -586,7 +585,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // ── acknowledge ──────────────────────────────────────
     if (action === "acknowledge" && token) {
-      console.log(`Portal acknowledge request for token: ${token.substring(0, 8)}...`);
       const { data: tokenData, error: tokenError } = await lookupToken(supabase, token);
       if (tokenError || !tokenData) {
         return new Response(`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:500px;margin:40px auto;text-align:center"><h2 style="color:#dc2626">Invalid or expired link</h2><p>This acknowledgment link is no longer valid.</p></body></html>`, { status: 403, headers: { "Content-Type": "text/html", ...corsHeaders } });
@@ -608,7 +606,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // ── verify token ───────────────────────────────────────
     if (action === "verify" && token) {
-      console.log(`Portal verify request for token: ${token.substring(0, 8)}...`);
 
       const { data: tokenData, error: tokenError } = await lookupToken(supabase, token);
 

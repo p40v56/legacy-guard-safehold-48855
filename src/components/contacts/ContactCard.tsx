@@ -208,6 +208,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
       const link = `${window.location.origin}/portal/${token}`;
       setPortalLink(link);
       setHasActiveShare(true);
+      setNeedsRegeneration(false);
       await navigator.clipboard.writeText(link);
       toast({ title: "Portal link generated & copied!", description: "The link has been copied to your clipboard." });
     } catch (error) {

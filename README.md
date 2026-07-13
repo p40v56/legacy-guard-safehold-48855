@@ -1,5 +1,13 @@
 # Welcome to your Lovable project
 
+> **Note on `VITE_SUPABASE_PUBLISHABLE_KEY`:** this is a public client (anon) key
+> designed to be shipped in the browser bundle. It is safe to expose because all
+> access is gated by Row-Level Security policies. If you want the historical
+> value that lived in the committed `.env` retired, rotate it manually from the
+> Supabase dashboard (Project Settings → API → Rotate anon key). This rotation
+> is a manual owner step and is not automated by the app.
+
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/a45d6709-6b34-4178-addc-3c0cfa6641b3

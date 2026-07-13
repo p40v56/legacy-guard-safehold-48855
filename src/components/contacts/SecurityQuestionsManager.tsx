@@ -97,6 +97,9 @@ const SecurityQuestionsManager = ({ contacts, contactTypeLabels }: SecurityQuest
 
     try {
       const answerHash = await hashAnswer(newAnswer);
+      // answer_ciphertext/answer_iv are read by src/lib/portalShares.ts to
+      // derive the per-share AES-GCM key at portal-generation time (ZK model).
+      // answer_hash is what supabase/functions/contact-portal verifies against.
       const { ciphertext, iv } = await encryptText(newAnswer.trim().toLowerCase(), vaultKey);
       const payload: any = {
         user_id: user.id,

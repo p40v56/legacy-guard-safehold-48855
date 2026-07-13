@@ -59,6 +59,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
   const [portalAccessCount, setPortalAccessCount] = useState(0);
   const [shareLastUpdated, setShareLastUpdated] = useState<string | null>(null);
   const [dataLastUpdated, setDataLastUpdated] = useState<string | null>(null);
+  const [needsRegeneration, setNeedsRegeneration] = useState(false);
 
   // Check if an active share exists and fetch portal access info
   useEffect(() => {
@@ -67,14 +68,17 @@ const ContactCard: React.FC<ContactCardProps> = ({
     // Check active share and get updated_at
     supabase
       .from('contact_shares')
-      .select('id, updated_at')
+      .select('id, updated_at, needs_regeneration')
       .eq('contact_id', contact.id)
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(1)
       .then(({ data }) => {
         setHasActiveShare((data?.length ?? 0) > 0);
-        if (data?.[0]) setShareLastUpdated(data[0].updated_at);
+        if (data?.[0]) {
+          setShareLastUpdated(data[0].updated_at);
+          setNeedsRegeneration(Boolean((data[0] as any).needs_regeneration));
+        }
       });
 
     // Check if user data was modified after portal was generated
@@ -204,6 +208,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
       const link = `${window.location.origin}/portal/${token}`;
       setPortalLink(link);
       setHasActiveShare(true);
+      setNeedsRegeneration(false);
       await navigator.clipboard.writeText(link);
       toast({ title: "Portal link generated & copied!", description: "The link has been copied to your clipboard." });
     } catch (error) {
@@ -363,6 +368,30 @@ const ContactCard: React.FC<ContactCardProps> = ({
                 </div>
               </TabsContent>
               <TabsContent value="portal" className="space-y-4 mt-4">
+                {hasActiveShare && needsRegeneration && (
+                  <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm mb-3">
+                    <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground flex items-center gap-2">
+                        Regeneration required
+                        <Badge variant="destructive" className="text-[10px]">Stale</Badge>
+                      </p>
+                      <p className="text-muted-foreground">
+                        This portal link was created before a security upgrade and no longer works.
+                        Regenerate the access link to issue a fresh, working token.
+                      </p>
+                      <Button
+                        onClick={handleGeneratePortalLink}
+                        disabled={generatingLink || !vaultKey}
+                        size="sm"
+                        className="mt-2 rounded-xl"
+                      >
+                        <Link2 className="w-4 h-4 mr-2" />
+                        {generatingLink ? 'Regenerating...' : 'Regenerate access link'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {hasActiveShare && shareLastUpdated && dataLastUpdated && new Date(dataLastUpdated) > new Date(shareLastUpdated) && (
                   <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/30 rounded-xl text-sm mb-3">
                     <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />

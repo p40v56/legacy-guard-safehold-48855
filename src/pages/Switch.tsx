@@ -13,6 +13,7 @@ import CheckInHistory from '@/components/switch/CheckInHistory';
 import { CheckInFrequency, UserSettings } from '@/types/common';
 import { SettingsService, ProfileService, NotificationSettingsService } from '@/services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
+import { calculateNextCheckIn } from '@/lib/deadlines';
 
 const Switch = () => {
   const { user } = useAuth();

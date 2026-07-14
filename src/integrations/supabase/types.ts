@@ -809,6 +809,7 @@ export type Database = {
           notification_type: string
           sent_at: string
           status: string
+          trigger_at: string | null
           user_id: string
         }
         Insert: {
@@ -820,6 +821,7 @@ export type Database = {
           notification_type?: string
           sent_at?: string
           status?: string
+          trigger_at?: string | null
           user_id: string
         }
         Update: {
@@ -831,6 +833,7 @@ export type Database = {
           notification_type?: string
           sent_at?: string
           status?: string
+          trigger_at?: string | null
           user_id?: string
         }
         Relationships: [

@@ -106,7 +106,7 @@ export const usePlan = (): PlanInfo => {
     const fetchPlanAndRole = async () => {
       try {
         const [profileResult, roleResult] = await Promise.all([
-          supabase.from('profiles').select('plan, plan_expires_at').eq('user_id', user.id).single(),
+          supabase.from('profiles').select('plan, plan_expires_at').eq('user_id', user.id).maybeSingle(),
           supabase.from('user_roles').select('role').eq('user_id', user.id),
         ]);
 

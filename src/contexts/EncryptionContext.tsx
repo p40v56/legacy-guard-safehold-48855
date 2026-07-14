@@ -102,7 +102,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
           .from('profiles')
           .select('migration_complete')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
 
         if (!migrationCheck?.migration_complete) {
           const result = await migrateUserData(userId, decryptedVaultKey);

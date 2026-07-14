@@ -52,7 +52,7 @@ const Confirm = () => {
           .from('profiles')
           .select('encrypted_vault_key')
           .eq('user_id', uid)
-          .single();
+          .maybeSingle();
 
         if (profile?.encrypted_vault_key) {
           navigate('/dashboard');

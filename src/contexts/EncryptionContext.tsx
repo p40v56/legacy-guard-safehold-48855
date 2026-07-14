@@ -71,7 +71,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('salt, encrypted_vault_key, vault_key_iv')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error || !profile) return false;
 

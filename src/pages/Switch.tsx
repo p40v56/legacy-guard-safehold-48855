@@ -38,16 +38,8 @@ const Switch = () => {
   }, [user]);
 
 
-  const calculateNextCheckIn = (frequency: CheckInFrequency, fromDate: Date = new Date()) => {
-    const nextDate = new Date(fromDate);
-    switch (frequency) {
-      case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
-      case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
-      case 'biweekly': nextDate.setDate(nextDate.getDate() + 14); break;
-      case 'monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
-    }
-    return nextDate.toISOString();
-  };
+
+
 
   const fetchSettings = async () => {
     if (!user) return;

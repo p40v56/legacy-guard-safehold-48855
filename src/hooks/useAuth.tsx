@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .from('profiles')
         .select('deactivated')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       setIsDeactivated(data?.deactivated ?? false);
     } catch {
       setIsDeactivated(false);

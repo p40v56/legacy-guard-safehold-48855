@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardStats, UserSettings, CheckInFrequency, DeadlineMode } from '@/types/common';
+import { calculateNextCheckIn as sharedCalculateNextCheckIn } from '@/lib/deadlines';
 
 // Profile Service
 export class ProfileService {

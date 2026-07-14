@@ -361,30 +361,30 @@ async function triggerSwitch(
 
   const switchTriggeredAt = userSettings.switch_triggered_at || now.toISOString();
 
-  // Build query for already-sent notifications — only consider those sent AFTER the current trigger
-  let alreadySentQuery = supabase
-    .from("sent_notifications")
-    .select("contact_id")
-    .eq("user_id", userId)
-    .eq("notification_type", "switch_triggered")
-    .eq("status", "sent");
-
-  // Only skip contacts notified after the current switch trigger time
-  if (switchTriggeredAt) {
-    alreadySentQuery = alreadySentQuery.gte("sent_at", switchTriggeredAt);
-  }
-
-  const [contactsRes, typePermissionsRes, rulesRes, alreadySentRes] = await Promise.all([
+  // Load contacts + already-claimed rows for THIS trigger.
+  // A row exists for a (user, contact, notification_type='switch_triggered', trigger_at=switchTriggeredAt)
+  // as soon as we start sending, so a second concurrent run (or a retry) will skip it.
+  const [contactsRes, typePermissionsRes, rulesRes, alreadyClaimedRes] = await Promise.all([
     supabase.from("contacts").select("*").eq("user_id", userId).eq("can_receive_messages", true),
     supabase.from("contact_type_permissions").select("*").eq("user_id", userId),
     supabase.from("activation_rules").select("*").eq("user_id", userId).eq("enabled", true),
-    alreadySentQuery,
+    supabase
+      .from("sent_notifications")
+      .select("contact_id,status")
+      .eq("user_id", userId)
+      .eq("notification_type", "switch_triggered")
+      .eq("trigger_at", switchTriggeredAt),
   ]);
 
   const contacts = (contactsRes.data || []) as Contact[];
   const typePermissions = (typePermissionsRes.data || []) as ContactTypePermission[];
   const activationRules = (rulesRes.data || []) as ActivationRule[];
-  const alreadySentContactIds = new Set((alreadySentRes.data || []).map((r: any) => r.contact_id));
+  // Skip any contact that already has a pending or sent claim for THIS trigger.
+  const alreadyClaimedContactIds = new Set(
+    (alreadyClaimedRes.data || [])
+      .filter((r: any) => r.status === "pending" || r.status === "sent")
+      .map((r: any) => r.contact_id),
+  );
 
   console.log(`Processing ${contacts.length} contacts with ${activationRules.length} activation rules`);
 
@@ -396,15 +396,37 @@ async function triggerSwitch(
       continue;
     }
 
-    // Skip contacts already notified
-    if (alreadySentContactIds.has(contact.id)) {
-      console.log(`Skipping contact ${contact.id} — already notified`);
+    // Skip contacts already claimed (pending or sent) for this trigger
+    if (alreadyClaimedContactIds.has(contact.id)) {
+      console.log(`Skipping contact ${contact.id} — already claimed for this trigger`);
       continue;
     }
 
     // Check delay_hours from activation rules
     if (!shouldNotifyContact(contact, activationRules, switchTriggeredAt, now)) {
       console.log(`Skipping contact ${contact.id} — delay_hours not yet reached`);
+      continue;
+    }
+
+    // IDEMPOTENCY CLAIM: insert a 'pending' row scoped to this trigger BEFORE sending.
+    // A partial unique index on (user_id, contact_id, notification_type, trigger_at)
+    // where notification_type='switch_triggered' makes a concurrent second insert fail,
+    // so only one worker actually sends the email.
+    const { data: claimRow, error: claimError } = await supabase
+      .from("sent_notifications")
+      .insert({
+        user_id: userId,
+        contact_id: contact.id,
+        notification_type: "switch_triggered",
+        status: "pending",
+        trigger_at: switchTriggeredAt,
+      })
+      .select("id")
+      .single();
+
+    if (claimError || !claimRow) {
+      // Almost certainly a unique-violation from a concurrent run — safe to skip.
+      console.log(`Skipping contact ${contact.id} — claim insert failed (likely concurrent)`);
       continue;
     }
 
@@ -454,13 +476,14 @@ async function triggerSwitch(
 
       const sendResult = await sendResponse.json();
 
-      await supabase.from("sent_notifications").insert({
-        user_id: userId,
-        contact_id: contact.id,
-        notification_type: "switch_triggered",
-        status: sendResult.success ? "sent" : "failed",
-        error_message: sendResult.error || null,
-      });
+      // Resolve the claim row to sent/failed.
+      await supabase
+        .from("sent_notifications")
+        .update({
+          status: sendResult.success ? "sent" : "failed",
+          error_message: sendResult.error || null,
+        })
+        .eq("id", claimRow.id);
 
       results.push({
         contactId: contact.id,
@@ -472,6 +495,10 @@ async function triggerSwitch(
     } catch (err: unknown) {
       const errMessage = err instanceof Error ? err.message : "Unknown error";
       console.error(`Error sending to ${contactLabel}:`, errMessage);
+      await supabase
+        .from("sent_notifications")
+        .update({ status: "failed", error_message: errMessage })
+        .eq("id", claimRow.id);
       results.push({
         contactId: contact.id,
         success: false,
@@ -482,6 +509,7 @@ async function triggerSwitch(
 
   return { success: true, results };
 }
+
 
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);

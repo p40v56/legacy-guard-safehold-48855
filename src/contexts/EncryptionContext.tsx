@@ -187,7 +187,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('salt')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (!profile?.salt) return false;
 

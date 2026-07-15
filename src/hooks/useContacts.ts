@@ -76,7 +76,8 @@ export const useContacts = () => {
           name: formData.name,
           phone: formData.phone,
           relationship: formData.relationship,
-          notes: (formData as any).notes,
+          // TODO: `notes` is a contacts-table column not yet surfaced on EmergencyContact form type
+          notes: (formData as unknown as { notes?: string }).notes,
           custom_message: formData.custom_message,
         };
         const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);
@@ -127,7 +128,8 @@ export const useContacts = () => {
           name: formData.name,
           phone: formData.phone,
           relationship: formData.relationship,
-          notes: (formData as any).notes,
+          // TODO: `notes` is a contacts-table column not yet surfaced on EmergencyContact form type
+          notes: (formData as unknown as { notes?: string }).notes,
           custom_message: formData.custom_message,
         };
         const encrypted = await encryptFields(fieldsToEncrypt, vaultKey);

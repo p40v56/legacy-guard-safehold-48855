@@ -206,7 +206,7 @@ export class SettingsService {
         deadline_at: deadlineAt || null,
         deadline_mode: currentSettings?.deadline_mode || null,
         grace_period_hours: currentSettings?.grace_period_hours ?? null,
-      } as any);
+      });
 
     return data;
   }

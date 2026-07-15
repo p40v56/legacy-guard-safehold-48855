@@ -111,12 +111,12 @@ export const usePlan = (): PlanInfo => {
         ]);
 
         if (profileResult.data) {
-          setRawPlan((profileResult.data as any).plan || 'free');
-          setPlanExpiresAt((profileResult.data as any).plan_expires_at || null);
+          setRawPlan(profileResult.data.plan || 'free');
+          setPlanExpiresAt(profileResult.data.plan_expires_at || null);
         }
 
         if (roleResult.data) {
-          setIsAdmin(roleResult.data.some((r: any) => r.role === 'admin'));
+          setIsAdmin(roleResult.data.some((r) => r.role === 'admin'));
         }
       } catch (error) {
         console.error('Error fetching plan info:', error);

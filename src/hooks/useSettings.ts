@@ -154,7 +154,7 @@ export const useSettings = () => {
       }));
       setActivationRules(transformedRules);
 
-      setTypePermissions(permissionsData as ContactTypePermissionsRow[]);
+      setTypePermissions(permissionsData as unknown as ContactTypePermissionsRow[]);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({

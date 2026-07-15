@@ -17,7 +17,7 @@ import { Lock, Shield, ShieldCheck, LogOut, Monitor, Smartphone, ChevronDown, Tr
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import SecurityQuestionsManager from '@/components/contacts/SecurityQuestionsManager';
 import UpgradePrompt from '@/components/UpgradePrompt';
-import { EmergencyContact } from '@/hooks/useContacts';
+import { EmergencyContact } from '@/types/access-control';
 import { PlanLimits } from '@/hooks/usePlan';
 
 const getPasswordStrength = (password: string): { label: string; color: string; width: string } => {

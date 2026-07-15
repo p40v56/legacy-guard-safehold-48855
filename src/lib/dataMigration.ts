@@ -4,6 +4,10 @@
  *
  * Run once per user after they first unlock their vault.
  * Safe to re-run: fields that already have an _iv value are skipped.
+ *
+ * TODO: This file uses `as any` extensively because it operates on dynamic
+ * table names (`from(table as any)`) which the strongly-typed Supabase client
+ * does not support. Type once the client exposes a generic `.from(name)`.
  */
 
 import { supabase } from '@/integrations/supabase/client';

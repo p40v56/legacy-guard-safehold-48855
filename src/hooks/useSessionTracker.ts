@@ -1,3 +1,4 @@
+// TODO: `user_sessions` table is not yet in generated Supabase types; casts are guarding that gap.
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 

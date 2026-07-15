@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -30,7 +30,7 @@ const Admin = lazy(() => import("./pages/Admin"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 
-const queryClient = new QueryClient();
+
 
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -39,7 +39,7 @@ const RouteFallback = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <>
     <AuthProvider>
       <EncryptionProvider>
         <ErrorBoundary>
@@ -72,7 +72,7 @@ const App = () => (
         </ErrorBoundary>
       </EncryptionProvider>
     </AuthProvider>
-  </QueryClientProvider>
+  </>
 );
 
 export default App;

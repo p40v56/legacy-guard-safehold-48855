@@ -79,6 +79,7 @@ const Admin = () => {
       const [profilesResult, statsResult, emailsResult, portalLogResult, triggeredResult] = await Promise.all([
         supabase.rpc('admin_list_profiles'),
         supabase.rpc('admin_get_stats'),
+        // TODO: type these two RPCs once generated types include admin_get_user_emails / admin_get_triggered_switches
         supabase.rpc('admin_get_user_emails' as any, { row_limit: 500 }),
         supabase.from('sent_notifications').select('id, user_id, contact_id, created_at, status, acknowledged_at').eq('notification_type', 'portal_accessed').order('created_at', { ascending: false }).limit(50),
         supabase.rpc('admin_get_triggered_switches' as any),

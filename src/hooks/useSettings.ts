@@ -8,7 +8,7 @@ import {
   ContactTypePermissionsService 
 } from '@/services/supabaseService';
 import { useToast } from '@/hooks/use-toast';
-import { ContactType } from '@/types/access-control';
+import { ContactType, ContactTypePermissions as ContactTypePermissionsRow } from '@/types/access-control';
 import { EmailTemplateData } from '@/components/settings/EmailTemplateEditor';
 import { useEncryption } from '@/contexts/EncryptionContext';
 import { encryptFields, decryptFields } from '@/lib/crypto';
@@ -73,7 +73,7 @@ export const useSettings = () => {
   });
 
   const [activationRules, setActivationRules] = useState<ActivationRule[]>([]);
-  const [typePermissions, setTypePermissions] = useState<any[]>([]);
+  const [typePermissions, setTypePermissions] = useState<ContactTypePermissionsRow[]>([]);
   const [emailTemplate, setEmailTemplate] = useState<EmailTemplateData>(defaultEmailTemplate);
 
   const fetchSettings = async () => {
@@ -92,7 +92,7 @@ export const useSettings = () => {
       let lastName = profileData.last_name || '';
       if (vaultKey) {
         try {
-          const decrypted = await decryptFields(profileData as any, ['first_name', 'last_name'], vaultKey);
+          const decrypted = await decryptFields(profileData, ['first_name', 'last_name'], vaultKey);
           firstName = decrypted.first_name || firstName;
           lastName = decrypted.last_name || lastName;
         } catch { /* use raw */ }
@@ -100,9 +100,9 @@ export const useSettings = () => {
 
       // Decrypt emergency_instructions if vault is unlocked
       let emergencyInstructions = profileData.emergency_instructions || '';
-      if (vaultKey && (profileData as any).emergency_instructions_iv) {
+      if (vaultKey && profileData.emergency_instructions_iv) {
         try {
-          const decrypted = await decryptFields(profileData as any, ['emergency_instructions'], vaultKey);
+          const decrypted = await decryptFields(profileData, ['emergency_instructions'], vaultKey);
           emergencyInstructions = decrypted.emergency_instructions || emergencyInstructions;
         } catch { /* use raw */ }
       }
@@ -119,13 +119,13 @@ export const useSettings = () => {
 
       // Load email template from profile data
       setEmailTemplate({
-        email_subject: (profileData as any).email_subject || defaultEmailTemplate.email_subject,
-        email_header_title: (profileData as any).email_header_title || defaultEmailTemplate.email_header_title,
-        email_header_subtitle: (profileData as any).email_header_subtitle || defaultEmailTemplate.email_header_subtitle,
-        email_intro_message: (profileData as any).email_intro_message || defaultEmailTemplate.email_intro_message,
-        email_footer_message: (profileData as any).email_footer_message || defaultEmailTemplate.email_footer_message,
-        email_grace_subject: (profileData as any).email_grace_subject || defaultEmailTemplate.email_grace_subject,
-        email_grace_intro: (profileData as any).email_grace_intro || defaultEmailTemplate.email_grace_intro,
+        email_subject: profileData.email_subject || defaultEmailTemplate.email_subject,
+        email_header_title: profileData.email_header_title || defaultEmailTemplate.email_header_title,
+        email_header_subtitle: profileData.email_header_subtitle || defaultEmailTemplate.email_header_subtitle,
+        email_intro_message: profileData.email_intro_message || defaultEmailTemplate.email_intro_message,
+        email_footer_message: profileData.email_footer_message || defaultEmailTemplate.email_footer_message,
+        email_grace_subject: profileData.email_grace_subject || defaultEmailTemplate.email_grace_subject,
+        email_grace_intro: profileData.email_grace_intro || defaultEmailTemplate.email_grace_intro,
       });
 
       setNotifications({
@@ -138,7 +138,7 @@ export const useSettings = () => {
         let customMessage = rule.custom_message || '';
         if (vaultKey && customMessage && rule.custom_message_iv) {
           try {
-            const decrypted = await decryptFields(rule as any, ['custom_message'], vaultKey);
+            const decrypted = await decryptFields(rule, ['custom_message'], vaultKey);
             customMessage = decrypted.custom_message || customMessage;
           } catch { /* use raw */ }
         }
@@ -154,7 +154,7 @@ export const useSettings = () => {
       }));
       setActivationRules(transformedRules);
 
-      setTypePermissions(permissionsData);
+      setTypePermissions(permissionsData as unknown as ContactTypePermissionsRow[]);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({
@@ -265,11 +265,11 @@ export const useSettings = () => {
     }
   };
 
-  const saveTypePermissions = async (updatedPermissions: any[]) => {
+  const saveTypePermissions = async (updatedPermissions: ContactTypePermissionsRow[]) => {
     if (!user) return;
     
     try {
-      await Promise.all(updatedPermissions.map((tp: any) =>
+      await Promise.all(updatedPermissions.map((tp) =>
         ContactTypePermissionsService.upsertContactTypePermission(
           user.id,
           tp.contact_type,

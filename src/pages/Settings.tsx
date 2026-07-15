@@ -30,6 +30,7 @@ import EmailTemplateEditor, { EmailTemplateData } from '@/components/settings/Em
 import NotificationTimeline from '@/components/settings/NotificationTimeline';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import ThemeSelector from '@/components/settings/ThemeSelector';
+import SecurityTab from '@/components/settings/SecurityTab';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { decryptFields } from '@/lib/crypto';

@@ -38,7 +38,7 @@ const getPasswordStrength = (password: string): { label: string; color: string; 
 interface SecurityTabProps {
   user: User | null;
   vaultKey: CryptoKey | null;
-  rewrapVaultKey: (newPassword: string, userId: string) => Promise<void>;
+  rewrapVaultKey: (newPassword: string, userId: string) => Promise<unknown>;
   limits: PlanLimits;
   emergencyContacts: EmergencyContact[];
   contactTypeLabels: Record<string, string>;

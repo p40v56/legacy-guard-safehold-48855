@@ -31,6 +31,10 @@ import NotificationTimeline from '@/components/settings/NotificationTimeline';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import ThemeSelector from '@/components/settings/ThemeSelector';
 import SecurityTab from '@/components/settings/SecurityTab';
+import AccountTab from '@/components/settings/AccountTab';
+import PrivacyTab from '@/components/settings/PrivacyTab';
+import NotificationsTab from '@/components/settings/NotificationsTab';
+import PaymentSuccessDialog from '@/components/settings/PaymentSuccessDialog';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateEUShort } from '@/utils/dateUtils';
 import { decryptFields } from '@/lib/crypto';
@@ -660,168 +664,20 @@ const Settings = () => {
           </div>
 
           {/* ─── ACCOUNT TAB ─── */}
-          <TabsContent value="account" className="space-y-6 mt-6">
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><User className="w-5 h-5 mr-2 text-primary" />Profile Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div><Label className="text-foreground">First Name</Label><Input value={profile.first_name} onChange={e => setProfile({...profile, first_name: e.target.value})} placeholder="Enter your first name" /></div>
-                  <div><Label className="text-foreground">Last Name</Label><Input value={profile.last_name} onChange={e => setProfile({...profile, last_name: e.target.value})} placeholder="Enter your last name" /></div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-foreground">Email</Label>
-                    <Input value={profile.email} disabled />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      To change your email address, contact{' '}
-                      <a href="mailto:support@legacyvault.app" className="text-primary hover:underline">support@legacyvault.app</a>
-                    </p>
-                  </div>
-                  <div><Label className="text-foreground">Phone Number</Label><Input value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} placeholder="+1 (555) 123-4567" /></div>
-                </div>
-                <Button onClick={saveProfile} disabled={saving} variant="default">
-                  {saving ? (<><LoadingSpinner size="sm" className="mr-2" />Saving...</>) : (<><Save className="w-4 h-4 mr-2" />Save Profile</>)}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader><CardTitle className="text-foreground">Account Status & Plan</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Current Plan</span>
-                  <Badge className={
-                    isExpired ? 'bg-destructive/20 text-destructive border-destructive/30' :
-                    plan === 'family' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
-                    plan === 'essential' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-success/20 text-success border-success/30'
-                  }>
-                    {isExpired ? 'Expired' : PLAN_LABELS[plan]}
-                  </Badge>
-                </div>
-                {isExpired && planExpiresAt && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                    <p className="text-sm text-destructive font-medium">Your plan expired on {formatDateEUShort(planExpiresAt)}.</p>
-                    <p className="text-sm text-muted-foreground mt-1">Your data is preserved. Renew to restore full access.</p>
-                    <div className="flex gap-3 mt-3">
-                      <button
-                        onClick={() => handleStripeCheckout('essential')}
-                        disabled={checkoutLoading === 'essential'}
-                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
-                      >
-                        {checkoutLoading === 'essential' ? 'Redirecting...' : 'Renew Essential (£49/year) →'}
-                      </button>
-                      <button
-                        onClick={() => handleStripeCheckout('family')}
-                        disabled={checkoutLoading === 'family'}
-                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
-                      >
-                        {checkoutLoading === 'family' ? 'Redirecting...' : 'Renew Family (£99/year) →'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {isPaid && !isExpired && planExpiresAt && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Expires</span>
-                    <span className="text-card-foreground font-medium">{formatDateEUShort(planExpiresAt)}</span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  {(['free', 'essential', 'family'] as PlanTier[]).map(tier => {
-                    const isCurrent = plan === tier;
-                    const lim = PLAN_LIMITS[tier];
-                    const userEmail = user?.email || '';
-                    return (
-                      <div key={tier} className={`rounded-xl p-4 border transition-all duration-200 ${isCurrent ? 'border-2 border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-2 ring-primary/30 scale-[1.02]' : 'border-border bg-muted/20 opacity-80'}`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-card-foreground">{PLAN_LABELS[tier]}</h4>
-                            {isCurrent && <Badge variant="secondary" className="text-[10px]">Current plan</Badge>}
-                          </div>
-                          <span className="text-sm font-semibold text-card-foreground">{PLAN_PRICES[tier]}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <p>👥 {lim.maxContacts === Infinity ? 'Unlimited contacts' : `${lim.maxContacts} trusted ${lim.maxContacts === 1 ? 'contact' : 'contacts'}`}</p>
-                          <p>📄 {lim.maxDocuments === Infinity ? 'Unlimited documents' : `${lim.maxDocuments} ${lim.maxDocuments === 1 ? 'document' : 'documents'}`}</p>
-                          <p>💰 {lim.maxFinancialAssets === Infinity ? 'Unlimited financial assets' : `${lim.maxFinancialAssets} financial ${lim.maxFinancialAssets === 1 ? 'asset' : 'assets'}`}</p>
-                          <p>🌐 {lim.maxAccounts === Infinity ? 'Unlimited digital accounts' : lim.maxAccounts === 0 ? 'No digital accounts' : `${lim.maxAccounts} digital ${lim.maxAccounts === 1 ? 'account' : 'accounts'}`}</p>
-                          <p>💾 {lim.maxStorageMb === 0 ? 'No file storage' : lim.maxStorageMb >= 1024 ? `${lim.maxStorageMb / 1024} GB storage` : `${lim.maxStorageMb} MB storage`}</p>
-                          <p>{lim.portalAccess ? '✓ Contact portals' : '✗ No contact portals'}</p>
-                        </div>
-                        {!isCurrent && (() => {
-                          const planOrder = { free: 0, essential: 1, family: 2 };
-                          const currentOrder = planOrder[plan] || 0;
-                          const tierOrder = planOrder[tier] || 0;
-                          const isUpgrade = tierOrder > currentOrder;
-                          const isDowngrade = tierOrder < currentOrder;
-                          if (tier === 'free') return null;
-
-                          // Calculate prorated price for upgrades
-                          const PLAN_PRICES_PENCE: Record<string, number> = { free: 0, essential: 4900, family: 9900 };
-                          let proratedLabel = '';
-                          if (isUpgrade && plan !== 'free' && planExpiresAt) {
-                            const now = new Date();
-                            const expiry = new Date(planExpiresAt);
-                            const msRemaining = expiry.getTime() - now.getTime();
-                            if (msRemaining > 0) {
-                              const msInYear = 365.25 * 24 * 60 * 60 * 1000;
-                              const fraction = Math.min(msRemaining / msInYear, 1);
-                              const diff = PLAN_PRICES_PENCE[tier] - PLAN_PRICES_PENCE[plan];
-                              const prorated = Math.max(Math.round(diff * fraction), 100);
-                              proratedLabel = `£${(prorated / 100).toFixed(2)} prorated`;
-                            }
-                          }
-
-                          const actionLabel = isUpgrade ? `Upgrade to ${PLAN_LABELS[tier]}` : `Switch to ${PLAN_LABELS[tier]}`;
-                          return (
-                            <div className="mt-4 space-y-1.5">
-                              {proratedLabel && (
-                                <p className="text-[11px] text-muted-foreground text-center">
-                                  Only <span className="text-foreground font-medium">{proratedLabel}</span> for the remaining period
-                                </p>
-                              )}
-                              <Button
-                                onClick={() => handleStripeCheckout(tier)}
-                                disabled={checkoutLoading === tier}
-                                variant={isUpgrade ? 'default' : 'outline'}
-                                size="sm"
-                                className={`w-full group/btn relative overflow-hidden ${
-                                  isUpgrade
-                                    ? 'bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300'
-                                    : ''
-                                }`}
-                              >
-                                <span className="relative z-10 flex items-center justify-center gap-2">
-                                  {checkoutLoading === tier ? (
-                                    <>
-                                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                      </svg>
-                                      Redirecting...
-                                    </>
-                                  ) : (
-                                    <>
-                                      {isUpgrade && <Sparkles className="w-4 h-4 group-hover/btn:animate-wiggle" />}
-                                      {actionLabel}
-                                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-200" />
-                                    </>
-                                  )}
-                                </span>
-                              </Button>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
+          <TabsContent value="account">
+            <AccountTab
+              user={user}
+              profile={profile}
+              setProfile={setProfile}
+              saving={saving}
+              saveProfile={saveProfile}
+              plan={plan}
+              planExpiresAt={planExpiresAt}
+              isExpired={isExpired}
+              isPaid={isPaid}
+              checkoutLoading={checkoutLoading}
+              handleStripeCheckout={handleStripeCheckout}
+            />
           </TabsContent>
 
           {/* ─── SECURITY TAB ─── */}
@@ -869,275 +725,44 @@ const Settings = () => {
           </TabsContent>
 
           {/* ─── NOTIFICATIONS TAB ─── */}
-          <TabsContent value="notifications" className="space-y-6 mt-6">
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader><CardTitle className="text-foreground flex items-center"><Bell className="w-5 h-5 mr-2 text-primary" />Notification Preferences</CardTitle></CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3"><Mail className="w-5 h-5 text-muted-foreground" /><div><Label className="text-foreground">Email Notifications</Label><p className="text-sm text-muted-foreground">Receive updates via email</p></div></div>
-                  <Switch checked={notifications.email_notifications} onCheckedChange={checked => setNotifications({...notifications, email_notifications: checked})} />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between opacity-60">
-                  <div className="flex items-center space-x-3"><Phone className="w-5 h-5 text-muted-foreground" /><div><Label className="text-foreground">SMS Notifications</Label><p className="text-sm text-muted-foreground">Receive updates via text message</p></div></div>
-                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Coming soon</Badge>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between opacity-60">
-                  <div className="flex items-center space-x-3"><Shield className="w-5 h-5 text-muted-foreground" /><div><Label className="text-foreground">Emergency Alerts</Label><p className="text-sm text-muted-foreground">Critical notifications for emergency situations</p></div></div>
-                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Coming soon</Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Shield className="w-5 h-5 mr-2 text-primary" />Portal access alerts</CardTitle>
-                <p className="text-sm text-muted-foreground mt-2">
-                  You are automatically notified by email when a trusted contact accesses their portal (once per 24 hours per contact).
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-foreground font-medium text-sm">Portal access notifications</p>
-                    <p className="text-sm text-muted-foreground">Email sent when a contact opens their portal</p>
-                  </div>
-                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Always on</Badge>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="notifications">
+            <NotificationsTab notifications={notifications} setNotifications={setNotifications} />
           </TabsContent>
 
           {/* ─── PRIVACY TAB ─── */}
-          <TabsContent value="privacy" className="space-y-6 mt-6">
-            {/* Data Lifecycle */}
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Clock className="w-5 h-5 mr-2 text-primary" />Data Lifecycle</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Optionally schedule automatic deletion of your vault after your switch has fired. This gives your contacts time to access their portal before all data is permanently removed.
-                </p>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground font-medium">Auto-delete after switch fires</Label>
-                    <p className="text-xs text-muted-foreground">Your account and all data will be permanently deleted after this period</p>
-                  </div>
-                  <Switch
-                    checked={autoDeleteEnabled}
-                    onCheckedChange={(checked) => {
-                      setAutoDeleteEnabled(checked);
-                      handleAutoDeleteChange(checked ? 180 : null);
-                    }}
-                  />
-                </div>
-
-                {autoDeleteEnabled && (
-                  <div className="space-y-3 pl-0">
-                    <div className="space-y-2">
-                      <Label className="text-foreground">Delete after</Label>
-                      <Select value={(autoDeleteDays || 180).toString()} onValueChange={(v) => handleAutoDeleteChange(parseInt(v))}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="30">30 days after switch fires</SelectItem>
-                          <SelectItem value="60">60 days after switch fires</SelectItem>
-                          <SelectItem value="90">90 days after switch fires</SelectItem>
-                          <SelectItem value="180">180 days after switch fires</SelectItem>
-                          <SelectItem value="365">1 year after switch fires</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
-                      <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-                      <p className="text-xs text-muted-foreground">
-                        This deletion is permanent and cannot be undone. Make sure your contacts have enough time to download what they need.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Download className="w-5 h-5 mr-2 text-primary" />Export Your Data</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Download a complete copy of all your data including contacts, documents, accounts, and financial assets. Data is decrypted locally before export.
-                </p>
-                {!vaultKey && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-warning/10 border border-warning/20">
-                    <Lock className="w-4 h-4 text-warning shrink-0" />
-                    <p className="text-xs text-muted-foreground">Your vault is locked. Unlock it first to export your data.</p>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-3">
-                  <Button onClick={handleExportData} disabled={exporting || !vaultKey} variant="default">
-                    {exporting ? (<><LoadingSpinner size="sm" className="mr-2" />Exporting...</>) : (<><Download className="w-4 h-4 mr-2" />Download as JSON</>)}
-                  </Button>
-                  <Button onClick={handleExportReadable} disabled={exporting || !vaultKey} variant="outline">
-                    <FileText className="w-4 h-4 mr-2" />Download as readable text
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-muted/30 border-none rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center"><Clock className="w-5 h-5 mr-2 text-primary" />Recent account activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-sm text-muted-foreground">Last sign in</span>
-                    <span className="text-sm text-foreground font-medium">{formatActivityDate(lastSignIn)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-sm text-muted-foreground">Password last changed</span>
-                    <span className="text-sm text-foreground font-medium">{passwordChangedAt ? formatActivityDate(passwordChangedAt) : 'Never'}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-sm text-muted-foreground">Account created</span>
-                    <span className="text-sm text-foreground font-medium">{formatActivityDate(accountCreatedAt)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-muted/30 border-none rounded-2xl border-destructive/20">
-              <CardHeader>
-                <CardTitle className="text-destructive flex items-center"><Trash2 className="w-5 h-5 mr-2" />Danger Zone</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
-                  {!showDeleteConfirm ? (
-                    <>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Permanently delete your account and all associated data. This action cannot be undone.
-                      </p>
-                      <Button onClick={() => setShowDeleteConfirm(true)} variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 rounded-xl">
-                        <Trash2 className="w-4 h-4 mr-2" />Delete my account
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="space-y-4">
-                      <p className="text-sm text-destructive font-medium">
-                        This will permanently delete all your data. This cannot be undone.
-                      </p>
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Type <span className="font-mono font-bold text-foreground">DELETE</span> to confirm:</p>
-                        <Input
-                          value={deleteConfirmText}
-                          onChange={e => setDeleteConfirmText(e.target.value)}
-                          placeholder="Type DELETE"
-                          className="bg-background border-destructive/30 rounded-xl"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Enter your password to confirm</Label>
-                        <Input
-                          type="password"
-                          value={deletePassword}
-                          onChange={e => setDeletePassword(e.target.value)}
-                          placeholder="Your current password"
-                          className="bg-background border-destructive/30 rounded-xl"
-                        />
-                      </div>
-                      <div className="flex gap-3">
-                        <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeletePassword(''); }} className="rounded-xl">
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          disabled={deleteConfirmText !== 'DELETE' || !deletePassword || deletingAccount}
-                          onClick={handleDeleteAccount}
-                        >
-                          {deletingAccount ? <LoadingSpinner size="sm" className="mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                          Delete permanently
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Your encryption keys are derived from your password. Once deleted, your data cannot be recovered by anyone.
-                </p>
-              </CardContent>
-            </Card>
+          <TabsContent value="privacy">
+            <PrivacyTab
+              vaultKey={vaultKey}
+              autoDeleteEnabled={autoDeleteEnabled}
+              autoDeleteDays={autoDeleteDays}
+              setAutoDeleteEnabled={setAutoDeleteEnabled}
+              handleAutoDeleteChange={handleAutoDeleteChange}
+              exporting={exporting}
+              handleExportData={handleExportData}
+              handleExportReadable={handleExportReadable}
+              lastSignIn={lastSignIn}
+              accountCreatedAt={accountCreatedAt}
+              passwordChangedAt={passwordChangedAt}
+              formatActivityDate={formatActivityDate}
+              showDeleteConfirm={showDeleteConfirm}
+              setShowDeleteConfirm={setShowDeleteConfirm}
+              deleteConfirmText={deleteConfirmText}
+              setDeleteConfirmText={setDeleteConfirmText}
+              deletePassword={deletePassword}
+              setDeletePassword={setDeletePassword}
+              deletingAccount={deletingAccount}
+              handleDeleteAccount={handleDeleteAccount}
+            />
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Payment Success Dialog */}
-      <Dialog open={showPaymentSuccess} onOpenChange={setShowPaymentSuccess}>
-        <DialogContent className="bg-card border-border max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-foreground text-xl">
-              <div className="p-2.5 rounded-xl bg-primary/15">
-                <Crown className="w-6 h-6 text-primary" />
-              </div>
-              Welcome to {upgradedPlan}!
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-5 mt-2">
-            <div className="text-center py-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/15 mb-4">
-                <PartyPopper className="w-8 h-8 text-success" />
-              </div>
-              <h3 className="text-lg font-semibold text-card-foreground mb-1">Payment Successful!</h3>
-              <p className="text-muted-foreground text-sm">
-                Thank you for upgrading to <strong className="text-foreground">{upgradedPlan}</strong>.
-              </p>
-            </div>
-
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-card-foreground">Your plan is now active</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-card-foreground">All premium features unlocked</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-card-foreground">Increased storage & limits</span>
-              </div>
-              {upgradedExpiry && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Check className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-card-foreground">
-                    Valid until {formatDateEUShort(upgradedExpiry)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <p className="text-xs text-muted-foreground text-center">
-              A confirmation email has been sent to your registered email address.
-            </p>
-
-            <Button
-              className="w-full"
-              onClick={() => {
-                setShowPaymentSuccess(false);
-                window.location.reload();
-              }}
-            >
-              Start Exploring
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PaymentSuccessDialog
+        open={showPaymentSuccess}
+        onOpenChange={setShowPaymentSuccess}
+        upgradedPlan={upgradedPlan}
+        upgradedExpiry={upgradedExpiry}
+      />
     </DashboardLayout>
   );
 };

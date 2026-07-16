@@ -29,6 +29,7 @@ const Portal = lazy(() => import("./pages/Portal"));
 const Admin = lazy(() => import("./pages/Admin"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 
 

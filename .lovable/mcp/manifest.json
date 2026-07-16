@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://aukkdhzrjglgiygsrrkz.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "legacyvault-mcp",
+      "version": "0.1.0",
+      "title": "LegacyVault"
+    },
+    "tools": [
+      {
+        "name": "get_switch_status",
+        "title": "Get dead man's switch status",
+        "description": "Return the signed-in user's dead man's switch status: whether it is active, when the next check-in is due, last check-in time, grace period state, and whether the switch has been triggered.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "perform_check_in",
+        "title": "Check in (reset the switch)",
+        "description": "Record a check-in for the signed-in user. This resets the dead man's switch countdown, cancels any active grace period, and logs the check-in in history. Use when the user tells their assistant they are still alive/well and want to postpone the switch.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_plan",
+        "title": "Get subscription plan",
+        "description": "Return the signed-in user's LegacyVault subscription plan (free, essential, or family) and expiry, if any.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_contacts_metadata",
+        "title": "List contacts (metadata only)",
+        "description": "List the signed-in user's trusted contacts by type, priority order, and email. LegacyVault uses zero-knowledge encryption, so contact names, phone numbers, and notes are encrypted client-side and are NOT returned by this tool.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_check_in_history",
+        "title": "Get check-in history",
+        "description": "Return the signed-in user's recent check-in history entries, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "Max entries to return (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

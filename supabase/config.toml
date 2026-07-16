@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.contact-portal]
 verify_jwt = false
 
+[functions.mcp]
+verify_jwt = false
+
 [functions.send-test-email]
 verify_jwt = false
 

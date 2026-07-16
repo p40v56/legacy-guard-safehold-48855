@@ -29,6 +29,7 @@ const Portal = lazy(() => import("./pages/Portal"));
 const Admin = lazy(() => import("./pages/Admin"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 
 
@@ -62,6 +63,7 @@ const App = () => (
                   <Route path="/portal/:token/*" element={<Portal />} />
                   <Route path="/terms" element={<TermsOfService />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

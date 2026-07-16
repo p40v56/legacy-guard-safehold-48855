@@ -127,8 +127,11 @@ const Auth = () => {
         description: "You have been signed in successfully.",
       });
 
+      const nextParam = searchParams.get('next');
       const planParam = searchParams.get('plan');
-      if (planParam === 'essential' || planParam === 'family') {
+      if (nextParam && nextParam.startsWith('/')) {
+        window.location.href = nextParam;
+      } else if (planParam === 'essential' || planParam === 'family') {
         navigate(`/settings?tab=account&checkout=${planParam}`);
       } else {
         navigate('/dashboard');
@@ -171,8 +174,11 @@ const Auth = () => {
       }
       toast({ title: 'Welcome back!', description: 'You have been signed in successfully.' });
 
+      const nextParam = searchParams.get('next');
       const planParam = searchParams.get('plan');
-      if (planParam === 'essential' || planParam === 'family') {
+      if (nextParam && nextParam.startsWith('/')) {
+        window.location.href = nextParam;
+      } else if (planParam === 'essential' || planParam === 'family') {
         navigate(`/settings?tab=account&checkout=${planParam}`);
       } else {
         navigate('/dashboard');
